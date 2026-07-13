@@ -3,7 +3,7 @@ import {
   error,
   requireAdmin,
   requireDb
-} from "../../../_lib.js";
+} from "../../_lib.js";
 
 export async function onRequestGet(context) {
   try {
