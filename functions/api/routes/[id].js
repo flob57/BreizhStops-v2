@@ -4,7 +4,7 @@ import {
   requireAdmin,
   requireDb,
   parseJson
-} from "../../../_lib.js";
+} from "../../_lib.js";
 
 function normalizeRoute(row) {
   return {
