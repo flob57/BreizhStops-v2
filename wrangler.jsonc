@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "breizhstops",
+  "compatibility_date": "2026-07-01",
+  "pages_build_output_dir": ".",
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "breizhstops-db",
+      "database_id": "REMPLACER_PAR_ID_D1"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "PHOTOS",
+      "bucket_name": "breizhstops-photos"
+    }
+  ]
+}

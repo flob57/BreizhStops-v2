@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#005493">
+  <title>BreizhStops</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+  <header class="app-header">
+    <div>
+      <h1>🚍 BreizhStops</h1>
+      <div class="subtitle">Arrêts, lignes et itinéraires</div>
+    </div>
+
+    <div class="header-actions">
+      <button id="openRoutesLibrary" class="header-button">📚 Mes itinéraires</button>
+      <button id="openSettings" class="header-button">⚙️ Accès</button>
+      <span id="status">Chargement…</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="search-tools">
+      <input
+        id="search"
+        type="search"
+        placeholder="Rechercher un arrêt, une commune, un réseau…"
+        autocomplete="off"
+      >
+
+      <div class="filters">
+        <select id="networkFilter">
+          <option value="">Tous les réseaux</option>
+        </select>
+
+        <select id="cityFilter">
+          <option value="">Toutes les communes</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="results-panel">
+      <div id="counter"></div>
+      <div id="results"></div>
+    </section>
+
+    <section class="map-panel">
+      <div id="map"></div>
+
+      <div id="mapToolbar" class="map-toolbar">
+        <button id="toggleWaypointMode">
+          📌 Ajouter un passage par une rue
+        </button>
+
+        <button id="clearWaypoints" class="secondary">
+          Effacer les passages
+        </button>
+      </div>
+    </section>
+
+    <aside class="route-panel">
+      <h2>Mon itinéraire</h2>
+
+      <fieldset class="departure-options">
+        <legend>Point de départ</legend>
+
+        <label>
+          <input type="radio" name="departureMode" value="current" checked>
+          Ma position actuelle
+        </label>
+
+        <label>
+          <input type="radio" name="departureMode" value="stop">
+          Choisir un arrêt de départ
+        </label>
+
+        <label>
+          <input type="radio" name="departureMode" value="automatic">
+          Laisser l’optimisation choisir
+        </label>
+      </fieldset>
+
+      <div id="locationStatus" class="information-box">
+        La position sera demandée lors de la création de l’itinéraire.
+      </div>
+
+      <div id="startStopArea" class="start-stop-area hidden">
+        <label for="startStopSearch">Arrêt de départ</label>
+
+        <input
+          id="startStopSearch"
+          type="search"
+          placeholder="Rechercher l’arrêt de départ…"
+          autocomplete="off"
+        >
+
+        <div id="startStopResults"></div>
+        <div id="selectedStartStop"></div>
+      </div>
+
+      <h3>Étapes sélectionnées</h3>
+      <div id="routeList" class="empty">Aucun arrêt ajouté.</div>
+
+      <div id="routeSummary" class="route-summary hidden"></div>
+
+      <div class="route-actions">
+        <button id="traceRoute" disabled>🛣️ Tracer dans BreizhStops</button>
+        <button id="optimizeRoute" disabled>🧮 Optimiser l’ordre</button>
+        <button id="saveRoute" disabled>💾 Enregistrer l’itinéraire</button>
+        <button id="shareRoute" disabled>🔗 Partager</button>
+        <button id="openRoute" disabled>📍 Google Maps</button>
+        <button id="openInRoute" disabled>🧭 Ouvrir dans inRoute</button>
+        <button id="exportGpx" disabled>📁 Exporter en GPX</button>
+        <button id="clearRoute" class="secondary">🗑 Vider</button>
+      </div>
+    </aside>
+  </main>
+
+  <dialog id="stopDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="stopDialogTitle">Fiche arrêt</h2>
+          <div id="stopDialogMeta" class="meta"></div>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Lignes desservant l’arrêt
+          <input id="stopLines" type="text" placeholder="Ex. 1, 2, 16, scolaire S4">
+        </label>
+
+        <label>
+          État de l’arrêt
+          <select id="stopStatus">
+            <option value="">Non renseigné</option>
+            <option value="conforme">Conforme</option>
+            <option value="surveillance">À surveiller</option>
+            <option value="travaux">Travaux</option>
+            <option value="deplace">Arrêt déplacé</option>
+            <option value="inaccessible">Inaccessible</option>
+          </select>
+        </label>
+
+        <label class="full-width">
+          Remarques
+          <textarea
+            id="stopNotes"
+            rows="5"
+            placeholder="Accès, quai, demi-tour, danger, information conducteur…"
+          ></textarea>
+        </label>
+
+        <label class="full-width">
+          Ajouter une photo
+          <input
+            id="stopPhoto"
+            type="file"
+            accept="image/*"
+            capture="environment"
+          >
+        </label>
+      </div>
+
+      <div id="stopPhotos" class="photo-grid"></div>
+
+      <div class="modal-actions">
+        <button type="button" id="saveStopDetails">💾 Enregistrer</button>
+        <button type="button" id="uploadStopPhoto">📷 Envoyer la photo</button>
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="routeDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <h2>Enregistrer l’itinéraire</h2>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Nom
+          <input id="routeName" type="text" placeholder="Ex. Ligne 16 – Aller">
+        </label>
+
+        <label>
+          Réseau
+          <input id="routeNetwork" type="text" placeholder="Ex. QUB">
+        </label>
+
+        <label>
+          Couleur
+          <input id="routeColor" type="color" value="#005493">
+        </label>
+
+        <label>
+          Visibilité
+          <select id="routeVisibility">
+            <option value="private">Privé</option>
+            <option value="link">Accessible par lien</option>
+          </select>
+        </label>
+
+        <label class="full-width">
+          Description
+          <textarea id="routeDescription" rows="4"></textarea>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="confirmSaveRoute">💾 Enregistrer</button>
+        <button value="cancel" class="secondary">Annuler</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="routesLibraryDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <h2>Mes itinéraires</h2>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div id="routesLibrary"></div>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <h2>Accès à l’administration</h2>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <p class="information-box">
+        Le code est stocké uniquement dans ce navigateur. Il doit correspondre
+        au secret <strong>ADMIN_TOKEN</strong> configuré dans Cloudflare.
+      </p>
+
+      <label>
+        Code administrateur
+        <input id="adminToken" type="password" autocomplete="current-password">
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" id="saveAdminToken">Enregistrer</button>
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,575 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --blue: #005493;
+  --blue-dark: #003e70;
+  --background: #eef3f7;
+  --panel: #ffffff;
+  --text: #1f2933;
+  --muted: #5f6b76;
+  --border: #d8e0e7;
+  --soft: #f8fafc;
+  --secondary: #667085;
+  --danger: #b42318;
+  --success: #176b39;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+  color: var(--text);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.app-header {
+  min-height: 68px;
+  padding: 10px 18px;
+  background: var(--blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.subtitle {
+  margin-top: 3px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.header-button {
+  margin: 0;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+#status {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr) 370px;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "search map route"
+    "results map route";
+  height: calc(100vh - 68px);
+}
+
+.search-tools {
+  grid-area: search;
+  background: var(--panel);
+  padding: 16px 16px 8px;
+  border-right: 1px solid var(--border);
+}
+
+.results-panel {
+  grid-area: results;
+  background: var(--panel);
+  padding: 4px 16px 16px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+
+.map-panel {
+  grid-area: map;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  min-height: 340px;
+}
+
+.map-toolbar {
+  position: absolute;
+  z-index: 700;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 250px;
+}
+
+.map-toolbar button {
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.map-toolbar .active {
+  background: #b54708;
+}
+
+.route-panel {
+  grid-area: route;
+  background: var(--panel);
+  padding: 16px;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+}
+
+.route-panel h2 {
+  margin-top: 0;
+}
+
+.route-panel h3 {
+  margin: 22px 0 10px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5df;
+  border-radius: 10px;
+  background: white;
+  color: var(--text);
+}
+
+textarea {
+  resize: vertical;
+}
+
+#search {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.filters {
+  display: grid;
+  gap: 10px;
+}
+
+#counter {
+  margin: 10px 0 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.result {
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid #e2e8ee;
+  border-radius: 12px;
+  background: var(--soft);
+}
+
+.result:hover {
+  background: #eef6fc;
+}
+
+.result-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.meta {
+  margin: 7px 0 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #e7eef5;
+  color: #344054;
+  font-size: 12px;
+}
+
+.badge.trusted {
+  background: #e8f6ed;
+  color: var(--success);
+}
+
+button,
+.map-link {
+  display: inline-block;
+  margin: 4px 5px 4px 0;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--blue);
+  color: white;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+button:hover,
+.map-link:hover {
+  background: var(--blue-dark);
+}
+
+button:disabled {
+  background: #b8c1cb;
+  cursor: not-allowed;
+}
+
+.secondary {
+  background: var(--secondary);
+}
+
+.danger {
+  background: var(--danger);
+}
+
+.empty {
+  color: #777;
+  font-style: italic;
+}
+
+.popup-title {
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+
+.departure-options {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.departure-options legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+
+.departure-options label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 0;
+  cursor: pointer;
+}
+
+.departure-options input[type="radio"] {
+  width: auto;
+  margin: 0;
+}
+
+.information-box {
+  margin-top: 12px;
+  padding: 11px;
+  border-radius: 9px;
+  background: #edf5fb;
+  color: #31536d;
+  font-size: 13px;
+}
+
+.start-stop-area {
+  margin-top: 15px;
+}
+
+.start-stop-area > label {
+  display: block;
+  margin-bottom: 7px;
+  font-weight: 700;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.start-result {
+  padding: 9px;
+  margin-top: 6px;
+  border: 1px solid #dfe5eb;
+  border-radius: 8px;
+  background: var(--soft);
+  cursor: pointer;
+}
+
+.start-result:hover {
+  background: #eef6fc;
+}
+
+.selected-start {
+  margin-top: 10px;
+  padding: 11px;
+  background: #eaf7ef;
+  border: 1px solid #b9dfc7;
+  border-radius: 9px;
+}
+
+.route-item {
+  padding: 11px 0;
+  border-bottom: 1px solid #e5e9ee;
+}
+
+.route-item-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+}
+
+.route-item-buttons button {
+  margin: 0;
+}
+
+.route-summary {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f3f8fc;
+  border: 1px solid #d4e3ef;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.route-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.route-actions button {
+  width: 100%;
+  margin: 0;
+  padding: 11px;
+  font-weight: 700;
+}
+
+.modal {
+  width: min(720px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal::backdrop {
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.modal-card {
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.modal-card.large {
+  width: 100%;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.icon-button {
+  margin: 0;
+  padding: 7px 10px;
+  background: var(--secondary);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.form-grid label,
+.modal-card > label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.modal-actions button {
+  margin: 0;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.photo-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--soft);
+}
+
+.photo-card img {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.library-item {
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--soft);
+}
+
+.library-item h3 {
+  margin: 0 0 6px;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 420px auto auto;
+    grid-template-areas:
+      "search"
+      "map"
+      "route"
+      "results";
+    height: auto;
+  }
+
+  .search-tools {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .map-panel {
+    height: 420px;
+  }
+
+  .route-panel {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    overflow: visible;
+  }
+
+  .results-panel {
+    border-right: 0;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 650px) {
+  .app-header {
+    align-items: flex-start;
+    padding: 10px 12px;
+  }
+
+  .app-header h1 {
+    font-size: 19px;
+  }
+
+  .header-actions {
+    max-width: 58%;
+  }
+
+  .header-button {
+    font-size: 11px;
+    padding: 6px 7px;
+  }
+
+  #status {
+    width: 100%;
+    text-align: right;
+    font-size: 11px;
+  }
+
+  .layout {
+    grid-template-rows: auto 350px auto auto;
+  }
+
+  .map-panel {
+    height: 350px;
+  }
+
+  .map-toolbar {
+    left: 10px;
+    right: 10px;
+    top: 48px;
+    max-width: none;
+  }
+
+  .map-toolbar button {
+    font-size: 12px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  button,
+  .map-link {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: auto;
+  }
+}
