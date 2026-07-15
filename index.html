@@ -611,86 +611,73 @@
       </div>
     </header>
 
-    <main class="sae-layout">
+    <main class="sae-layout sae-layout-iphone">
       <section class="sae-main-panel">
-        <article class="sae-current-card">
-          <div class="sae-section-label">ARRÊT ACTUEL</div>
-
-          <div class="sae-current-row">
+        <article class="sae-current-card sae-current-card-compact">
+          <div class="sae-current-topline">
             <div>
+              <div class="sae-section-label">ARRÊT ACTUEL</div>
               <div id="saeCurrentStop" class="sae-current-stop">—</div>
-              <div class="sae-time-row">
-                Théorique :
-                <strong id="saeCurrentScheduled">—</strong>
-              </div>
             </div>
-
             <div id="saeDelay" class="sae-delay sae-delay-neutral">—</div>
           </div>
 
-          <div class="sae-count-grid">
-            <div class="sae-count-box">
-              <div class="sae-count-title">
-                MONTÉES
-                <span id="saeBoardingsValue">0</span>
-              </div>
+          <div class="sae-current-meta">
+            <span>Théorique : <strong id="saeCurrentScheduled">—</strong></span>
+            <span>Distance : <strong id="saeCurrentDistance">—</strong></span>
+          </div>
 
-              <div class="sae-count-controls">
-                <button id="saeBoardingsMinus" class="secondary">−</button>
-                <button id="saeBoardingsPlus">+</button>
-              </div>
+          <div class="sae-count-inline">
+            <div class="sae-count-inline-group">
+              <span class="sae-count-inline-label">⬆️</span>
+              <button id="saeBoardingsMinus" class="secondary">−</button>
+              <strong id="saeBoardingsValue">0</strong>
+              <button id="saeBoardingsPlus">+</button>
             </div>
 
-            <div class="sae-count-box">
-              <div class="sae-count-title">
-                DESCENTES
-                <span id="saeAlightingsValue">0</span>
-              </div>
-
-              <div class="sae-count-controls">
-                <button id="saeAlightingsMinus" class="secondary">−</button>
-                <button id="saeAlightingsPlus">+</button>
-              </div>
+            <div class="sae-count-inline-group">
+              <span class="sae-count-inline-label">⬇️</span>
+              <button id="saeAlightingsMinus" class="secondary">−</button>
+              <strong id="saeAlightingsValue">0</strong>
+              <button id="saeAlightingsPlus">+</button>
             </div>
           </div>
 
-          <button id="saeValidateStop" class="sae-validate-button">
+          <button id="saeValidateStop" class="sae-validate-button sae-validate-button-compact">
             ✓ Valider l’arrêt
           </button>
         </article>
 
-        <article class="sae-next-card">
+        <article class="sae-next-card sae-next-card-compact">
           <div>
             <div class="sae-section-label">PROCHAIN ARRÊT</div>
             <div id="saeNextStopName" class="sae-next-stop-name">—</div>
           </div>
-
           <div class="sae-next-data">
             <span id="saeNextScheduled">—</span>
-            <strong id="saeNextDistance">—</strong>
           </div>
         </article>
+      </section>
 
-        <article class="sae-progress-card">
+      <section class="sae-map-panel sae-map-panel-iphone">
+        <div id="saeMap"></div>
+        <div class="sae-map-buttons sae-map-buttons-compact">
+          <button id="saeZoomIn">＋</button>
+          <button id="saeZoomOut">－</button>
+          <button id="saeFollowToggle">🎯</button>
+          <button id="saeOrientationToggle">🧭</button>
+          <button id="saeNorthUp" class="secondary">N</button>
+        </div>
+      </section>
+
+      <section class="sae-progress-wrapper">
+        <article class="sae-progress-card sae-progress-card-compact">
           <div class="sae-progress-header">
             <span>PROGRESSION DE LA COURSE</span>
             <strong id="saeProgressCount">0 / 0</strong>
           </div>
-
           <div id="saeStopProgress" class="sae-stop-progress"></div>
         </article>
-      </section>
-
-      <section class="sae-map-panel">
-        <div id="saeMap"></div>
-
-        <div class="sae-map-buttons">
-          <button id="saeZoomIn">＋ Zoom</button>
-          <button id="saeZoomOut">－ Zoom</button>
-          <button id="saeFollowToggle">🎯 Suivi actif</button>
-          <button id="saeOrientationToggle">🧭 Orientation active</button>
-          <button id="saeNorthUp" class="secondary">N Nord en haut</button>
-        </div>
       </section>
     </main>
   </section>

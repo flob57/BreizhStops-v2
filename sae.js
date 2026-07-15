@@ -671,6 +671,8 @@ function renderSaeState() {
   $("saeCurrentScheduled").textContent =
     current?.scheduled_time || "—";
 
+  $("saeCurrentDistance").textContent = "—";
+
   $("saeNextStopName").textContent =
     next?.name || "Terminus";
 
@@ -985,12 +987,21 @@ function updateSaeGpsProgress(point, speed) {
     ? distanceKm(point, next) * 1000
     : 0;
 
-  $("saeNextDistance").textContent =
-    next
-      ? nextDistance >= 1000
-        ? `${(nextDistance / 1000).toFixed(1)} km`
-        : `${Math.round(nextDistance)} m`
-      : "Terminus";
+  $("saeCurrentDistance").textContent =
+    currentDistance >= 1000
+      ? `${(currentDistance / 1000).toFixed(1)} km`
+      : `${Math.round(currentDistance)} m`;
+
+  const nextDistanceElement = $("saeNextDistance");
+
+  if (nextDistanceElement) {
+    nextDistanceElement.textContent =
+      next
+        ? nextDistance >= 1000
+          ? `${(nextDistance / 1000).toFixed(1)} km`
+          : `${Math.round(nextDistance)} m`
+        : "Terminus";
+  }
 
   if (currentDistance <= 45) {
     if (!SAE.arrivalDetected) {

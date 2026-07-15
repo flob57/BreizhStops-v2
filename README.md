@@ -84,3 +84,14 @@ navigateur.
 - flèche GPS fixe vers le haut ;
 - rotation de la carte selon le cap ;
 - boutons de zoom dédiés.
+
+
+## Nouveautés V5.2 iPhone
+
+- affichage SAE réorganisé pour l’iPhone 16 ;
+- arrêt actuel avec heure, avance/retard et distance ;
+- montées et descentes compactes sur une seule ligne ;
+- prochain arrêt avec heure théorique ;
+- carte avant la progression ;
+- progression placée en bas ;
+- commandes GPS plus compactes.
