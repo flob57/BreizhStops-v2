@@ -43,3 +43,34 @@ e060ea26-eb7e-4c98-95ec-9d783dbb2770
 ```
 
 Exécute `schema.sql` uniquement si les quatre tables n'existent pas déjà.
+
+
+## Migration V3.1
+
+La V3.1 ajoute deux tables :
+
+- `custom_stops`
+- `stop_sources`
+
+Dans la console D1, recopie et exécute la partie correspondante située à la fin
+de `schema.sql`.
+
+Cette opération ne supprime aucune table ni aucune donnée existante.
+
+## Protection Cloudflare Access
+
+Les nouvelles routes d’écriture sont déjà sous :
+
+```text
+/api/admin/*
+```
+
+La règle Access existante les protège donc automatiquement.
+
+## Principe des mises à jour
+
+- source déjà connue : mise à jour de la date de dernière apparition ;
+- arrêt D1 déjà connu : mise à jour des informations ;
+- doublon d’un arrêt statique : création d’un lien de source uniquement ;
+- nouvel arrêt : ajout dans `custom_stops` ;
+- arrêt absent d’un nouvel import : aucune suppression.

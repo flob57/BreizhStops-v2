@@ -50,3 +50,34 @@ ON routes(updated_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_routes_share
 ON routes(share_token);
+
+
+CREATE TABLE IF NOT EXISTS custom_stops (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  commune TEXT NOT NULL DEFAULT '',
+  network TEXT NOT NULL DEFAULT '',
+  lat REAL NOT NULL,
+  lon REAL NOT NULL,
+  address TEXT NOT NULL DEFAULT '',
+  trusted INTEGER NOT NULL DEFAULT 0,
+  manual INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_custom_stops_location
+ON custom_stops(lat, lon);
+
+CREATE TABLE IF NOT EXISTS stop_sources (
+  source TEXT NOT NULL,
+  source_type TEXT NOT NULL DEFAULT '',
+  source_id TEXT NOT NULL,
+  stop_id TEXT NOT NULL,
+  first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (source, source_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_stop_sources_stop
+ON stop_sources(stop_id);

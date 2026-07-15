@@ -17,6 +17,11 @@ let routeWaypoints = [];
 let tracedRoute = null;
 let editingRouteId = null;
 let waypointMode = false;
+let routeDisplayMode = false;
+let createStopMode = false;
+let pendingStopPosition = null;
+let analysedImport = [];
+let importAnalysis = null;
 
 const $ = id => document.getElementById(id);
 
@@ -108,6 +113,17 @@ function initMap() {
   waypointLayer = L.layerGroup().addTo(map);
 
   map.on("click", event => {
+    if (createStopMode) {
+      createStopMode = false;
+      map.getContainer().classList.remove("create-stop-cursor");
+      pendingStopPosition = {
+        lat: event.latlng.lat,
+        lon: event.latlng.lng
+      };
+      openCreateStopDialog(pendingStopPosition);
+      return;
+    }
+
     if (!waypointMode) {
       return;
     }
@@ -143,6 +159,21 @@ async function loadStops() {
     }
 
     stops = data;
+
+    try {
+      const extraStops = await apiFetch("/api/stops-extra");
+      if (Array.isArray(extraStops)) {
+        const existingIds = new Set(stops.map(stop => String(stop.id)));
+        extraStops.forEach(stop => {
+          if (!existingIds.has(String(stop.id))) {
+            stops.push(stop);
+            existingIds.add(String(stop.id));
+          }
+        });
+      }
+    } catch (extraError) {
+      console.warn("Arrêts D1 non chargés :", extraError);
+    }
 
     initMap();
     updateLinkedFilters();
@@ -243,7 +274,10 @@ function refreshSearch() {
 
   currentResults = matches.slice(0, 100);
   displayResults(currentResults, matches.length);
-  displayMarkers(currentResults);
+
+  if (!routeDisplayMode) {
+    displayMarkers(currentResults);
+  }
 }
 
 function getSourceBadges(stop) {
@@ -350,6 +384,48 @@ function displayMarkers(results) {
       maxZoom: 15
     });
   }
+}
+
+
+function displayRouteMarkers(points) {
+  markersLayer.clearLayers();
+  markerById.clear();
+
+  points.forEach((stop, index) => {
+    const lat = Number(stop.lat);
+    const lon = Number(stop.lon);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      return;
+    }
+
+    const icon = L.divIcon({
+      className: "",
+      html: `<div class="route-stop-marker">${index + 1}</div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+
+    const marker = L.marker([lat, lon], { icon })
+      .bindPopup(`
+        <div class="popup-title">
+          ${index + 1}. 🚏 ${escapeHtml(stop.nom || "Arrêt")}
+        </div>
+        <div>📍 ${escapeHtml(stop.commune || "")}</div>
+      `)
+      .addTo(markersLayer);
+
+    markerById.set(String(stop.id), marker);
+  });
+
+  routeDisplayMode = true;
+  $("showAllStops").classList.remove("hidden");
+}
+
+function restoreAllStopMarkers() {
+  routeDisplayMode = false;
+  $("showAllStops").classList.add("hidden");
+  displayMarkers(currentResults);
 }
 
 function zoomToStop(index) {
@@ -778,6 +854,7 @@ async function traceRoute() {
     };
 
     routeLayer.clearLayers();
+    displayRouteMarkers(orderedStops);
 
     const latLngs = route.geometry.coordinates.map(
       ([lon, lat]) => [lat, lon]
@@ -1188,6 +1265,7 @@ async function loadSavedRoute(id) {
     renderWaypoints();
 
     routeLayer.clearLayers();
+    displayRouteMarkers(orderedStops);
 
     const latLngs = route.geometry.coordinates.map(
       ([lon, lat]) => [lat, lon]
@@ -1331,6 +1409,432 @@ async function loadSharedRouteFromUrl() {
   }
 }
 
+
+function startManualStopCreation() {
+  createStopMode = true;
+  waypointMode = false;
+  $("toggleWaypointMode").classList.remove("active");
+  $("toggleWaypointMode").textContent = "📌 Ajouter un passage par une rue";
+  map.getContainer().classList.add("create-stop-cursor");
+  alert("Clique maintenant sur la carte à l’emplacement du nouvel arrêt.");
+}
+
+function openCreateStopDialog(position) {
+  pendingStopPosition = position;
+  $("newStopName").value = "";
+  $("newStopCity").value = cityFilter.value || "";
+  $("newStopNetwork").value = networkFilter.value || "";
+  $("newStopSource").value = "Création manuelle";
+  $("newStopLat").value = Number(position.lat).toFixed(7);
+  $("newStopLon").value = Number(position.lon).toFixed(7);
+  $("newStopNotes").value = "";
+  $("createStopDialog").showModal();
+}
+
+async function createStopFromCurrentPosition() {
+  try {
+    const position = await getCurrentPositionPoint();
+    $("dataAdminDialog").close();
+    openCreateStopDialog(position);
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function confirmCreateStop() {
+  const name = $("newStopName").value.trim();
+
+  if (!name) {
+    alert("Le nom de l’arrêt est obligatoire.");
+    return;
+  }
+
+  const payload = {
+    name,
+    commune: $("newStopCity").value.trim(),
+    network: $("newStopNetwork").value.trim(),
+    source: $("newStopSource").value.trim() || "Création manuelle",
+    lat: Number($("newStopLat").value),
+    lon: Number($("newStopLon").value),
+    notes: $("newStopNotes").value.trim()
+  };
+
+  try {
+    const created = await apiFetch("/api/admin/stops/create", {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify(payload)
+    });
+
+    stops.push(created);
+    $("createStopDialog").close();
+
+    searchInput.value = created.nom;
+    refreshSearch();
+    map.setView([created.lat, created.lon], 17);
+
+    alert("Arrêt créé et enregistré.");
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+function parseCsvLine(line, delimiter) {
+  const values = [];
+  let current = "";
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index++) {
+    const character = line[index];
+
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        current += '"';
+        index++;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === delimiter && !quoted) {
+      values.push(current);
+      current = "";
+    } else {
+      current += character;
+    }
+  }
+
+  values.push(current);
+  return values;
+}
+
+function parseGtfsText(text) {
+  const cleanText = text.replace(/^\uFEFF/, "");
+  const lines = cleanText.split(/\r?\n/).filter(line => line.trim());
+
+  if (lines.length < 2) {
+    throw new Error("Le fichier GTFS est vide.");
+  }
+
+  const delimiter =
+    (lines[0].match(/;/g) || []).length >
+    (lines[0].match(/,/g) || []).length
+      ? ";"
+      : ",";
+
+  const headers = parseCsvLine(lines[0], delimiter)
+    .map(value => value.trim());
+
+  const required = ["stop_id", "stop_name", "stop_lat", "stop_lon"];
+
+  required.forEach(column => {
+    if (!headers.includes(column)) {
+      throw new Error(`Colonne GTFS absente : ${column}`);
+    }
+  });
+
+  return lines.slice(1).map(line => {
+    const values = parseCsvLine(line, delimiter);
+    const row = {};
+
+    headers.forEach((header, index) => {
+      row[header] = values[index] || "";
+    });
+
+    return {
+      source_id: row.stop_id,
+      name: row.stop_name,
+      commune:
+        row.commune ||
+        row.stop_city ||
+        row.municipality ||
+        "",
+      network: row.reseau || row.network || "",
+      lat: Number(String(row.stop_lat).replace(",", ".")),
+      lon: Number(String(row.stop_lon).replace(",", "."))
+    };
+  }).filter(stop =>
+    stop.source_id &&
+    stop.name &&
+    Number.isFinite(stop.lat) &&
+    Number.isFinite(stop.lon)
+  );
+}
+
+function parseGpx(text) {
+  const documentXml = new DOMParser().parseFromString(
+    text,
+    "application/xml"
+  );
+
+  if (documentXml.querySelector("parsererror")) {
+    throw new Error("Le fichier GPX est invalide.");
+  }
+
+  return [...documentXml.querySelectorAll("wpt")].map(
+    (element, index) => {
+      const name =
+        element.querySelector("name")?.textContent?.trim() ||
+        `Point inRoute ${index + 1}`;
+
+      const address =
+        element.querySelector("src")?.textContent?.trim() ||
+        element.querySelector("desc")?.textContent?.trim() ||
+        "";
+
+      const postalMatch = address.match(/\b\d{5}\s+([^,]+)/);
+
+      return {
+        source_id:
+          `gpx-${normalize(name)}-` +
+          `${Number(element.getAttribute("lat")).toFixed(6)}-` +
+          `${Number(element.getAttribute("lon")).toFixed(6)}`,
+        name,
+        commune: postalMatch ? postalMatch[1].trim() : "",
+        network: "",
+        lat: Number(element.getAttribute("lat")),
+        lon: Number(element.getAttribute("lon")),
+        address
+      };
+    }
+  ).filter(stop =>
+    Number.isFinite(stop.lat) &&
+    Number.isFinite(stop.lon)
+  );
+}
+
+async function readImportFile(file) {
+  const lowerName = file.name.toLowerCase();
+
+  if (lowerName.endsWith(".zip")) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const archive = fflate.unzipSync(bytes);
+
+    const stopsEntry = Object.keys(archive).find(
+      name => name.toLowerCase().endsWith("stops.txt")
+    );
+
+    if (!stopsEntry) {
+      throw new Error("Le ZIP ne contient pas de fichier stops.txt.");
+    }
+
+    return parseGtfsText(
+      new TextDecoder("utf-8").decode(archive[stopsEntry])
+    );
+  }
+
+  const text = await file.text();
+
+  if (
+    lowerName.endsWith(".gpx") ||
+    text.trim().startsWith("<?xml") ||
+    text.includes("<gpx")
+  ) {
+    return parseGpx(text);
+  }
+
+  return parseGtfsText(text);
+}
+
+function nearbyMatch(imported) {
+  let best = null;
+
+  for (const stop of stops) {
+    const latDifference = Math.abs(Number(stop.lat) - imported.lat);
+    const lonDifference = Math.abs(Number(stop.lon) - imported.lon);
+
+    if (latDifference > 0.001 || lonDifference > 0.0015) {
+      continue;
+    }
+
+    const distance = distanceKm(stop, imported) * 1000;
+    const sameName =
+      normalize(stop.nom) === normalize(imported.name) ||
+      normalize(stop.nom).includes(normalize(imported.name)) ||
+      normalize(imported.name).includes(normalize(stop.nom));
+
+    if (
+      distance <= 8 ||
+      (distance <= 35 && sameName)
+    ) {
+      if (!best || distance < best.distance) {
+        best = { stop, distance };
+      }
+    }
+  }
+
+  return best;
+}
+
+async function analyseImportFile() {
+  const file = $("importFile").files[0];
+
+  if (!file) {
+    alert("Sélectionne d’abord un fichier.");
+    return;
+  }
+
+  try {
+    $("importReport").innerHTML = "<p>Analyse en cours…</p>";
+
+    const parsed = await readImportFile(file);
+    const sourceName =
+      $("importSourceName").value.trim() ||
+      $("importSourceType").value;
+
+    const existingById = new Map();
+
+    stops.forEach(stop => {
+      if (stop.id) {
+        existingById.set(String(stop.id), stop);
+      }
+
+      if (stop.code) {
+        existingById.set(String(stop.code), stop);
+      }
+    });
+
+    let knownIds = 0;
+    let proximityMatches = 0;
+    let newStops = 0;
+
+    analysedImport = parsed.map(item => {
+      const direct = existingById.get(String(item.source_id));
+
+      if (direct) {
+        knownIds++;
+        return {
+          ...item,
+          matched_stop_id: direct.id,
+          match_type: "identifiant"
+        };
+      }
+
+      const nearby = nearbyMatch(item);
+
+      if (nearby) {
+        proximityMatches++;
+        return {
+          ...item,
+          matched_stop_id: nearby.stop.id,
+          match_type: "proximité"
+        };
+      }
+
+      newStops++;
+      return {
+        ...item,
+        matched_stop_id: null,
+        match_type: "nouveau"
+      };
+    });
+
+    importAnalysis = {
+      source: sourceName,
+      source_type: $("importSourceType").value,
+      total: parsed.length,
+      knownIds,
+      proximityMatches,
+      newStops
+    };
+
+    $("importReport").innerHTML = `
+      <div class="import-summary">
+        <strong>Analyse terminée</strong>
+        ${parsed.length} arrêt(s) lu(s)<br>
+        ${knownIds} déjà connu(s) par identifiant<br>
+        ${proximityMatches} doublon(s) probable(s) par proximité<br>
+        ${newStops} nouvel/nouveaux arrêt(s)<br>
+        <b>0 arrêt ne sera supprimé.</b>
+        <div class="import-progress"><div id="importProgressBar"></div></div>
+      </div>
+    `;
+
+    $("confirmImport").disabled = false;
+  } catch (error) {
+    $("importReport").innerHTML = `
+      <p>Analyse impossible : ${escapeHtml(error.message)}</p>
+    `;
+    $("confirmImport").disabled = true;
+  }
+}
+
+async function confirmIncrementalImport() {
+  if (!analysedImport.length || !importAnalysis) {
+    return;
+  }
+
+  $("confirmImport").disabled = true;
+  $("analyseImport").disabled = true;
+
+  const batchSize = 250;
+  const totals = {
+    added: 0,
+    linked: 0,
+    updated: 0
+  };
+
+  try {
+    for (
+      let index = 0;
+      index < analysedImport.length;
+      index += batchSize
+    ) {
+      const batch = analysedImport.slice(index, index + batchSize);
+
+      const response = await apiFetch("/api/admin/stops/import", {
+        method: "POST",
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          source: importAnalysis.source,
+          source_type: importAnalysis.source_type,
+          stops: batch
+        })
+      });
+
+      totals.added += response.added || 0;
+      totals.linked += response.linked || 0;
+      totals.updated += response.updated || 0;
+
+      const progress = Math.min(
+        100,
+        Math.round((index + batch.length) / analysedImport.length * 100)
+      );
+
+      const progressBar = $("importProgressBar");
+
+      if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+      }
+    }
+
+    const extraStops = await apiFetch("/api/stops-extra");
+    const staticIds = new Set(stops.map(stop => String(stop.id)));
+
+    extraStops.forEach(stop => {
+      if (!staticIds.has(String(stop.id))) {
+        stops.push(stop);
+        staticIds.add(String(stop.id));
+      }
+    });
+
+    updateLinkedFilters();
+    refreshSearch();
+
+    $("importReport").innerHTML = `
+      <div class="import-summary">
+        <strong>Import terminé</strong>
+        ${totals.added} nouvel/nouveaux arrêt(s) ajouté(s)<br>
+        ${totals.linked} arrêt(s) relié(s) à une source existante<br>
+        ${totals.updated} arrêt(s) D1 mis à jour<br>
+        <b>Aucun ancien arrêt n’a été supprimé.</b>
+      </div>
+    `;
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    $("analyseImport").disabled = false;
+  }
+}
+
 document
   .querySelectorAll('input[name="departureMode"]')
   .forEach(input => {
@@ -1379,6 +1883,7 @@ clearRouteBtn.addEventListener("click", () => {
   selectedStartStopEl.innerHTML = "";
   waypointLayer.clearLayers();
   invalidateTrace();
+  restoreAllStopMarkers();
   updateRoute();
 });
 
@@ -1386,6 +1891,30 @@ $("saveStopDetails").addEventListener("click", saveStopDetails);
 $("uploadStopPhoto").addEventListener("click", uploadStopPhoto);
 $("confirmSaveRoute").addEventListener("click", confirmSaveRoute);
 $("openRoutesLibrary").addEventListener("click", openRoutesLibrary);
+
+$("openDataAdmin").addEventListener("click", () => {
+  $("dataAdminDialog").showModal();
+});
+
+$("startCreateStop").addEventListener("click", startManualStopCreation);
+$("showAllStops").addEventListener("click", restoreAllStopMarkers);
+$("createStopFromPosition").addEventListener(
+  "click",
+  createStopFromCurrentPosition
+);
+$("confirmCreateStop").addEventListener("click", confirmCreateStop);
+$("analyseImport").addEventListener("click", analyseImportFile);
+$("confirmImport").addEventListener("click", confirmIncrementalImport);
+
+$("importSourceType").addEventListener("change", event => {
+  const suggested = {
+    gtfs: "GTFS complémentaire",
+    inroute: "inRoute",
+    other: "Source complémentaire"
+  };
+
+  $("importSourceName").value = suggested[event.target.value];
+});
 
 
 handleDepartureModeChange();

@@ -19,6 +19,7 @@
 
     <div class="header-actions">
       <button id="openRoutesLibrary" class="header-button">📚 Mes itinéraires</button>
+      <button id="openDataAdmin" class="header-button">🗃️ Données</button>
       <span id="status">Chargement…</span>
     </div>
   </header>
@@ -58,6 +59,14 @@
 
         <button id="clearWaypoints" class="secondary">
           Effacer les passages
+        </button>
+
+        <button id="showAllStops" class="secondary hidden">
+          👁 Réafficher tous les arrêts
+        </button>
+
+        <button id="startCreateStop">
+          ➕ Créer un arrêt
         </button>
       </div>
     </section>
@@ -234,7 +243,135 @@
   </dialog>
 
 
+
+  <dialog id="dataAdminDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <div>
+          <h2>Administration des arrêts</h2>
+          <div class="meta">
+            Les imports ajoutent ou mettent à jour les arrêts, sans supprimer les anciens.
+          </div>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <section class="admin-section">
+        <h3>Importer une source</h3>
+
+        <div class="form-grid">
+          <label>
+            Type de source
+            <select id="importSourceType">
+              <option value="gtfs">GTFS</option>
+              <option value="inroute">inRoute</option>
+              <option value="other">Autre source</option>
+            </select>
+          </label>
+
+          <label>
+            Nom de la source
+            <input
+              id="importSourceName"
+              type="text"
+              value="GTFS complémentaire"
+              placeholder="Ex. GTFS BreizhGo juillet 2026"
+            >
+          </label>
+
+          <label class="full-width">
+            Fichier
+            <input
+              id="importFile"
+              type="file"
+              accept=".zip,.txt,.csv,.gpx,.xml"
+            >
+          </label>
+        </div>
+
+        <div class="information-box">
+          Formats acceptés : ZIP GTFS, stops.txt, CSV GTFS et GPX inRoute.
+          Les arrêts absents du nouveau fichier sont conservés.
+        </div>
+
+        <div class="modal-actions left">
+          <button type="button" id="analyseImport">🔎 Analyser</button>
+          <button type="button" id="confirmImport" disabled>⬆️ Importer</button>
+        </div>
+
+        <div id="importReport" class="import-report"></div>
+      </section>
+
+      <hr>
+
+      <section class="admin-section">
+        <h3>Créer un arrêt manuellement</h3>
+
+        <p>
+          Clique sur « Créer un arrêt » sur la carte, puis choisis son emplacement.
+          Tu peux aussi utiliser la position du smartphone.
+        </p>
+
+        <button type="button" id="createStopFromPosition">
+          📍 Utiliser ma position actuelle
+        </button>
+      </section>
+    </form>
+  </dialog>
+
+  <dialog id="createStopDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <h2>Créer un arrêt</h2>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Nom de l’arrêt
+          <input id="newStopName" type="text" required>
+        </label>
+
+        <label>
+          Commune
+          <input id="newStopCity" type="text">
+        </label>
+
+        <label>
+          Réseau
+          <input id="newStopNetwork" type="text">
+        </label>
+
+        <label>
+          Source
+          <input id="newStopSource" type="text" value="Création manuelle">
+        </label>
+
+        <label>
+          Latitude
+          <input id="newStopLat" type="number" step="any" readonly>
+        </label>
+
+        <label>
+          Longitude
+          <input id="newStopLon" type="number" step="any" readonly>
+        </label>
+
+        <label class="full-width">
+          Remarque initiale
+          <textarea id="newStopNotes" rows="4"></textarea>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="confirmCreateStop">💾 Créer l’arrêt</button>
+        <button value="cancel" class="secondary">Annuler</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
