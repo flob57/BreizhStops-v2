@@ -100,3 +100,14 @@ Avant un import :
 5. clique sur **Tester la connexion** puis relance l'import.
 
 La route `/api/admin/session` sert uniquement à établir et vérifier la session.
+
+
+## V4.1 GPS
+
+Aucune nouvelle table D1 ni liaison Cloudflare n'est nécessaire.
+
+Sur iPhone, l'autorisation d'accéder à l'orientation du téléphone peut être
+demandée au démarrage du GPS. Cette autorisation nécessite une action de
+l'utilisateur et un site HTTPS.
+
+Le suivi GPS reste actif tant que BreizhStops est visible à l'écran.

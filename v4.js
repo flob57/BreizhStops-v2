@@ -12,7 +12,13 @@ const V4 = {
   gpsData: null,
   gpsCurrentStopIndex: 0,
   gpsVoiceEnabled: true,
-  gpsLastAnnouncement: ""
+  gpsLastAnnouncement: "",
+  gpsFollowEnabled: true,
+  gpsOrientationEnabled: true,
+  gpsBearing: 0,
+  gpsDeviceHeading: null,
+  gpsLastPosition: null,
+  gpsManualPan: false
 };
 
 async function v4ApiFetch(url, options = {}) {
@@ -322,6 +328,145 @@ function buildGpsDataFromPattern(pattern) {
   };
 }
 
+
+function normalizeBearing(value) {
+  let bearing = Number(value);
+
+  if (!Number.isFinite(bearing)) {
+    return 0;
+  }
+
+  bearing %= 360;
+
+  if (bearing < 0) {
+    bearing += 360;
+  }
+
+  return bearing;
+}
+
+function shortestBearingDelta(from, to) {
+  let delta = normalizeBearing(to) - normalizeBearing(from);
+
+  if (delta > 180) {
+    delta -= 360;
+  }
+
+  if (delta < -180) {
+    delta += 360;
+  }
+
+  return delta;
+}
+
+function smoothBearing(target) {
+  const delta = shortestBearingDelta(V4.gpsBearing, target);
+  V4.gpsBearing = normalizeBearing(V4.gpsBearing + delta * 0.22);
+  return V4.gpsBearing;
+}
+
+function getEffectiveHeading(position) {
+  const gpsHeading = Number(position?.coords?.heading);
+  const speed = Number(position?.coords?.speed);
+
+  if (
+    Number.isFinite(gpsHeading) &&
+    gpsHeading >= 0 &&
+    (!Number.isFinite(speed) || speed > 1.2)
+  ) {
+    return normalizeBearing(gpsHeading);
+  }
+
+  if (Number.isFinite(V4.gpsDeviceHeading)) {
+    return normalizeBearing(V4.gpsDeviceHeading);
+  }
+
+  return V4.gpsBearing;
+}
+
+function rotateGpsMap(bearing) {
+  const mapPane = V4.gpsMap?.getPane("mapPane");
+
+  if (!mapPane) {
+    return;
+  }
+
+  const value = V4.gpsOrientationEnabled ? -bearing : 0;
+  mapPane.style.transformOrigin = "50% 50%";
+  mapPane.style.transition = "transform 0.25s linear";
+  mapPane.style.transform = `rotate(${value}deg)`;
+
+  if (V4.gpsPositionMarker?._icon) {
+    V4.gpsPositionMarker._icon.style.transform +=
+      ` rotate(${V4.gpsOrientationEnabled ? bearing : 0}deg)`;
+  }
+}
+
+async function requestOrientationPermission() {
+  if (
+    typeof DeviceOrientationEvent !== "undefined" &&
+    typeof DeviceOrientationEvent.requestPermission === "function"
+  ) {
+    const permission = await DeviceOrientationEvent.requestPermission();
+
+    if (permission !== "granted") {
+      throw new Error("Autorisation d’orientation refusée.");
+    }
+  }
+
+  window.addEventListener(
+    "deviceorientationabsolute",
+    handleDeviceOrientation,
+    true
+  );
+
+  window.addEventListener(
+    "deviceorientation",
+    handleDeviceOrientation,
+    true
+  );
+}
+
+function handleDeviceOrientation(event) {
+  let heading = null;
+
+  if (Number.isFinite(event.webkitCompassHeading)) {
+    heading = event.webkitCompassHeading;
+  } else if (Number.isFinite(event.alpha)) {
+    heading = 360 - event.alpha;
+  }
+
+  if (Number.isFinite(heading)) {
+    V4.gpsDeviceHeading = normalizeBearing(heading);
+  }
+}
+
+function setGpsFollow(enabled) {
+  V4.gpsFollowEnabled = enabled;
+
+  $("gpsFollowToggle").textContent =
+    enabled ? "🎯 Suivi actif" : "🎯 Suivi en pause";
+
+  $("gpsFollowToggle").classList.toggle(
+    "gps-follow-paused",
+    !enabled
+  );
+}
+
+function setGpsOrientation(enabled) {
+  V4.gpsOrientationEnabled = enabled;
+
+  $("gpsOrientationToggle").textContent =
+    enabled ? "🧭 Orientation active" : "🧭 Orientation coupée";
+
+  $("gpsOrientationToggle").classList.toggle(
+    "gps-orientation-off",
+    !enabled
+  );
+
+  rotateGpsMap(enabled ? V4.gpsBearing : 0);
+}
+
 function initGpsMap() {
   if (V4.gpsMap) {
     setTimeout(() => V4.gpsMap.invalidateSize(), 50);
@@ -342,6 +487,17 @@ function initGpsMap() {
 
   V4.gpsRouteLayer = L.layerGroup().addTo(V4.gpsMap);
   V4.gpsStopsLayer = L.layerGroup().addTo(V4.gpsMap);
+
+  V4.gpsMap.on("dragstart", () => {
+    V4.gpsManualPan = true;
+    setGpsFollow(false);
+  });
+
+  V4.gpsMap.on("zoomstart", () => {
+    if (V4.gpsFollowEnabled) {
+      V4.gpsManualPan = false;
+    }
+  });
 }
 
 function renderGpsRoute(data) {
@@ -461,15 +617,24 @@ function onGpsPosition(position) {
     lon: position.coords.longitude
   };
 
+  V4.gpsLastPosition = point;
+
+  const targetHeading = getEffectiveHeading(position);
+  const smoothedHeading = smoothBearing(targetHeading);
+
   if (!V4.gpsPositionMarker) {
-    V4.gpsPositionMarker = L.circleMarker(
+    const headingIcon = L.divIcon({
+      className: "gps-heading-marker",
+      html: '<div class="gps-heading-arrow"></div>',
+      iconSize: [34, 34],
+      iconAnchor: [17, 17]
+    });
+
+    V4.gpsPositionMarker = L.marker(
       [point.lat, point.lon],
       {
-        radius: 10,
-        color: "white",
-        weight: 3,
-        fillColor: "#1677ff",
-        fillOpacity: 1
+        icon: headingIcon,
+        zIndexOffset: 1000
       }
     ).addTo(V4.gpsMap);
 
@@ -489,6 +654,20 @@ function onGpsPosition(position) {
       .setRadius(position.coords.accuracy);
   }
 
+  if (V4.gpsPositionMarker?._icon) {
+    V4.gpsPositionMarker._icon.style.transform +=
+      ` rotate(${smoothedHeading}deg)`;
+  }
+
+  if (V4.gpsFollowEnabled) {
+    V4.gpsMap.setView(
+      [point.lat, point.lon],
+      Math.max(V4.gpsMap.getZoom(), 16),
+      { animate: true }
+    );
+  }
+
+  rotateGpsMap(smoothedHeading);
   updateGpsStopDisplay(point);
 
   const distanceFromRoute = distanceToPolylineMeters(
@@ -521,6 +700,18 @@ function startGps(data) {
   V4.gpsPositionMarker = null;
   V4.gpsAccuracyCircle = null;
   V4.gpsLastAnnouncement = "";
+  V4.gpsFollowEnabled = true;
+  V4.gpsOrientationEnabled = true;
+  V4.gpsBearing = 0;
+  V4.gpsDeviceHeading = null;
+  V4.gpsManualPan = false;
+
+  setGpsFollow(true);
+  setGpsOrientation(true);
+
+  requestOrientationPermission().catch(error => {
+    console.warn("Orientation non disponible :", error);
+  });
 
   $("gpsRouteName").textContent = data.name || "Parcours BreizhStops";
   $("gpsDirection").textContent = data.direction || "";
@@ -551,6 +742,18 @@ function stopGps() {
   }
 
   speechSynthesis?.cancel();
+
+  window.removeEventListener(
+    "deviceorientationabsolute",
+    handleDeviceOrientation,
+    true
+  );
+  window.removeEventListener(
+    "deviceorientation",
+    handleDeviceOrientation,
+    true
+  );
+
   $("gpsScreen").classList.add("hidden");
 
   if (V4.gpsMap) {
@@ -922,11 +1125,37 @@ $("gpsRouteSelect").addEventListener("change", event => {
 $("confirmStartGps").addEventListener("click", confirmStartGps);
 $("stopGps").addEventListener("click", stopGps);
 
-$("gpsRecenter").addEventListener("click", () => {
-  const position = V4.gpsPositionMarker?.getLatLng();
-  if (position) {
-    V4.gpsMap.setView(position, 17);
+$("gpsFollowToggle").addEventListener("click", () => {
+  setGpsFollow(!V4.gpsFollowEnabled);
+
+  if (V4.gpsFollowEnabled && V4.gpsLastPosition) {
+    V4.gpsMap.setView(
+      [V4.gpsLastPosition.lat, V4.gpsLastPosition.lon],
+      17,
+      { animate: true }
+    );
   }
+});
+
+$("gpsOrientationToggle").addEventListener("click", async () => {
+  const nextValue = !V4.gpsOrientationEnabled;
+
+  if (nextValue) {
+    try {
+      await requestOrientationPermission();
+    } catch (error) {
+      alert(error.message);
+      return;
+    }
+  }
+
+  setGpsOrientation(nextValue);
+});
+
+$("gpsNorthUp").addEventListener("click", () => {
+  setGpsOrientation(false);
+  V4.gpsBearing = 0;
+  rotateGpsMap(0);
 });
 
 $("gpsPreviousStop").addEventListener("click", () => {

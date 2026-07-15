@@ -45,3 +45,14 @@ navigateur.
 - prochain arrêt automatique ;
 - détection de sortie d'itinéraire ;
 - annonces vocales simples.
+
+
+## Nouveautés V4.1 GPS
+
+- position automatiquement maintenue au centre de la carte ;
+- orientation de la carte selon le cap GPS ou la boussole du téléphone ;
+- flèche de position orientée ;
+- lissage du cap pour éviter les rotations brutales ;
+- suspension automatique du suivi lorsque l'utilisateur déplace la carte ;
+- bouton pour reprendre le suivi ;
+- bouton Nord en haut.
