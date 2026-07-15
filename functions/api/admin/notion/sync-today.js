@@ -1,8 +1,7 @@
 import {
   json,
   error,
-  requireDb,
-  createId
+  requireDb
 } from "../../../_lib.js";
 
 const NOTION_VERSION = "2022-06-28";
@@ -23,19 +22,20 @@ function titleValue(property) {
   const values =
     property.title ||
     property.rich_text ||
-    property.formula?.string
-      ? (
-          property.title ||
-          property.rich_text ||
-          [{ plain_text: property.formula?.string || "" }]
-        )
-      : [];
+    (
+      property.formula?.string
+        ? [{ plain_text: property.formula.string }]
+        : []
+    );
 
-  return values.map(item => item.plain_text || "").join("").trim();
-}
-
-function dateValue(property) {
-  return property?.date?.start || "";
+  return values
+    .map(item =>
+      item.plain_text ||
+      item.text?.content ||
+      ""
+    )
+    .join("")
+    .trim();
 }
 
 function relationIds(property) {
@@ -64,7 +64,7 @@ async function notionFetch(url, token, options = {}) {
 
 async function getAllBlockChildren(blockId, token) {
   let results = [];
-  let cursor = undefined;
+  let cursor;
 
   do {
     const url = new URL(
@@ -78,31 +78,132 @@ async function getAllBlockChildren(blockId, token) {
     }
 
     const payload = await notionFetch(url.toString(), token);
+
     results = results.concat(payload.results || []);
-    cursor = payload.has_more ? payload.next_cursor : undefined;
+    cursor = payload.has_more
+      ? payload.next_cursor
+      : undefined;
   } while (cursor);
 
   return results;
 }
 
-function richText(block) {
-  const value = block[block.type];
-  const items = value?.rich_text || [];
-  return items.map(item => item.plain_text || "").join("").trim();
+function richTextItemsToText(items) {
+  return (items || [])
+    .map(item =>
+      item.plain_text ||
+      item.text?.content ||
+      item.equation?.expression ||
+      ""
+    )
+    .join("")
+    .replace(/\u00a0/g, " ")
+    .trim();
 }
 
-function parseTimeStop(text) {
-  const match = String(text || "").match(
-    /^\s*(\d{1,2}:\d{2}(?::\d{2})?)\s+(.+?)\s*$/
+function blockText(block) {
+  const value = block?.[block.type];
+  return richTextItemsToText(value?.rich_text);
+}
+
+function normalizeTime(value) {
+  const match = String(value || "").match(
+    /\b([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?\b/
   );
 
   if (!match) {
+    return "";
+  }
+
+  const hours = String(Number(match[1])).padStart(2, "0");
+  const minutes = match[2];
+  const seconds = match[3] || "00";
+
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+function removeTimeFromText(value) {
+  return String(value || "")
+    .replace(
+      /\b([01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\b/g,
+      ""
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isHeaderText(value) {
+  const normalized = String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+  return [
+    "arret",
+    "arrets",
+    "nom de l arret",
+    "nom de l'arrêt",
+    "stop",
+    "stop name",
+    "heure",
+    "horaire",
+    "time"
+  ].includes(normalized);
+}
+
+function parseTableRow(row) {
+  const cells = row?.table_row?.cells || [];
+
+  const values = cells
+    .map(cell => richTextItemsToText(cell))
+    .map(value => value.trim());
+
+  if (!values.some(Boolean)) {
+    return null;
+  }
+
+  const timeCell = values.find(value => normalizeTime(value));
+  const time = normalizeTime(timeCell);
+
+  if (!time) {
+    return null;
+  }
+
+  const stopCandidates = values
+    .map(removeTimeFromText)
+    .filter(Boolean)
+    .filter(value => !isHeaderText(value))
+    .sort((a, b) => b.length - a.length);
+
+  const name = stopCandidates[0] || "";
+
+  if (!name) {
     return null;
   }
 
   return {
-    time: match[1].length === 5 ? `${match[1]}:00` : match[1],
-    name: match[2].trim()
+    time,
+    name
+  };
+}
+
+function parseTimeStopText(text) {
+  const time = normalizeTime(text);
+
+  if (!time) {
+    return null;
+  }
+
+  const name = removeTimeFromText(text);
+
+  if (!name || isHeaderText(name)) {
+    return null;
+  }
+
+  return {
+    time,
+    name
   };
 }
 
@@ -114,11 +215,12 @@ async function parseCoursePage(pageId, token, config) {
 
   const properties = page.properties || {};
 
+  const titleProperty = Object.values(properties)
+    .find(property => property.type === "title");
+
   const name =
     titleValue(properties[config.course_title_property]) ||
-    titleValue(
-      Object.values(properties).find(property => property.type === "title")
-    ) ||
+    titleValue(titleProperty) ||
     "Course";
 
   const girouette =
@@ -141,34 +243,17 @@ async function parseCoursePage(pageId, token, config) {
       const rows = await getAllBlockChildren(block.id, token);
 
       for (const row of rows) {
-        const cells = row.table_row?.cells || [];
-        const values = cells.map(cell =>
-          cell.map(item => item.plain_text || "").join("").trim()
-        );
+        const parsed = parseTableRow(row);
 
-        if (!values.length) {
-          continue;
-        }
-
-        const time =
-          values.find(value => /^\d{1,2}:\d{2}/.test(value)) || "";
-
-        const stopName =
-          values.find(value => value && value !== time) || "";
-
-        if (time && stopName) {
-          stops.push({
-            time: time.length === 5 ? `${time}:00` : time,
-            name: stopName
-          });
+        if (parsed) {
+          stops.push(parsed);
         }
       }
 
       continue;
     }
 
-    const text = richText(block);
-    const parsed = parseTimeStop(text);
+    const parsed = parseTimeStopText(blockText(block));
 
     if (parsed) {
       stops.push(parsed);
@@ -178,14 +263,14 @@ async function parseCoursePage(pageId, token, config) {
   const uniqueStops = [];
   const seen = new Set();
 
-  stops.forEach(stop => {
+  for (const stop of stops) {
     const key = `${stop.time}|${stop.name}`;
 
     if (!seen.has(key)) {
       seen.add(key);
       uniqueStops.push(stop);
     }
-  });
+  }
 
   return {
     notion_page_id: pageId,
@@ -201,7 +286,8 @@ export async function onRequestPost(context) {
   try {
     const db = requireDb(context);
     const token = context.env.NOTION_TOKEN;
-    const databaseId = context.env.NOTION_PLANNING_DATABASE_ID;
+    const databaseId =
+      context.env.NOTION_PLANNING_DATABASE_ID;
 
     if (!token || !databaseId) {
       throw new Error(
@@ -212,25 +298,38 @@ export async function onRequestPost(context) {
 
     const config = {
       date_property:
-        context.env.NOTION_DATE_PROPERTY || "Date",
+        context.env.NOTION_DATE_PROPERTY ||
+        "Date",
+
       course_properties:
         JSON.parse(
           context.env.NOTION_COURSE_PROPERTIES ||
           '["Course 1","Course 2","Course 3","Course 4","Course 5"]'
         ),
+
       course_title_property:
-        context.env.NOTION_COURSE_TITLE_PROPERTY || "Nom",
+        context.env.NOTION_COURSE_TITLE_PROPERTY ||
+        "Nom",
+
       girouette_property:
-        context.env.NOTION_GIROUETTE_PROPERTY || "Girouette",
+        context.env.NOTION_GIROUETTE_PROPERTY ||
+        "Girouette",
+
       service_property:
-        context.env.NOTION_SERVICE_PROPERTY || "Service",
+        context.env.NOTION_SERVICE_PROPERTY ||
+        "Service",
+
       network_property:
-        context.env.NOTION_NETWORK_PROPERTY || "Réseau"
+        context.env.NOTION_NETWORK_PROPERTY ||
+        "Réseau"
     };
 
     const body = await context.request.json();
-    const date =
-      String(body.date || new Date().toISOString().slice(0, 10));
+
+    const date = String(
+      body.date ||
+      new Date().toISOString().slice(0, 10)
+    );
 
     const query = await notionFetch(
       `https://api.notion.com/v1/databases/${databaseId}/query`,
@@ -249,10 +348,9 @@ export async function onRequestPost(context) {
       }
     );
 
-    const planningPages = query.results || [];
     const coursePageIds = [];
 
-    for (const planningPage of planningPages) {
+    for (const planningPage of query.results || []) {
       const properties = planningPage.properties || {};
 
       for (const propertyName of config.course_properties) {
@@ -280,12 +378,23 @@ export async function onRequestPost(context) {
 
       await db.prepare(
         `INSERT INTO sae_courses (
-           id, notion_page_id, service_date,
-           name, network, service, girouette,
-           start_time, end_time, source,
-           created_at, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'notion',
-           CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+           id,
+           notion_page_id,
+           service_date,
+           name,
+           network,
+           service,
+           girouette,
+           start_time,
+           end_time,
+           source,
+           created_at,
+           updated_at
+         ) VALUES (
+           ?, ?, ?, ?, ?, ?, ?, ?, ?, 'notion',
+           CURRENT_TIMESTAMP,
+           CURRENT_TIMESTAMP
+         )
          ON CONFLICT(id) DO UPDATE SET
            service_date = excluded.service_date,
            name = excluded.name,
@@ -307,29 +416,48 @@ export async function onRequestPost(context) {
         course.stops.at(-1)?.time || ""
       ).run();
 
+      /*
+       * On remplace les passages de cette course.
+       * Cela corrige automatiquement les anciennes lignes
+       * qui avaient été enregistrées sans nom d'arrêt.
+       */
       await db.prepare(
         "DELETE FROM sae_course_stops WHERE course_id = ?"
       ).bind(courseId).run();
 
-      const statements = course.stops.map((stop, index) =>
-        db.prepare(
-          `INSERT INTO sae_course_stops (
-             id, course_id, stop_sequence,
-             stop_name, scheduled_time,
-             created_at, updated_at
-           ) VALUES (?, ?, ?, ?, ?,
-             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
-        ).bind(
-          `${courseId}-stop-${index + 1}`,
-          courseId,
-          index + 1,
-          stop.name,
-          stop.time
-        )
+      const statements = course.stops.map(
+        (stop, index) =>
+          db.prepare(
+            `INSERT INTO sae_course_stops (
+               id,
+               course_id,
+               stop_sequence,
+               stop_name,
+               scheduled_time,
+               created_at,
+               updated_at
+             ) VALUES (
+               ?, ?, ?, ?, ?,
+               CURRENT_TIMESTAMP,
+               CURRENT_TIMESTAMP
+             )`
+          ).bind(
+            `${courseId}-stop-${index + 1}`,
+            courseId,
+            index + 1,
+            stop.name,
+            stop.time
+          )
       );
 
-      for (let index = 0; index < statements.length; index += 80) {
-        await db.batch(statements.slice(index, index + 80));
+      for (
+        let index = 0;
+        index < statements.length;
+        index += 80
+      ) {
+        await db.batch(
+          statements.slice(index, index + 80)
+        );
       }
 
       courseCount++;
