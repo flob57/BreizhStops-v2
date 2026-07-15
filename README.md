@@ -16,3 +16,10 @@ Fonctions :
 - Google Maps, inRoute et GPX.
 
 Lire impérativement `INSTALLATION-CLOUDFLARE.md` avant le déploiement.
+
+
+## Sécurité
+
+Les opérations d'écriture utilisent `/api/admin/*` et doivent être protégées
+par Cloudflare Access. Aucun mot de passe n'est stocké dans le dépôt ni dans le
+navigateur.

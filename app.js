@@ -61,24 +61,10 @@ function escapeHtml(text) {
     .replaceAll("'", "&#039;");
 }
 
-function getAdminToken() {
-  return localStorage.getItem("breizhstops-admin-token") || "";
-}
-
 function apiHeaders(json = true) {
-  const headers = {};
-
-  if (json) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  const token = getAdminToken();
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  return headers;
+  return json
+    ? { "Content-Type": "application/json" }
+    : {};
 }
 
 async function apiFetch(url, options = {}) {
@@ -1017,7 +1003,7 @@ async function saveStopDetails() {
 
   try {
     await apiFetch(
-      `/api/stops/${encodeURIComponent(activeStop.id)}`,
+      `/api/admin/stops/${encodeURIComponent(activeStop.id)}`,
       {
         method: "PUT",
         headers: apiHeaders(),
@@ -1051,15 +1037,10 @@ async function uploadStopPhoto() {
   form.append("photo", file);
 
   const headers = {};
-  const token = getAdminToken();
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
 
   try {
     const data = await apiFetch(
-      `/api/stops/${encodeURIComponent(activeStop.id)}/photos`,
+      `/api/admin/stops/${encodeURIComponent(activeStop.id)}/photos`,
       {
         method: "POST",
         headers,
@@ -1110,8 +1091,8 @@ async function confirmSaveRoute() {
 
   try {
     const url = editingRouteId
-      ? `/api/routes/${editingRouteId}`
-      : "/api/routes";
+      ? `/api/admin/routes/${editingRouteId}`
+      : "/api/admin/routes";
 
     const method = editingRouteId ? "PUT" : "POST";
 
@@ -1139,7 +1120,7 @@ async function openRoutesLibrary() {
   $("routesLibrary").innerHTML = "<p>Chargement…</p>";
 
   try {
-    const routes = await apiFetch("/api/routes", {
+    const routes = await apiFetch("/api/admin/routes", {
       headers: apiHeaders(false)
     });
 
@@ -1187,7 +1168,7 @@ function renderRoutesLibrary(routes) {
 
 async function loadSavedRoute(id) {
   try {
-    const route = await apiFetch(`/api/routes/${id}`, {
+    const route = await apiFetch(`/api/admin/routes/${id}`, {
       headers: apiHeaders(false)
     });
 
@@ -1253,7 +1234,7 @@ async function deleteSavedRoute(id) {
   }
 
   try {
-    await apiFetch(`/api/routes/${id}`, {
+    await apiFetch(`/api/admin/routes/${id}`, {
       method: "DELETE",
       headers: apiHeaders(false)
     });
@@ -1272,7 +1253,7 @@ async function shareCurrentRoute() {
   }
 
   try {
-    const route = await apiFetch(`/api/routes/${editingRouteId}`, {
+    const route = await apiFetch(`/api/admin/routes/${editingRouteId}`, {
       headers: apiHeaders(false)
     });
 
@@ -1406,20 +1387,6 @@ $("uploadStopPhoto").addEventListener("click", uploadStopPhoto);
 $("confirmSaveRoute").addEventListener("click", confirmSaveRoute);
 $("openRoutesLibrary").addEventListener("click", openRoutesLibrary);
 
-$("openSettings").addEventListener("click", () => {
-  $("adminToken").value = getAdminToken();
-  $("settingsDialog").showModal();
-});
-
-$("saveAdminToken").addEventListener("click", () => {
-  localStorage.setItem(
-    "breizhstops-admin-token",
-    $("adminToken").value.trim()
-  );
-
-  $("settingsDialog").close();
-  alert("Code enregistré dans ce navigateur.");
-});
 
 handleDepartureModeChange();
 

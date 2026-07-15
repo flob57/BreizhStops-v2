@@ -12,25 +12,6 @@ export function error(message, status = 400) {
   return json({ error: message }, status);
 }
 
-export function requireAdmin(context) {
-  const configured = context.env.ADMIN_TOKEN;
-
-  if (!configured) {
-    throw new Error(
-      "Configuration Cloudflare incomplète : secret ADMIN_TOKEN absent."
-    );
-  }
-
-  const authorization =
-    context.request.headers.get("Authorization") || "";
-
-  if (authorization !== `Bearer ${configured}`) {
-    return error("Accès administrateur refusé.", 401);
-  }
-
-  return null;
-}
-
 export function requireDb(context) {
   if (!context.env.DB) {
     throw new Error(

@@ -19,7 +19,6 @@
 
     <div class="header-actions">
       <button id="openRoutesLibrary" class="header-button">📚 Mes itinéraires</button>
-      <button id="openSettings" class="header-button">⚙️ Accès</button>
       <span id="status">Chargement…</span>
     </div>
   </header>
@@ -234,29 +233,6 @@
     </form>
   </dialog>
 
-  <dialog id="settingsDialog" class="modal">
-    <form method="dialog" class="modal-card">
-      <div class="modal-header">
-        <h2>Accès à l’administration</h2>
-        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
-      </div>
-
-      <p class="information-box">
-        Le code est stocké uniquement dans ce navigateur. Il doit correspondre
-        au secret <strong>ADMIN_TOKEN</strong> configuré dans Cloudflare.
-      </p>
-
-      <label>
-        Code administrateur
-        <input id="adminToken" type="password" autocomplete="current-password">
-      </label>
-
-      <div class="modal-actions">
-        <button type="button" id="saveAdminToken">Enregistrer</button>
-        <button value="cancel" class="secondary">Fermer</button>
-      </div>
-    </form>
-  </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="./app.js"></script>
