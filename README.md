@@ -71,3 +71,16 @@ navigateur.
 - calcul du nombre de voyageurs à bord ;
 - enregistrement des passages réels et comptages dans D1 ;
 - aucune annonce vocale.
+
+
+## Nouveautés V5.1
+
+- filtre de réseau dans la correspondance des arrêts du SAE ;
+- points inRoute toujours disponibles en complément ;
+- modification du nom des arrêts ;
+- sens entrant ou sortant ;
+- suppression logique des arrêts ;
+- sens affiché dans la sélection SAE ;
+- flèche GPS fixe vers le haut ;
+- rotation de la carte selon le cap ;
+- boutons de zoom dédiés.

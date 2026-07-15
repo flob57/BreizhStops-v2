@@ -133,3 +133,15 @@ Lis `NOTION-CONFIGURATION.md` pour adapter les noms des propriétés Notion.
 
 La règle Cloudflare Access `/api/admin/*` protège automatiquement toutes les
 données SAE et la synchronisation Notion.
+
+
+## Migration V5.1
+
+Exécute la dernière partie de `schema.sql` pour créer :
+
+```text
+stop_overrides
+```
+
+Cette table conserve les changements de nom, le sens entrant/sortant et les
+suppressions sans modifier directement le gros fichier `data/stops.json`.

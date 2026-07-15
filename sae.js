@@ -20,7 +20,8 @@ const SAE = {
   followEnabled: true,
   orientationEnabled: true,
   bearing: 0,
-  deviceHeading: null
+  deviceHeading: null,
+  selectedNetwork: ""
 };
 
 function saeTodayIso() {
@@ -311,6 +312,7 @@ async function prepareSaeCourse(courseId) {
       };
     });
 
+    populateSaeNetworkFilter();
     renderSaeMatches();
     $("saeMatchDialog").showModal();
   } catch (error) {
@@ -318,9 +320,87 @@ async function prepareSaeCourse(courseId) {
   }
 }
 
+
+function saeNetworksForCourse() {
+  const networks = new Set();
+
+  SAE.matchedStops.forEach(courseStop => {
+    (courseStop.candidates || normalizedStopCandidates(courseStop.name))
+      .forEach(candidate => {
+        if (candidate.reseau) {
+          networks.add(candidate.reseau);
+        }
+      });
+  });
+
+  return [...networks].sort((a, b) => a.localeCompare(b, "fr"));
+}
+
+function isInRouteStop(stop) {
+  return (
+    normalize(stop.reseau) === "inroute" ||
+    (stop.sources || []).some(source =>
+      normalize(source).includes("inroute")
+    )
+  );
+}
+
+function filteredSaeCandidates(courseStop) {
+  const all = courseStop.candidates ||
+    normalizedStopCandidates(courseStop.name);
+
+  if (!SAE.selectedNetwork) {
+    return all;
+  }
+
+  return all.filter(candidate =>
+    normalize(candidate.reseau) === normalize(SAE.selectedNetwork) ||
+    isInRouteStop(candidate)
+  );
+}
+
+function directionLabel(stop) {
+  if (stop.direction === "entrant") {
+    return " — Entrant";
+  }
+
+  if (stop.direction === "sortant") {
+    return " — Sortant";
+  }
+
+  return "";
+}
+
+function populateSaeNetworkFilter() {
+  const select = $("saeNetworkFilter");
+  const networks = saeNetworksForCourse();
+
+  select.innerHTML =
+    '<option value="">Tous les réseaux</option>' +
+    networks.map(network => `
+      <option value="${escapeHtml(network)}">
+        ${escapeHtml(network)}
+      </option>
+    `).join("");
+
+  const dominant = SAE.selectedCourse?.network || "";
+
+  if (
+    dominant &&
+    networks.some(network =>
+      normalize(network) === normalize(dominant)
+    )
+  ) {
+    SAE.selectedNetwork = dominant;
+    select.value = dominant;
+  } else {
+    SAE.selectedNetwork = "";
+  }
+}
+
 function renderSaeMatches() {
   $("saeMatchList").innerHTML = SAE.matchedStops.map((stop, index) => {
-    const candidates = stop.candidates || normalizedStopCandidates(stop.name);
+    const candidates = filteredSaeCandidates(stop);
 
     return `
       <div class="sae-match-row">
@@ -343,6 +423,7 @@ function renderSaeMatches() {
               ${escapeHtml(candidate.nom)}
               — ${escapeHtml(candidate.commune || "")}
               ${candidate.reseau ? ` — ${escapeHtml(candidate.reseau)}` : ""}
+              ${escapeHtml(directionLabel(candidate))}
             </option>
           `).join("")}
         </select>
@@ -865,8 +946,12 @@ function onSaePosition(position) {
   }
 
   if (SAE.positionMarker?._icon) {
+    /*
+     * The marker is inside the rotated map pane.
+     * Applying the opposite rotation keeps the arrow fixed toward the top.
+     */
     SAE.positionMarker._icon.style.transform +=
-      ` rotate(${bearing}deg)`;
+      ` rotate(${SAE.orientationEnabled ? bearing : 0}deg)`;
   }
 
   if (SAE.followEnabled) {
@@ -1034,4 +1119,22 @@ $("saeNorthUp").addEventListener("click", () => {
   SAE.bearing = 0;
   setSaeOrientation(false);
   rotateSaeMap(0);
+});
+
+
+$("saeNetworkFilter").addEventListener("change", event => {
+  SAE.selectedNetwork = event.target.value;
+  renderSaeMatches();
+});
+
+$("saeZoomIn").addEventListener("click", () => {
+  if (SAE.map) {
+    SAE.map.zoomIn();
+  }
+});
+
+$("saeZoomOut").addEventListener("click", () => {
+  if (SAE.map) {
+    SAE.map.zoomOut();
+  }
 });

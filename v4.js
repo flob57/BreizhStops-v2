@@ -395,6 +395,10 @@ function rotateGpsMap(bearing) {
   mapPane.style.transform = `rotate(${value}deg)`;
 
   if (V4.gpsPositionMarker?._icon) {
+    /*
+     * The map pane rotates. Counter-rotate the marker so the arrow
+     * remains fixed toward the top of the screen.
+     */
     V4.gpsPositionMarker._icon.style.transform +=
       ` rotate(${V4.gpsOrientationEnabled ? bearing : 0}deg)`;
   }
@@ -1156,5 +1160,18 @@ $("testAdminSession").addEventListener("click", async () => {
   } catch (error) {
     $("adminSessionStatus").innerHTML =
       `<p class="information-box">${escapeHtml(error.message)}</p>`;
+  }
+});
+
+
+$("gpsZoomIn").addEventListener("click", () => {
+  if (V4.gpsMap) {
+    V4.gpsMap.zoomIn();
+  }
+});
+
+$("gpsZoomOut").addEventListener("click", () => {
+  if (V4.gpsMap) {
+    V4.gpsMap.zoomOut();
   }
 });

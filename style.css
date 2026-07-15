@@ -1191,3 +1191,24 @@ button:disabled {
     padding: 8px;
   }
 }
+
+
+.stop-direction-badge {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #e8f1f8;
+  color: #174d70;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sae-map-buttons {
+  max-height: calc(100% - 20px);
+  overflow-y: auto;
+}
+
+.gps-heading-arrow {
+  transform: rotate(0deg) !important;
+}

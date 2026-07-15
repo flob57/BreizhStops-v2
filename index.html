@@ -144,6 +144,20 @@
 
       <div class="form-grid">
         <label>
+          Nom de l’arrêt
+          <input id="stopEditableName" type="text">
+        </label>
+
+        <label>
+          Sens de circulation
+          <select id="stopDirection">
+            <option value="">Non renseigné</option>
+            <option value="entrant">Entrant</option>
+            <option value="sortant">Sortant</option>
+          </select>
+        </label>
+
+        <label>
           Lignes desservant l’arrêt
           <input id="stopLines" type="text" placeholder="Ex. 1, 2, 16, scolaire S4">
         </label>
@@ -185,6 +199,7 @@
       <div class="modal-actions">
         <button type="button" id="saveStopDetails">💾 Enregistrer</button>
         <button type="button" id="uploadStopPhoto">📷 Envoyer la photo</button>
+        <button type="button" id="deleteStop" class="danger">🗑 Supprimer l’arrêt</button>
         <button value="cancel" class="secondary">Fermer</button>
       </div>
     </form>
@@ -488,6 +503,8 @@
     <div id="gpsMap" class="gps-map"></div>
 
     <footer class="gps-footer">
+      <button id="gpsZoomIn">＋ Zoom</button>
+      <button id="gpsZoomOut">－ Zoom</button>
       <button id="gpsFollowToggle">🎯 Suivi actif</button>
       <button id="gpsOrientationToggle">🧭 Orientation active</button>
       <button id="gpsNorthUp" class="secondary">N Nord en haut</button>
@@ -552,6 +569,20 @@
         </div>
 
         <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Réseau principal
+          <select id="saeNetworkFilter">
+            <option value="">Tous les réseaux</option>
+          </select>
+        </label>
+
+        <div class="information-box">
+          Les arrêts du réseau choisi sont proposés en priorité.
+          Les points issus d’inRoute restent toujours disponibles.
+        </div>
       </div>
 
       <div id="saeMatchList"></div>
@@ -654,6 +685,8 @@
         <div id="saeMap"></div>
 
         <div class="sae-map-buttons">
+          <button id="saeZoomIn">＋ Zoom</button>
+          <button id="saeZoomOut">－ Zoom</button>
           <button id="saeFollowToggle">🎯 Suivi actif</button>
           <button id="saeOrientationToggle">🧭 Orientation active</button>
           <button id="saeNorthUp" class="secondary">N Nord en haut</button>

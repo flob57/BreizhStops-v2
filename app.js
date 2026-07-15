@@ -161,6 +161,31 @@ async function loadStops() {
     stops = data;
 
     try {
+      const overrides = await apiFetch("/api/stop-overrides");
+      const overrideMap = new Map(
+        (overrides || []).map(item => [String(item.stop_id), item])
+      );
+
+      stops = stops
+        .filter(stop => !overrideMap.get(String(stop.id))?.deleted)
+        .map(stop => {
+          const override = overrideMap.get(String(stop.id));
+
+          if (!override) {
+            return stop;
+          }
+
+          return {
+            ...stop,
+            nom: override.custom_name || stop.nom,
+            direction: override.direction || ""
+          };
+        });
+    } catch (overrideError) {
+      console.warn("Modifications d’arrêts non chargées :", overrideError);
+    }
+
+    try {
       const extraStops = await apiFetch("/api/stops-extra");
       if (Array.isArray(extraStops)) {
         const existingIds = new Set(stops.map(stop => String(stop.id)));
@@ -1032,6 +1057,8 @@ async function openStopSheetFor(stop) {
   $("stopDialogMeta").textContent =
     `${stop.commune || ""} · ${stop.reseau || ""}`;
 
+  $("stopEditableName").value = stop.nom || "";
+  $("stopDirection").value = stop.direction || "";
   $("stopLines").value = "";
   $("stopNotes").value = "";
   $("stopStatus").value = "";
@@ -1085,6 +1112,8 @@ async function saveStopDetails() {
         method: "PUT",
         headers: apiHeaders(),
         body: JSON.stringify({
+          name: $("stopEditableName").value.trim(),
+          direction: $("stopDirection").value,
           notes: $("stopNotes").value.trim(),
           status: $("stopStatus").value,
           lines
@@ -1092,7 +1121,59 @@ async function saveStopDetails() {
       }
     );
 
+    activeStop.nom =
+      $("stopEditableName").value.trim() || activeStop.nom;
+    activeStop.direction = $("stopDirection").value;
+
+    $("stopDialogTitle").textContent = activeStop.nom;
+    refreshSearch();
+
     alert("Fiche arrêt enregistrée.");
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+
+async function deleteActiveStop() {
+  if (!activeStop) {
+    return;
+  }
+
+  const confirmed = confirm(
+    `Supprimer l’arrêt « ${activeStop.nom} » de BreizhStops ?`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await apiFetch(
+      `/api/admin/stops/${encodeURIComponent(activeStop.id)}`,
+      {
+        method: "DELETE",
+        headers: apiHeaders()
+      }
+    );
+
+    const stopId = String(activeStop.id);
+
+    stops = stops.filter(stop => String(stop.id) !== stopId);
+    routeStops = routeStops.filter(stop => String(stop.id) !== stopId);
+
+    if (selectedStartStop && String(selectedStartStop.id) === stopId) {
+      selectedStartStop = null;
+    }
+
+    $("stopDialog").close();
+    activeStop = null;
+
+    updateLinkedFilters();
+    refreshSearch();
+    updateRoute();
+
+    alert("Arrêt supprimé.");
   } catch (error) {
     alert(error.message);
   }
@@ -1888,6 +1969,7 @@ clearRouteBtn.addEventListener("click", () => {
 });
 
 $("saveStopDetails").addEventListener("click", saveStopDetails);
+$("deleteStop").addEventListener("click", deleteActiveStop);
 $("uploadStopPhoto").addEventListener("click", uploadStopPhoto);
 $("confirmSaveRoute").addEventListener("click", confirmSaveRoute);
 $("openRoutesLibrary").addEventListener("click", openRoutesLibrary);

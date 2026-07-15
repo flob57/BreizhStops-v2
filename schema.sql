@@ -227,3 +227,15 @@ CREATE TABLE IF NOT EXISTS sae_stop_events (
 
 CREATE INDEX IF NOT EXISTS idx_sae_stop_events_run
 ON sae_stop_events(run_id, stop_index);
+
+
+CREATE TABLE IF NOT EXISTS stop_overrides (
+  stop_id TEXT PRIMARY KEY,
+  custom_name TEXT NOT NULL DEFAULT '',
+  direction TEXT NOT NULL DEFAULT '',
+  deleted INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_stop_overrides_deleted
+ON stop_overrides(deleted);
