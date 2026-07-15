@@ -156,3 +156,74 @@ CREATE TABLE IF NOT EXISTS gtfs_imports (
   patterns INTEGER NOT NULL DEFAULT 0,
   imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+
+CREATE TABLE IF NOT EXISTS sae_courses (
+  id TEXT PRIMARY KEY,
+  notion_page_id TEXT UNIQUE,
+  service_date TEXT NOT NULL,
+  name TEXT NOT NULL,
+  network TEXT NOT NULL DEFAULT '',
+  service TEXT NOT NULL DEFAULT '',
+  girouette TEXT NOT NULL DEFAULT '',
+  start_time TEXT NOT NULL DEFAULT '',
+  end_time TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'notion',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_sae_courses_date
+ON sae_courses(service_date);
+
+CREATE TABLE IF NOT EXISTS sae_course_stops (
+  id TEXT PRIMARY KEY,
+  course_id TEXT NOT NULL,
+  stop_sequence INTEGER NOT NULL,
+  stop_name TEXT NOT NULL,
+  scheduled_time TEXT NOT NULL DEFAULT '',
+  commune TEXT NOT NULL DEFAULT '',
+  matched_stop_id TEXT,
+  lat REAL,
+  lon REAL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(course_id, stop_sequence)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sae_course_stops_course
+ON sae_course_stops(course_id, stop_sequence);
+
+CREATE TABLE IF NOT EXISTS sae_runs (
+  id TEXT PRIMARY KEY,
+  course_id TEXT NOT NULL,
+  service_date TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  current_stop_index INTEGER NOT NULL DEFAULT 0,
+  onboard INTEGER NOT NULL DEFAULT 0,
+  started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  finished_at TEXT,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_sae_runs_course
+ON sae_runs(course_id, service_date);
+
+CREATE TABLE IF NOT EXISTS sae_stop_events (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  course_stop_id TEXT NOT NULL,
+  stop_index INTEGER NOT NULL,
+  scheduled_time TEXT NOT NULL DEFAULT '',
+  actual_time TEXT NOT NULL,
+  delay_seconds INTEGER,
+  boardings INTEGER NOT NULL DEFAULT 0,
+  alightings INTEGER NOT NULL DEFAULT 0,
+  onboard_before INTEGER NOT NULL DEFAULT 0,
+  onboard_after INTEGER NOT NULL DEFAULT 0,
+  automatic INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_sae_stop_events_run
+ON sae_stop_events(run_id, stop_index);

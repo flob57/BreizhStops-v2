@@ -11,8 +11,6 @@ const V4 = {
   gpsWatchId: null,
   gpsData: null,
   gpsCurrentStopIndex: 0,
-  gpsVoiceEnabled: true,
-  gpsLastAnnouncement: "",
   gpsFollowEnabled: true,
   gpsOrientationEnabled: true,
   gpsBearing: 0,
@@ -550,22 +548,6 @@ function distanceToPolylineMeters(position, coordinates) {
   return minimum;
 }
 
-function speakGps(text) {
-  if (
-    !V4.gpsVoiceEnabled ||
-    !("speechSynthesis" in window) ||
-    text === V4.gpsLastAnnouncement
-  ) {
-    return;
-  }
-
-  V4.gpsLastAnnouncement = text;
-  speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "fr-FR";
-  speechSynthesis.speak(utterance);
-}
 
 function updateGpsStopDisplay(position) {
   const stopsList = V4.gpsData?.stops || [];
@@ -586,7 +568,6 @@ function updateGpsStopDisplay(position) {
   if (distance <= 45 && index < stopsList.length - 1) {
     V4.gpsCurrentStopIndex++;
     index++;
-    speakGps(`Arrêt ${next.nom}. Prochain arrêt ${stopsList[index].nom}.`);
   }
 
   const currentNext = stopsList[index];
@@ -604,10 +585,6 @@ function updateGpsStopDisplay(position) {
     following ? `Puis : ${following.nom}` : "Terminus";
 
   if (currentDistance <= 350 && currentDistance > 45) {
-    speakGps(
-      `Dans ${Math.round(currentDistance / 10) * 10} mètres, ` +
-      `arrêt ${currentNext.nom}.`
-    );
   }
 }
 
@@ -681,7 +658,6 @@ function onGpsPosition(position) {
     status.textContent =
       `⚠ Hors itinéraire : ${Math.round(distanceFromRoute)} m`;
     status.className = "gps-status off-route";
-    speakGps("Attention, vous quittez l’itinéraire.");
   } else {
     status.textContent =
       `✓ Sur l’itinéraire · précision ${Math.round(position.coords.accuracy)} m`;
@@ -699,7 +675,6 @@ function startGps(data) {
   V4.gpsCurrentStopIndex = 0;
   V4.gpsPositionMarker = null;
   V4.gpsAccuracyCircle = null;
-  V4.gpsLastAnnouncement = "";
   V4.gpsFollowEnabled = true;
   V4.gpsOrientationEnabled = true;
   V4.gpsBearing = 0;
@@ -741,7 +716,6 @@ function stopGps() {
     V4.gpsWatchId = null;
   }
 
-  speechSynthesis?.cancel();
 
   window.removeEventListener(
     "deviceorientationabsolute",
@@ -1169,11 +1143,6 @@ $("gpsNextStopButton").addEventListener("click", () => {
   );
 });
 
-$("gpsVoiceToggle").addEventListener("click", () => {
-  V4.gpsVoiceEnabled = !V4.gpsVoiceEnabled;
-  $("gpsVoiceToggle").textContent =
-    V4.gpsVoiceEnabled ? "🔊 Voix activée" : "🔇 Voix coupée";
-});
 
 $("openAccessLogin").addEventListener("click", () => {
   window.open("/api/admin/session", "_blank", "noopener");

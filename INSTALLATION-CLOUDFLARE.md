@@ -111,3 +111,25 @@ demandée au démarrage du GPS. Cette autorisation nécessite une action de
 l'utilisateur et un site HTTPS.
 
 Le suivi GPS reste actif tant que BreizhStops est visible à l'écran.
+
+
+## Migration V5 SAE
+
+Exécute la nouvelle partie située à la fin de `schema.sql`. Elle crée :
+
+- `sae_courses`
+- `sae_course_stops`
+- `sae_runs`
+- `sae_stop_events`
+
+Ajoute ensuite dans Cloudflare Pages :
+
+```text
+NOTION_TOKEN
+NOTION_PLANNING_DATABASE_ID
+```
+
+Lis `NOTION-CONFIGURATION.md` pour adapter les noms des propriétés Notion.
+
+La règle Cloudflare Access `/api/admin/*` protège automatiquement toutes les
+données SAE et la synchronisation Notion.

@@ -21,6 +21,7 @@
       <button id="openRoutesLibrary" class="header-button">📚 Mes itinéraires</button>
       <button id="openLinesExplorer" class="header-button">🚌 Lignes</button>
       <button id="openGpsLauncher" class="header-button">🧭 GPS</button>
+      <button id="openSae" class="header-button">🚌 SAE</button>
       <button id="openDataAdmin" class="header-button">🗃️ Données</button>
       <span id="status">Chargement…</span>
     </div>
@@ -492,7 +493,7 @@
       <button id="gpsNorthUp" class="secondary">N Nord en haut</button>
       <button id="gpsPreviousStop" class="secondary">← Arrêt précédent</button>
       <button id="gpsNextStopButton">Arrêt suivant →</button>
-      <button id="gpsVoiceToggle" class="secondary">🔊 Voix activée</button>
+      
     </footer>
   </section>
 
@@ -518,9 +519,153 @@
     </form>
   </dialog>
 
+
+  <dialog id="saeTodayDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <div>
+          <h2>🚌 SAE — Mes courses</h2>
+          <div id="saeTodayDate" class="meta"></div>
+        </div>
+
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="modal-actions left">
+        <button type="button" id="saeSyncNotion">🔄 Synchroniser Notion</button>
+        <button type="button" id="saeRefreshToday" class="secondary">Actualiser</button>
+      </div>
+
+      <div id="saeSyncStatus"></div>
+      <div id="saeTodayList" class="sae-course-list"></div>
+    </form>
+  </dialog>
+
+  <dialog id="saeMatchDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <div>
+          <h2>Correspondance des arrêts</h2>
+          <div class="meta">
+            Vérifie les arrêts reconnus avant de lancer le SAE.
+          </div>
+        </div>
+
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div id="saeMatchList"></div>
+
+      <div class="modal-actions">
+        <button type="button" id="saeConfirmMatches">✅ Valider et ouvrir le SAE</button>
+        <button value="cancel" class="secondary">Annuler</button>
+      </div>
+    </form>
+  </dialog>
+
+  <section id="saeScreen" class="sae-screen hidden">
+    <header class="sae-header">
+      <div>
+        <div id="saeCourseName" class="sae-course-name">Course</div>
+        <div class="sae-header-details">
+          <span id="saeGirouette">Girouette : —</span>
+          <span id="saeService">Service : —</span>
+        </div>
+      </div>
+
+      <div class="sae-header-actions">
+        <span id="saeGpsBadge" class="sae-badge sae-badge-warning">GPS…</span>
+        <span id="saePassengerBadge" class="sae-badge sae-badge-passengers">👥 0</span>
+        <button id="saeQuit" class="danger">Quitter</button>
+      </div>
+    </header>
+
+    <main class="sae-layout">
+      <section class="sae-main-panel">
+        <article class="sae-current-card">
+          <div class="sae-section-label">ARRÊT ACTUEL</div>
+
+          <div class="sae-current-row">
+            <div>
+              <div id="saeCurrentStop" class="sae-current-stop">—</div>
+              <div class="sae-time-row">
+                Théorique :
+                <strong id="saeCurrentScheduled">—</strong>
+              </div>
+            </div>
+
+            <div id="saeDelay" class="sae-delay sae-delay-neutral">—</div>
+          </div>
+
+          <div class="sae-count-grid">
+            <div class="sae-count-box">
+              <div class="sae-count-title">
+                MONTÉES
+                <span id="saeBoardingsValue">0</span>
+              </div>
+
+              <div class="sae-count-controls">
+                <button id="saeBoardingsMinus" class="secondary">−</button>
+                <button id="saeBoardingsPlus">+</button>
+              </div>
+            </div>
+
+            <div class="sae-count-box">
+              <div class="sae-count-title">
+                DESCENTES
+                <span id="saeAlightingsValue">0</span>
+              </div>
+
+              <div class="sae-count-controls">
+                <button id="saeAlightingsMinus" class="secondary">−</button>
+                <button id="saeAlightingsPlus">+</button>
+              </div>
+            </div>
+          </div>
+
+          <button id="saeValidateStop" class="sae-validate-button">
+            ✓ Valider l’arrêt
+          </button>
+        </article>
+
+        <article class="sae-next-card">
+          <div>
+            <div class="sae-section-label">PROCHAIN ARRÊT</div>
+            <div id="saeNextStopName" class="sae-next-stop-name">—</div>
+          </div>
+
+          <div class="sae-next-data">
+            <span id="saeNextScheduled">—</span>
+            <strong id="saeNextDistance">—</strong>
+          </div>
+        </article>
+
+        <article class="sae-progress-card">
+          <div class="sae-progress-header">
+            <span>PROGRESSION DE LA COURSE</span>
+            <strong id="saeProgressCount">0 / 0</strong>
+          </div>
+
+          <div id="saeStopProgress" class="sae-stop-progress"></div>
+        </article>
+      </section>
+
+      <section class="sae-map-panel">
+        <div id="saeMap"></div>
+
+        <div class="sae-map-buttons">
+          <button id="saeFollowToggle">🎯 Suivi actif</button>
+          <button id="saeOrientationToggle">🧭 Orientation active</button>
+          <button id="saeNorthUp" class="secondary">N Nord en haut</button>
+        </div>
+      </section>
+    </main>
+  </section>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./app.js"></script>
   <script src="./v4.js"></script>
+  <script src="./sae.js"></script>
 </body>
 </html>

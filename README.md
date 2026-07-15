@@ -56,3 +56,18 @@ navigateur.
 - suspension automatique du suivi lorsque l'utilisateur déplace la carte ;
 - bouton pour reprendre le suivi ;
 - bouton Nord en haut.
+
+
+## Nouveautés V5 SAE
+
+- synchronisation du planning journalier Notion ;
+- lecture des fiches horaires ;
+- correspondance des noms d'arrêts avec BreizhStops ;
+- tracé automatique de la course ;
+- écran SAE conducteur ;
+- heure théorique, avance ou retard et distance ;
+- passage automatique à l'arrêt suivant ;
+- comptage des montées et descentes ;
+- calcul du nombre de voyageurs à bord ;
+- enregistrement des passages réels et comptages dans D1 ;
+- aucune annonce vocale.
