@@ -124,46 +124,150 @@ async function syncSaeNotion() {
   }
 }
 
-function normalizedStopCandidates(name) {
-  const wanted = normalize(name);
+function saeMatchKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    // Le caractère � provient de certains anciens imports mal encodés.
+    // On le traite comme un caractère inconnu plutôt que comme une différence bloquante.
+    .replace(/�/g, "")
+    .replace(/\bste\b/g, "sainte")
+    .replace(/\bst\b/g, "saint")
+    .replace(/\bgal\b/g, "general")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-  const exact = stops.filter(stop =>
-    normalize(stop.nom) === wanted
-  );
+function saeEditDistance(left, right) {
+  const a = saeMatchKey(left);
+  const b = saeMatchKey(right);
 
-  if (exact.length) {
-    return exact.slice(0, 20);
+  if (!a) return b.length;
+  if (!b) return a.length;
+
+  const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  const current = new Array(b.length + 1);
+
+  for (let i = 1; i <= a.length; i++) {
+    current[0] = i;
+
+    for (let j = 1; j <= b.length; j++) {
+      const substitution = a[i - 1] === b[j - 1] ? 0 : 1;
+
+      current[j] = Math.min(
+        current[j - 1] + 1,
+        previous[j] + 1,
+        previous[j - 1] + substitution
+      );
+    }
+
+    for (let j = 0; j <= b.length; j++) {
+      previous[j] = current[j];
+    }
   }
 
-  return stops.filter(stop => {
-    const candidate = normalize(stop.nom);
-    return candidate.includes(wanted) || wanted.includes(candidate);
-  }).slice(0, 20);
+  return previous[b.length];
+}
+
+function saeSimilarity(left, right) {
+  const a = saeMatchKey(left);
+  const b = saeMatchKey(right);
+  const longest = Math.max(a.length, b.length);
+
+  if (!longest) return 1;
+
+  return 1 - saeEditDistance(a, b) / longest;
+}
+
+function inferSaeCourseContext(courseStops) {
+  const networkCounts = new Map();
+  const cityCounts = new Map();
+
+  for (const courseStop of courseStops) {
+    const wanted = saeMatchKey(courseStop.name);
+
+    if (!wanted) continue;
+
+    const exact = stops.filter(stop => {
+      const candidate = saeMatchKey(stop.nom);
+      return candidate === wanted || candidate.includes(wanted) || wanted.includes(candidate);
+    }).slice(0, 8);
+
+    for (const candidate of exact) {
+      if (candidate.reseau) {
+        networkCounts.set(
+          candidate.reseau,
+          (networkCounts.get(candidate.reseau) || 0) + 1
+        );
+      }
+
+      if (candidate.commune) {
+        cityCounts.set(
+          candidate.commune,
+          (cityCounts.get(candidate.commune) || 0) + 1
+        );
+      }
+    }
+  }
+
+  const best = counts => [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+
+  SAE.inferredNetwork = SAE.selectedCourse?.network || best(networkCounts);
+  SAE.inferredCommune = best(cityCounts);
+}
+
+function normalizedStopCandidates(name) {
+  const wanted = saeMatchKey(name);
+
+  if (!wanted) return [];
+
+  return stops
+    .map(stop => {
+      const candidate = saeMatchKey(stop.nom);
+      let similarity = saeSimilarity(wanted, candidate);
+
+      if (candidate === wanted) similarity += 0.6;
+      else if (candidate.includes(wanted) || wanted.includes(candidate)) similarity += 0.25;
+
+      return { stop, similarity };
+    })
+    // 0,52 tolère Kerroué/Kerrou� et Béchales/Bécharles,
+    // sans proposer toute la base Bretagne.
+    .filter(item => item.similarity >= 0.52)
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, 35)
+    .map(item => item.stop);
 }
 
 function rankStopCandidate(candidate, courseStop) {
-  let score = 0;
+  let score = saeSimilarity(candidate.nom, courseStop.name) * 100;
 
-  if (normalize(candidate.nom) === normalize(courseStop.name)) {
+  if (saeMatchKey(candidate.nom) === saeMatchKey(courseStop.name)) {
     score += 100;
   }
 
+  const expectedCity = courseStop.commune || SAE.inferredCommune;
+  const expectedNetwork = SAE.selectedCourse?.network || SAE.inferredNetwork;
+
   if (
-    courseStop.commune &&
-    normalize(candidate.commune) === normalize(courseStop.commune)
+    expectedCity &&
+    saeMatchKey(candidate.commune) === saeMatchKey(expectedCity)
   ) {
-    score += 30;
+    score += 35;
   }
 
   if (
-    SAE.selectedCourse?.network &&
-    normalize(candidate.reseau) === normalize(SAE.selectedCourse.network)
+    expectedNetwork &&
+    saeMatchKey(candidate.reseau) === saeMatchKey(expectedNetwork)
   ) {
-    score += 20;
+    score += 45;
   }
 
   if (candidate.verified_terrain || candidate.trusted) {
-    score += 10;
+    score += 12;
   }
 
   return score;
@@ -176,6 +280,8 @@ async function prepareSaeCourse(courseId) {
     );
 
     SAE.selectedCourse = course;
+    inferSaeCourseContext(course.stops);
+
     SAE.matchedStops = course.stops.map(courseStop => {
       if (
         Number.isFinite(Number(courseStop.lat)) &&
