@@ -74,3 +74,29 @@ La règle Access existante les protège donc automatiquement.
 - doublon d’un arrêt statique : création d’un lien de source uniquement ;
 - nouvel arrêt : ajout dans `custom_stops` ;
 - arrêt absent d’un nouvel import : aucune suppression.
+
+
+## Migration V4
+
+Exécute la nouvelle partie située à la fin de `schema.sql`. Elle crée les tables :
+
+- `gtfs_agencies`
+- `gtfs_routes`
+- `gtfs_patterns`
+- `gtfs_pattern_stops`
+- `gtfs_stop_routes`
+- `gtfs_imports`
+
+Aucune table existante n'est supprimée.
+
+## Connexion Cloudflare Access
+
+Avant un import :
+
+1. ouvre **Données** ;
+2. utilise le bouton de connexion administrateur si l'application le demande ;
+3. termine la connexion dans le nouvel onglet ;
+4. reviens sur BreizhStops ;
+5. clique sur **Tester la connexion** puis relance l'import.
+
+La route `/api/admin/session` sert uniquement à établir et vérifier la session.

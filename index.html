@@ -19,6 +19,8 @@
 
     <div class="header-actions">
       <button id="openRoutesLibrary" class="header-button">📚 Mes itinéraires</button>
+      <button id="openLinesExplorer" class="header-button">🚌 Lignes</button>
+      <button id="openGpsLauncher" class="header-button">🧭 GPS</button>
       <button id="openDataAdmin" class="header-button">🗃️ Données</button>
       <span id="status">Chargement…</span>
     </div>
@@ -263,7 +265,8 @@
           <label>
             Type de source
             <select id="importSourceType">
-              <option value="gtfs">GTFS</option>
+              <option value="gtfs-full">GTFS complet (lignes + arrêts)</option>
+              <option value="gtfs">GTFS arrêts uniquement</option>
               <option value="inroute">inRoute</option>
               <option value="other">Autre source</option>
             </select>
@@ -290,7 +293,7 @@
         </div>
 
         <div class="information-box">
-          Formats acceptés : ZIP GTFS, stops.txt, CSV GTFS et GPX inRoute.
+          Formats acceptés : ZIP GTFS complet, stops.txt, CSV GTFS et GPX inRoute.
           Les arrêts absents du nouveau fichier sont conservés.
         </div>
 
@@ -370,8 +373,152 @@
     </form>
   </dialog>
 
+
+  <dialog id="linesExplorerDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <div>
+          <h2>Recherche de ligne</h2>
+          <div class="meta">Choisis un réseau, une ligne puis une variante de parcours.</div>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Réseau
+          <select id="lineAgencySelect">
+            <option value="">Choisir un réseau</option>
+          </select>
+        </label>
+
+        <label>
+          Ligne
+          <select id="lineRouteSelect" disabled>
+            <option value="">Choisir une ligne</option>
+          </select>
+        </label>
+
+        <label class="full-width">
+          Variante / direction
+          <select id="linePatternSelect" disabled>
+            <option value="">Choisir une variante</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="lineDetails" class="line-details">
+        <p>Sélectionne une ligne pour afficher son parcours.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="showSelectedLine" disabled>🗺️ Afficher sur la carte</button>
+        <button type="button" id="startGpsFromLine" disabled>🧭 Démarrer le GPS</button>
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="gpsLauncherDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <h2>Lancer le GPS</h2>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label class="full-width">
+          Type de parcours
+          <select id="gpsSourceType">
+            <option value="gtfs">Ligne GTFS</option>
+            <option value="saved">Itinéraire BreizhStops enregistré</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="gpsGtfsChooser">
+        <div class="form-grid">
+          <label>
+            Réseau
+            <select id="gpsAgencySelect"></select>
+          </label>
+          <label>
+            Ligne
+            <select id="gpsRouteSelect" disabled></select>
+          </label>
+          <label class="full-width">
+            Variante
+            <select id="gpsPatternSelect" disabled></select>
+          </label>
+        </div>
+      </div>
+
+      <div id="gpsSavedChooser" class="hidden">
+        <label>
+          Itinéraire enregistré
+          <select id="gpsSavedRouteSelect"></select>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="confirmStartGps">▶️ Démarrer</button>
+        <button value="cancel" class="secondary">Annuler</button>
+      </div>
+    </form>
+  </dialog>
+
+  <section id="gpsScreen" class="gps-screen hidden">
+    <header class="gps-header">
+      <div>
+        <div id="gpsRouteName" class="gps-route-name">GPS BreizhStops</div>
+        <div id="gpsDirection" class="gps-direction"></div>
+      </div>
+      <button id="stopGps" class="danger">Quitter</button>
+    </header>
+
+    <div class="gps-information">
+      <div class="gps-next-label">Prochain arrêt</div>
+      <div id="gpsNextStop" class="gps-next-stop">—</div>
+      <div id="gpsNextDistance" class="gps-distance">—</div>
+      <div id="gpsFollowingStop" class="gps-following"></div>
+      <div id="gpsRouteStatus" class="gps-status">Recherche de la position…</div>
+    </div>
+
+    <div id="gpsMap" class="gps-map"></div>
+
+    <footer class="gps-footer">
+      <button id="gpsRecenter">🎯 Recentrer</button>
+      <button id="gpsPreviousStop" class="secondary">← Arrêt précédent</button>
+      <button id="gpsNextStopButton">Arrêt suivant →</button>
+      <button id="gpsVoiceToggle" class="secondary">🔊 Voix activée</button>
+    </footer>
+  </section>
+
+  <dialog id="adminLoginDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <h2>Connexion à l’administration</h2>
+        <button class="icon-button" value="cancel">✕</button>
+      </div>
+
+      <p class="information-box">
+        Cloudflare Access doit être ouvert une fois avant les imports et les
+        modifications. La connexion restera ensuite active dans ce navigateur.
+      </p>
+
+      <div class="modal-actions">
+        <button type="button" id="openAccessLogin">🔐 Ouvrir la connexion</button>
+        <button type="button" id="testAdminSession">✅ Tester la connexion</button>
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
+
+      <div id="adminSessionStatus"></div>
+    </form>
+  </dialog>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./app.js"></script>
+  <script src="./v4.js"></script>
 </body>
 </html>

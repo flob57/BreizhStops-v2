@@ -33,3 +33,15 @@ navigateur.
 - création manuelle d’un arrêt sur la carte ;
 - création depuis la position GPS du smartphone ;
 - stockage des nouveaux arrêts dans D1.
+
+
+## Nouveautés V4 bêta
+
+- import des réseaux, lignes, courses, variantes et shapes GTFS ;
+- recherche réseau → ligne → variante ;
+- affichage des lignes dans chaque fiche arrêt ;
+- parcours officiels GTFS sur la carte ;
+- GPS temps réel pour une ligne GTFS ou un itinéraire enregistré ;
+- prochain arrêt automatique ;
+- détection de sortie d'itinéraire ;
+- annonces vocales simples.

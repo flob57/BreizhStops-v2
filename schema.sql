@@ -81,3 +81,78 @@ CREATE TABLE IF NOT EXISTS stop_sources (
 
 CREATE INDEX IF NOT EXISTS idx_stop_sources_stop
 ON stop_sources(stop_id);
+
+
+CREATE TABLE IF NOT EXISTS gtfs_agencies (
+  id TEXT PRIMARY KEY,
+  source TEXT NOT NULL,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL DEFAULT '',
+  timezone TEXT NOT NULL DEFAULT 'Europe/Paris',
+  first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS gtfs_routes (
+  id TEXT PRIMARY KEY,
+  source TEXT NOT NULL,
+  agency_id TEXT NOT NULL,
+  short_name TEXT NOT NULL DEFAULT '',
+  long_name TEXT NOT NULL DEFAULT '',
+  route_type TEXT NOT NULL DEFAULT '',
+  color TEXT NOT NULL DEFAULT '005493',
+  text_color TEXT NOT NULL DEFAULT 'FFFFFF',
+  first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_gtfs_routes_agency
+ON gtfs_routes(agency_id);
+
+CREATE TABLE IF NOT EXISTS gtfs_patterns (
+  id TEXT PRIMARY KEY,
+  source TEXT NOT NULL,
+  route_id TEXT NOT NULL,
+  direction_id TEXT NOT NULL DEFAULT '',
+  headsign TEXT NOT NULL DEFAULT '',
+  label TEXT NOT NULL DEFAULT '',
+  shape_json TEXT,
+  trip_count INTEGER NOT NULL DEFAULT 0,
+  first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_gtfs_patterns_route
+ON gtfs_patterns(route_id);
+
+CREATE TABLE IF NOT EXISTS gtfs_pattern_stops (
+  pattern_id TEXT NOT NULL,
+  stop_id TEXT NOT NULL,
+  stop_sequence INTEGER NOT NULL,
+  stop_name TEXT NOT NULL,
+  commune TEXT NOT NULL DEFAULT '',
+  lat REAL NOT NULL,
+  lon REAL NOT NULL,
+  PRIMARY KEY(pattern_id, stop_sequence)
+);
+
+CREATE INDEX IF NOT EXISTS idx_gtfs_pattern_stops_stop
+ON gtfs_pattern_stops(stop_id);
+
+CREATE TABLE IF NOT EXISTS gtfs_stop_routes (
+  stop_id TEXT NOT NULL,
+  route_id TEXT NOT NULL,
+  PRIMARY KEY(stop_id, route_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_gtfs_stop_routes_stop
+ON gtfs_stop_routes(stop_id);
+
+CREATE TABLE IF NOT EXISTS gtfs_imports (
+  id TEXT PRIMARY KEY,
+  source TEXT NOT NULL,
+  agencies INTEGER NOT NULL DEFAULT 0,
+  routes INTEGER NOT NULL DEFAULT 0,
+  patterns INTEGER NOT NULL DEFAULT 0,
+  imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
