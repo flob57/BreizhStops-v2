@@ -1418,3 +1418,286 @@ button:disabled {
     height: 34px;
   }
 }
+
+
+/* ==========================================================
+   V5.3 — Correction largeur iPhone 16
+   ========================================================== */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.sae-screen {
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.sae-header,
+.sae-layout-iphone,
+.sae-main-panel,
+.sae-current-card,
+.sae-next-card,
+.sae-map-panel,
+.sae-progress-wrapper,
+.sae-progress-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.sae-current-topline > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sae-current-card-compact .sae-current-stop,
+.sae-next-card-compact .sae-next-stop-name {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.sae-current-card-compact .sae-delay {
+  flex: 0 0 auto;
+  max-width: 42%;
+  min-width: 0;
+  white-space: normal;
+}
+
+.sae-current-meta {
+  width: 100%;
+}
+
+.sae-current-meta span {
+  min-width: 0;
+}
+
+.sae-count-inline {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.sae-count-inline-group {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns:
+    minmax(20px, 0.55fr)
+    minmax(32px, 1fr)
+    minmax(24px, 0.65fr)
+    minmax(32px, 1fr);
+}
+
+.sae-count-inline-group button {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
+.sae-next-card-compact {
+  width: 100%;
+}
+
+.sae-next-card-compact > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sae-next-card-compact .sae-next-data {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.sae-map-panel-iphone {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.sae-map-panel-iphone #saeMap {
+  width: 100%;
+  max-width: 100%;
+}
+
+.sae-map-buttons-compact {
+  max-width: calc(100% - 16px);
+  grid-template-columns: repeat(5, minmax(36px, 42px));
+}
+
+.sae-stop-progress {
+  max-width: 100%;
+}
+
+@media (max-width: 650px) {
+  .sae-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: start;
+    gap: 5px 8px;
+  }
+
+  .sae-header > div:first-child {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    min-width: 0;
+  }
+
+  .sae-header-actions {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: end;
+    gap: 5px;
+  }
+
+  .sae-header-actions .danger {
+    grid-column: 1 / 3;
+    width: 100%;
+  }
+
+  .sae-course-name {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .sae-header-details {
+    display: flex;
+    max-width: 100%;
+  }
+
+  .sae-layout-iphone {
+    width: 100%;
+    max-width: 100vw;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .sae-current-card-compact,
+  .sae-next-card-compact,
+  .sae-progress-card-compact {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .sae-current-topline {
+    align-items: center;
+  }
+
+  .sae-current-card-compact .sae-current-stop {
+    max-width: 100%;
+    font-size: 22px;
+  }
+
+  .sae-current-card-compact .sae-delay {
+    max-width: 44%;
+    padding: 7px 8px;
+    font-size: 13px;
+  }
+
+  .sae-current-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .sae-count-inline {
+    gap: 6px;
+  }
+
+  .sae-count-inline-group {
+    grid-template-columns:
+      20px
+      minmax(30px, 1fr)
+      24px
+      minmax(30px, 1fr);
+    gap: 3px;
+    padding: 5px 4px;
+  }
+
+  .sae-count-inline-label {
+    font-size: 16px;
+  }
+
+  .sae-count-inline-group strong {
+    font-size: 16px;
+  }
+
+  .sae-count-inline-group button {
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .sae-validate-button-compact {
+    width: 100%;
+  }
+
+  .sae-next-card-compact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .sae-next-card-compact .sae-next-stop-name {
+    font-size: 17px;
+  }
+
+  .sae-next-card-compact .sae-next-data {
+    font-size: 16px;
+  }
+
+  .sae-map-buttons-compact {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: auto;
+    grid-template-columns: repeat(5, 38px);
+  }
+
+  .sae-map-buttons-compact button {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+  }
+}
+
+@media (max-width: 390px) {
+  .sae-header-actions {
+    grid-template-columns: auto;
+  }
+
+  .sae-header-actions .danger {
+    grid-column: 1;
+  }
+
+  .sae-count-inline-group {
+    grid-template-columns:
+      18px
+      minmax(28px, 1fr)
+      22px
+      minmax(28px, 1fr);
+  }
+
+  .sae-map-buttons-compact {
+    grid-template-columns: repeat(5, 35px);
+  }
+
+  .sae-map-buttons-compact button {
+    width: 35px;
+    min-width: 35px;
+    height: 35px;
+  }
+}

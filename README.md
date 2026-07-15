@@ -95,3 +95,14 @@ navigateur.
 - carte avant la progression ;
 - progression placée en bas ;
 - commandes GPS plus compactes.
+
+
+## Nouveautés V5.3 iPhone — largeur
+
+- suppression des débordements horizontaux ;
+- largeur limitée à l’écran réel de l’iPhone ;
+- boutons montées/descentes flexibles ;
+- badge avance/retard contenu dans la carte ;
+- prochain arrêt correctement réparti sur une ligne ;
+- carte et progression limitées à 100 % de la largeur ;
+- en-tête réorganisé pour éviter les éléments hors écran.
