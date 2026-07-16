@@ -159,3 +159,19 @@ La version repart de la V5.2 stable. Les changements portent uniquement sur :
 
 Les correspondances choisies sont toujours enregistrées par le mécanisme SAE
 déjà présent.
+
+
+## V5.6 — Prises de service
+
+1. Exécuter la dernière partie de `schema.sql` dans D1.
+2. Ajouter les trois secrets Notion décrits dans `NOTION-CONFIGURATION.md`.
+3. Partager les trois bases Notion avec l’intégration.
+4. Déployer tous les fichiers.
+5. Ouvrir BreizhStops puis cliquer sur `🏢 Dépôt`.
+
+Le calendrier intégré permet de renseigner :
+
+- une période de vacances scolaires ;
+- un jour férié ;
+- le profil de services à utiliser ;
+- ou l’absence totale de service.

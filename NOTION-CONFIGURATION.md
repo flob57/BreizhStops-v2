@@ -63,3 +63,35 @@ Le connecteur reconnaît :
 ```
 
 Les secondes sont facultatives.
+
+
+# Prises de service — variables supplémentaires
+
+Ajoute trois secrets Cloudflare Pages :
+
+```text
+NOTION_LMJV_DATABASE_ID
+NOTION_WEDNESDAY_DATABASE_ID
+NOTION_SATURDAY_HOLIDAYS_DATABASE_ID
+```
+
+Valeurs :
+
+```text
+NOTION_LMJV_DATABASE_ID=2e66bbfa7ec1801e9214d3f06d3bee91
+NOTION_WEDNESDAY_DATABASE_ID=37c6bbfa7ec180458081c38c3b6a8c3f
+NOTION_SATURDAY_HOLIDAYS_DATABASE_ID=37c6bbfa7ec180019abae1cb85893b16
+```
+
+Les trois bases doivent être partagées avec l’intégration Notion utilisée par
+`NOTION_TOKEN`.
+
+Propriétés lues :
+
+```text
+PS
+QUB
+Conducteur
+Course 1
+Véhicule
+```

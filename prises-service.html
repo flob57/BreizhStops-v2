@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+  <meta name="theme-color" content="#07100b">
+  <title>BreizhStops — Prises de service</title>
+  <link rel="stylesheet" href="./prises-service.css">
+</head>
+
+<body>
+  <header class="duty-header">
+    <div>
+      <a href="./index.html" class="back-link">‹ BreizhStops</a>
+      <h1>🚌 Prises de service</h1>
+      <p id="todayLabel">Chargement…</p>
+    </div>
+
+    <div class="header-summary">
+      <strong id="validationCount">0 / 0</strong>
+      <span>vérifiées</span>
+    </div>
+  </header>
+
+  <main class="duty-page">
+    <section class="toolbar">
+      <button id="syncNotion">⟳ Synchroniser depuis Notion</button>
+      <button id="refreshServices" class="secondary">Actualiser</button>
+      <button id="openCalendar" class="secondary">📅 Calendrier</button>
+
+      <div class="profile-badge" id="profileBadge">
+        Base du jour : chargement…
+      </div>
+    </section>
+
+    <section id="statusMessage" class="status-message" hidden></section>
+
+    <section class="duty-card">
+      <div class="desktop-table-wrapper">
+        <table class="duty-table">
+          <thead>
+            <tr>
+              <th>OK</th>
+              <th>PS</th>
+              <th>Décompte</th>
+              <th>QUB</th>
+              <th>Conducteur</th>
+              <th>Course 1</th>
+              <th>Véhicule</th>
+            </tr>
+          </thead>
+          <tbody id="dutyTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="dutyMobileList" class="duty-mobile-list"></div>
+
+      <div id="emptyState" class="empty-state" hidden>
+        Aucune prise de service chargée pour cette journée.
+      </div>
+    </section>
+
+    <p class="daily-note">
+      Les validations sont liées à la date : elles repartent automatiquement
+      de zéro au changement de journée, sans effacer l’historique.
+    </p>
+  </main>
+
+  <dialog id="calendarDialog">
+    <div class="dialog-header">
+      <div>
+        <h2>📅 Calendrier d’exploitation</h2>
+        <p>
+          Enregistre ici les vacances scolaires et les jours fériés.
+        </p>
+      </div>
+      <button id="closeCalendar" class="icon-button">×</button>
+    </div>
+
+    <form id="calendarForm" class="calendar-form">
+      <label>
+        Nom
+        <input
+          id="calendarLabel"
+          required
+          placeholder="Ex. Vacances de la Toussaint"
+        >
+      </label>
+
+      <label>
+        Type
+        <select id="calendarType">
+          <option value="school_holiday">Vacances scolaires</option>
+          <option value="public_holiday">Jour férié</option>
+        </select>
+      </label>
+
+      <label>
+        Date de début
+        <input id="calendarStart" type="date" required>
+      </label>
+
+      <label>
+        Date de fin
+        <input id="calendarEnd" type="date" required>
+      </label>
+
+      <label>
+        Organisation à appliquer
+        <select id="calendarProfile">
+          <option value="vacation">Samedi + Vacances</option>
+          <option value="none">Aucun service</option>
+          <option value="lmjv">LMJV période scolaire</option>
+          <option value="wednesday">Mercredi période scolaire</option>
+        </select>
+      </label>
+
+      <label class="full-width">
+        Remarque
+        <textarea id="calendarNotes" rows="2"></textarea>
+      </label>
+
+      <button type="submit">Ajouter au calendrier</button>
+    </form>
+
+    <div id="calendarEvents" class="calendar-events"></div>
+  </dialog>
+
+  <script src="./prises-service.js"></script>
+</body>
+</html>

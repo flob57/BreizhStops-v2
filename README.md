@@ -131,3 +131,17 @@ Correction de l'ordre des blocs du SAE sur iPhone :
 La cause était le conteneur `.sae-progress-wrapper`, qui n'avait pas de valeur
 `order` en affichage mobile. Aucune fonction SAE, GPS, Notion ou Cloudflare
 n'a été modifiée.
+
+
+## V5.6 — Gestion du dépôt
+
+Nouvelle page `prises-service.html` :
+
+- sélection automatique de la base Notion selon le jour ;
+- calendrier manuel des vacances scolaires et jours fériés ;
+- synchronisation des propriétés PS, QUB, Conducteur, Course 1 et Véhicule ;
+- décompte en temps réel ;
+- validation quotidienne ;
+- remise à zéro automatique par changement de date ;
+- historique des validations conservé dans D1 ;
+- présentation PC et smartphone.

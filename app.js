@@ -2004,3 +2004,12 @@ handleDepartureModeChange();
 loadStops().then(() => {
   loadSharedRouteFromUrl();
 });
+
+
+const depotManagementButton = document.getElementById("openDepotManagement");
+
+if (depotManagementButton) {
+  depotManagementButton.addEventListener("click", () => {
+    window.location.href = "./prises-service.html";
+  });
+}

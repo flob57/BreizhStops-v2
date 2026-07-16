@@ -239,3 +239,55 @@ CREATE TABLE IF NOT EXISTS stop_overrides (
 
 CREATE INDEX IF NOT EXISTS idx_stop_overrides_deleted
 ON stop_overrides(deleted);
+
+
+-- ============================================================
+-- V5.6 — Gestion du dépôt / prises de service
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS depot_calendar (
+  id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  event_type TEXT NOT NULL DEFAULT 'school_holiday',
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  service_profile TEXT NOT NULL DEFAULT 'vacation',
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_depot_calendar_dates
+ON depot_calendar(start_date, end_date);
+
+CREATE TABLE IF NOT EXISTS duty_services (
+  id TEXT PRIMARY KEY,
+  service_date TEXT NOT NULL,
+  source_profile TEXT NOT NULL,
+  notion_page_id TEXT NOT NULL DEFAULT '',
+  ps_time TEXT NOT NULL DEFAULT '',
+  qub_reference TEXT NOT NULL DEFAULT '',
+  driver_name TEXT NOT NULL DEFAULT '',
+  first_course TEXT NOT NULL DEFAULT '',
+  vehicle_registration TEXT NOT NULL DEFAULT '',
+  source_payload TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(service_date, source_profile, notion_page_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_duty_services_date
+ON duty_services(service_date, ps_time);
+
+CREATE TABLE IF NOT EXISTS duty_validations (
+  id TEXT PRIMARY KEY,
+  duty_service_id TEXT NOT NULL,
+  service_date TEXT NOT NULL,
+  validated INTEGER NOT NULL DEFAULT 1,
+  validated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(duty_service_id, service_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_duty_validations_date
+ON duty_validations(service_date);
