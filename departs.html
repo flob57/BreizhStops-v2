@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#040806">
+  <title>BreizhStops V6.4 — Départs</title>
+  <link rel="stylesheet" href="./departs.css">
+</head>
+<body>
+  <header class="departures-header">
+    <div>
+      <a href="./index.html" class="back-link">‹ BreizhStops</a>
+      <h1>🚉 Départs <span class="version">V6.4</span></h1>
+      <p id="dateLabel">Chargement…</p>
+    </div>
+    <div class="header-actions">
+      <span id="clock">--:--</span>
+      <button id="refreshButton">↻ MAJ</button>
+    </div>
+  </header>
+
+  <main class="departures-page">
+    <section class="toolbar">
+      <button id="syncButton">⟳ Synchroniser Notion</button>
+      <a href="./prises-service.html">🚌 Prises de service</a>
+      <span id="profileLabel">Base du jour : chargement…</span>
+    </section>
+
+    <div id="message" class="message" hidden></div>
+
+    <p class="intro">
+      Courses en circulation et départs prévus dans les 60 prochaines minutes.
+      Mise à jour automatique toutes les 30 secondes.
+    </p>
+
+    <section>
+      <h2>En circulation</h2>
+      <div id="runningList" class="board"></div>
+      <div id="runningEmpty" class="empty">Aucune course actuellement en circulation.</div>
+    </section>
+
+    <section>
+      <h2>Prochains départs</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Départ</th>
+              <th>Dans</th>
+              <th>Course</th>
+              <th>Lieu</th>
+              <th>Conducteur</th>
+              <th>Véhicule</th>
+              <th>QUB</th>
+              <th>PS vérifiée</th>
+            </tr>
+          </thead>
+          <tbody id="upcomingBody"></tbody>
+        </table>
+      </div>
+      <div id="upcomingEmpty" class="empty">Aucun départ prévu dans les 60 prochaines minutes.</div>
+    </section>
+  </main>
+
+  <script src="./departs.js"></script>
+</body>
+</html>

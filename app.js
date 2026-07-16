@@ -2013,3 +2013,10 @@ if (depotManagementButton) {
     window.location.href = "./prises-service.html";
   });
 }
+
+const departuresButton = document.getElementById("openDepartures");
+if (departuresButton) {
+  departuresButton.addEventListener("click", () => {
+    window.location.href = "./departs.html";
+  });
+}

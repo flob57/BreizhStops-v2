@@ -291,3 +291,31 @@ CREATE TABLE IF NOT EXISTS duty_validations (
 
 CREATE INDEX IF NOT EXISTS idx_duty_validations_date
 ON duty_validations(service_date);
+
+
+-- ============================================================
+-- V6.4 — Tableau des départs
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS daily_departures (
+  id TEXT PRIMARY KEY,
+  service_date TEXT NOT NULL,
+  source_profile TEXT NOT NULL,
+  source_service_page_id TEXT NOT NULL,
+  course_index INTEGER NOT NULL,
+  course_page_id TEXT NOT NULL,
+  departure_time TEXT NOT NULL,
+  course_name TEXT NOT NULL DEFAULT '',
+  origin_name TEXT NOT NULL DEFAULT '',
+  arrival_time TEXT NOT NULL DEFAULT '',
+  driver_name TEXT NOT NULL DEFAULT '',
+  vehicle_registration TEXT NOT NULL DEFAULT '',
+  qub_reference TEXT NOT NULL DEFAULT '',
+  stops_json TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(service_date, source_service_page_id, course_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_departures_date_time
+ON daily_departures(service_date, departure_time);

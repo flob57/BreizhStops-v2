@@ -175,3 +175,13 @@ Le calendrier intégré permet de renseigner :
 - un jour férié ;
 - le profil de services à utiliser ;
 - ou l’absence totale de service.
+
+
+## V6.4 — Tableau des départs
+
+Exécuter la section V6.4 de `schema.sql` dans D1 pour créer
+la table `daily_departures`.
+
+Aucun nouveau secret Cloudflare n’est nécessaire.
+Après déploiement, ouvrir `🚉 Départs` puis cliquer sur
+`Synchroniser Notion`.

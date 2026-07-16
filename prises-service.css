@@ -459,3 +459,16 @@ dialog::backdrop {
   line-height: 1.2;
   vertical-align: middle;
 }
+
+.toolbar-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border: 1px solid #3b4740;
+  border-radius: 9px;
+  background: #17201b;
+  color: white;
+  font-weight: 700;
+  text-decoration: none;
+}

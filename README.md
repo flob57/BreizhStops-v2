@@ -147,10 +147,10 @@ Nouvelle page `prises-service.html` :
 - présentation PC et smartphone.
 
 
-## V6.3 — Gestion du dépôt
+## V6.4 — Gestion du dépôt
 
 Cette version corrige les chemins d’import des nouvelles fonctions
-Cloudflare Pages et affiche le numéro `V6.3` à côté du nom BreizhStops.
+Cloudflare Pages et affiche le numéro `V6.4` à côté du nom BreizhStops.
 
 Fonctions incluses :
 
@@ -163,7 +163,7 @@ Fonctions incluses :
 - historique conservé dans D1.
 
 
-## V6.3 — résolution des conducteurs
+## V6.4 — résolution des conducteurs
 
 Le synchroniseur suit désormais les relations Notion imbriquées :
 
@@ -178,7 +178,7 @@ Un cache évite les appels répétés pour les mêmes pages Notion.
 Aucune modification D1 supplémentaire n’est nécessaire.
 
 
-## V6.3 — Conducteur via rollup Notion
+## V6.4 — Conducteur via rollup Notion
 
 Correction du champ Conducteur lorsque Notion le calcule ainsi :
 
@@ -199,7 +199,7 @@ Le synchroniseur sait maintenant résoudre récursivement :
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V6.3 — nom réel du conducteur
+## V6.4 — nom réel du conducteur
 
 Le synchroniseur suit les relations jusqu’à la fiche du conducteur,
 puis lit exclusivement sa propriété `title`.
@@ -208,3 +208,18 @@ Il n’utilise plus une course, une affectation, un rollup ou une formule
 comme nom de conducteur.
 
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
+
+
+## V6.4 — Tableau des départs
+
+Nouvelle page `departs.html` :
+
+- lecture automatique de toutes les propriétés `Course n` / `Horaire n` ;
+- identification des courses en circulation ;
+- prochain arrêt théorique selon l’heure courante ;
+- diagramme thermomètre dépliable avec position théorique du car ;
+- départs dans les 60 prochaines minutes ;
+- conducteur, véhicule et QUB repris depuis les prises de service ;
+- état de validation de la prise de service ;
+- actualisation automatique toutes les 30 secondes ;
+- prise en charge des courses passant minuit.
