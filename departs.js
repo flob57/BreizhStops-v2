@@ -112,11 +112,64 @@ async function api(url, options = {}) {
 
   const text = await response.text();
   let payload = {};
-  try { payload = text ? JSON.parse(text) : {}; }
-  catch { throw new Error("Réponse serveur illisible."); }
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    const clean = String(text || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 220);
+
+    throw new Error(
+      clean
+        ? `Erreur serveur ${response.status} : ${clean}`
+        : `Réponse du serveur illisible (${response.status}).`
+    );
+  }
 
   if (!response.ok) throw new Error(payload.error || `Erreur ${response.status}`);
   return payload;
+}
+
+
+async function synchronizeDutiesInBatches(onProgress = null) {
+  let offset = 0;
+  let totalImported = 0;
+  let done = false;
+  let lastResult = null;
+
+  while (!done) {
+    if (onProgress) {
+      onProgress(offset);
+    }
+
+    const result = await api("/api/admin/duties/sync", {
+      method: "POST",
+      body: JSON.stringify({
+        date: state.date,
+        offset,
+        reset: offset === 0
+      })
+    });
+
+    lastResult = result;
+    totalImported += Number(result.imported || 0);
+    done = result.done === true;
+    offset =
+      result.next_offset ??
+      result.total_services ??
+      offset + 1;
+
+    if (!done) {
+      await new Promise(resolve => setTimeout(resolve, 120));
+    }
+  }
+
+  return {
+    ...(lastResult || {}),
+    imported: totalImported
+  };
 }
 
 function escapeHtml(value) {
@@ -234,10 +287,15 @@ async function syncAll() {
   showMessage("Synchronisation des prises de service…");
 
   try {
-    await api("/api/admin/duties/sync", {
-      method: "POST",
-      body: JSON.stringify({ date: state.date })
-    });
+    await synchronizeDutiesInBatches(
+      offset => {
+        showMessage(
+          offset === 0
+            ? "Lecture des prises de service Notion…"
+            : `Prises de service : service ${offset + 1}…`
+        );
+      }
+    );
 
     let offset = 0;
     let totalImported = 0;

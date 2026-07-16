@@ -147,10 +147,10 @@ Nouvelle page `prises-service.html` :
 - présentation PC et smartphone.
 
 
-## V6.5 — Gestion du dépôt
+## V6.6 — Gestion du dépôt
 
 Cette version corrige les chemins d’import des nouvelles fonctions
-Cloudflare Pages et affiche le numéro `V6.5` à côté du nom BreizhStops.
+Cloudflare Pages et affiche le numéro `V6.6` à côté du nom BreizhStops.
 
 Fonctions incluses :
 
@@ -163,7 +163,7 @@ Fonctions incluses :
 - historique conservé dans D1.
 
 
-## V6.5 — résolution des conducteurs
+## V6.6 — résolution des conducteurs
 
 Le synchroniseur suit désormais les relations Notion imbriquées :
 
@@ -178,7 +178,7 @@ Un cache évite les appels répétés pour les mêmes pages Notion.
 Aucune modification D1 supplémentaire n’est nécessaire.
 
 
-## V6.5 — Conducteur via rollup Notion
+## V6.6 — Conducteur via rollup Notion
 
 Correction du champ Conducteur lorsque Notion le calcule ainsi :
 
@@ -199,7 +199,7 @@ Le synchroniseur sait maintenant résoudre récursivement :
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V6.5 — nom réel du conducteur
+## V6.6 — nom réel du conducteur
 
 Le synchroniseur suit les relations jusqu’à la fiche du conducteur,
 puis lit exclusivement sa propriété `title`.
@@ -210,7 +210,7 @@ comme nom de conducteur.
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V6.5 — Tableau des départs
+## V6.6 — Tableau des départs
 
 Nouvelle page `departs.html` :
 
@@ -225,7 +225,7 @@ Nouvelle page `departs.html` :
 - prise en charge des courses passant minuit.
 
 
-## V6.5 — synchronisation par lots
+## V6.6 — synchronisation par lots
 
 Correction de l’erreur Cloudflare :
 
@@ -233,5 +233,19 @@ Correction de l’erreur Cloudflare :
 
 La page Départs synchronise désormais un service Notion par invocation,
 puis enchaîne automatiquement les services jusqu’à la fin.
+
+Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
+
+
+## V6.6 — synchronisation complète par lots
+
+Les prises de service sont désormais synchronisées une par une,
+afin de respecter la limite Cloudflare sur les sous-requêtes.
+
+La page Départs utilise cette même synchronisation par lots avant
+de lire les courses et fiches horaires.
+
+Les messages d’erreur affichent désormais le code HTTP et un extrait
+de la réponse Cloudflare au lieu du seul message « réponse illisible ».
 
 Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.

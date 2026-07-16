@@ -689,62 +689,86 @@ export async function onRequestPost(context) {
     }
 
     const pages = await allDatabasePages(databaseId, token);
-    const rows = [];
+    const offset = Math.max(0, Number(body.offset || 0));
+    const reset = body.reset === true;
 
-    for (const page of pages) {
-      const properties = page.properties || {};
+    if (reset) {
+      await db.prepare(
+        "DELETE FROM duty_services WHERE service_date = ?"
+      ).bind(date).run();
+    }
 
-      const psTime = await propertyText(properties["PS"], token);
-      const qubReference = await propertyText(properties["QUB"], token);
-      let driverName = await strictDriverNameFromProperty(
-        properties["Conducteur"],
-        token
-      );
+    if (offset >= pages.length) {
+      return json({
+        date,
+        profile: resolution.profile,
+        profile_label: resolution.label,
+        imported: 0,
+        processed: offset,
+        total_services: pages.length,
+        done: true,
+        next_offset: null
+      });
+    }
 
-      if (!driverName) {
-        const relationProperties = Object.values(properties)
-          .filter(property =>
-            property?.type === "relation" &&
-            Array.isArray(property.relation) &&
-            property.relation.length > 0
+    const page = pages[offset];
+    const properties = page.properties || {};
+
+    const psTime = await propertyText(properties["PS"], token);
+    const qubReference = await propertyText(properties["QUB"], token);
+
+    let driverName = await strictDriverNameFromProperty(
+      properties["Conducteur"],
+      token
+    );
+
+    if (!driverName) {
+      const relationProperties = Object.values(properties)
+        .filter(property =>
+          property?.type === "relation" &&
+          Array.isArray(property.relation) &&
+          property.relation.length > 0
+        );
+
+      for (const relationProperty of relationProperties) {
+        for (const relation of relationProperty.relation) {
+          const candidate = await strictDriverNameFromPage(
+            relation.id,
+            token
           );
 
-        for (const relationProperty of relationProperties) {
-          for (const relation of relationProperty.relation) {
-            const candidate = await strictDriverNameFromPage(
-              relation.id,
-              token
-            );
-
-            if (candidate) {
-              driverName = candidate;
-              break;
-            }
-          }
-
-          if (driverName) {
+          if (candidate) {
+            driverName = candidate;
             break;
           }
         }
+
+        if (driverName) {
+          break;
+        }
       }
+    }
 
-      const firstCourse = await propertyText(properties["Course 1"], token);
-      const vehicleRegistration = await propertyText(
-        properties["Véhicule"],
-        token
-      );
+    const firstCourse = await propertyText(
+      properties["Course 1"],
+      token
+    );
 
-      if (
-        !psTime &&
-        !qubReference &&
-        !driverName &&
-        !firstCourse &&
-        !vehicleRegistration
-      ) {
-        continue;
-      }
+    const vehicleRegistration = await propertyText(
+      properties["Véhicule"],
+      token
+    );
 
-      rows.push({
+    let imported = 0;
+
+    if (
+      psTime ||
+      qubReference ||
+      driverName ||
+      firstCourse ||
+      vehicleRegistration
+    ) {
+      const row = {
         id: `duty-${date}-${page.id}`,
         notion_page_id: page.id,
         ps_time: psTime,
@@ -752,30 +776,8 @@ export async function onRequestPost(context) {
         driver_name: driverName,
         first_course: firstCourse,
         vehicle_registration: vehicleRegistration
-      });
-    }
+      };
 
-    rows.sort((left, right) =>
-      sortTime(left.ps_time).localeCompare(sortTime(right.ps_time))
-    );
-
-    const currentIds = rows.map(row => row.id);
-
-    if (currentIds.length) {
-      const placeholders = currentIds.map(() => "?").join(",");
-
-      await db.prepare(
-        `DELETE FROM duty_services
-         WHERE service_date = ?
-           AND id NOT IN (${placeholders})`
-      ).bind(date, ...currentIds).run();
-    } else {
-      await db.prepare(
-        "DELETE FROM duty_services WHERE service_date = ?"
-      ).bind(date).run();
-    }
-
-    for (const row of rows) {
       await db.prepare(
         `INSERT INTO duty_services (
            id,
@@ -816,14 +818,24 @@ export async function onRequestPost(context) {
         row.vehicle_registration,
         JSON.stringify(row)
       ).run();
+
+      imported = 1;
     }
+
+    const nextOffset = offset + 1;
 
     return json({
       date,
       profile: resolution.profile,
       profile_label: resolution.label,
-      imported: rows.length,
-      services: rows
+      imported,
+      processed: nextOffset,
+      total_services: pages.length,
+      done: nextOffset >= pages.length,
+      next_offset:
+        nextOffset >= pages.length
+          ? null
+          : nextOffset
     });
   } catch (exception) {
     return error(exception.message, 500);

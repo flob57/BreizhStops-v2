@@ -45,7 +45,17 @@ async function api(url, options = {}) {
   try {
     payload = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error("Réponse du serveur illisible.");
+    const clean = String(text || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 220);
+
+    throw new Error(
+      clean
+        ? `Erreur serveur ${response.status} : ${clean}`
+        : `Réponse du serveur illisible (${response.status}).`
+    );
   }
 
   if (!response.ok) {
@@ -53,6 +63,46 @@ async function api(url, options = {}) {
   }
 
   return payload;
+}
+
+
+async function synchronizeDutiesInBatches(onProgress = null) {
+  let offset = 0;
+  let totalImported = 0;
+  let done = false;
+  let lastResult = null;
+
+  while (!done) {
+    if (onProgress) {
+      onProgress(offset);
+    }
+
+    const result = await api("/api/admin/duties/sync", {
+      method: "POST",
+      body: JSON.stringify({
+        date: state.date,
+        offset,
+        reset: offset === 0
+      })
+    });
+
+    lastResult = result;
+    totalImported += Number(result.imported || 0);
+    done = result.done === true;
+    offset =
+      result.next_offset ??
+      result.total_services ??
+      offset + 1;
+
+    if (!done) {
+      await new Promise(resolve => setTimeout(resolve, 120));
+    }
+  }
+
+  return {
+    ...(lastResult || {}),
+    imported: totalImported
+  };
 }
 
 function showStatus(message, isError = false) {
@@ -287,12 +337,15 @@ async function syncServices() {
   showStatus("Synchronisation Notion en cours…");
 
   try {
-    const payload = await api("/api/admin/duties/sync", {
-      method: "POST",
-      body: JSON.stringify({
-        date: state.date
-      })
-    });
+    const payload = await synchronizeDutiesInBatches(
+      offset => {
+        showStatus(
+          offset === 0
+            ? "Lecture de la base Notion…"
+            : `Synchronisation : service ${offset + 1}…`
+        );
+      }
+    );
 
     $("profileBadge").textContent =
       payload.profile === "none"
