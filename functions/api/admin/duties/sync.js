@@ -7,6 +7,7 @@ import {
 
 const NOTION_VERSION = "2022-06-28";
 const PAGE_CACHE = new Map();
+const PAGE_TEXT_CACHE = new Map();
 
 function notionHeaders(token) {
   return {
@@ -98,9 +99,9 @@ function basicPropertyText(property) {
   }
 }
 
-async function pageTitle(pageId, token) {
+async function notionPage(pageId, token) {
   if (!pageId) {
-    return "";
+    return null;
   }
 
   if (PAGE_CACHE.has(pageId)) {
@@ -112,15 +113,146 @@ async function pageTitle(pageId, token) {
     token
   );
 
+  PAGE_CACHE.set(pageId, page);
+  return page;
+}
+
+function findProperty(properties, expectedNames = []) {
+  const entries = Object.entries(properties || {});
+
+  for (const expectedName of expectedNames) {
+    const exact = entries.find(
+      ([name]) =>
+        name.trim().toLowerCase() ===
+        expectedName.trim().toLowerCase()
+    );
+
+    if (exact) {
+      return exact[1];
+    }
+  }
+
+  return null;
+}
+
+async function pageTitle(pageId, token) {
+  const page = await notionPage(pageId, token);
+
+  if (!page) {
+    return "";
+  }
+
   const titleProperty = Object.values(page.properties || {})
     .find(property => property.type === "title");
 
-  const title = basicPropertyText(titleProperty);
-  PAGE_CACHE.set(pageId, title);
-  return title;
+  return basicPropertyText(titleProperty);
 }
 
-async function propertyText(property, token) {
+async function relationPageText(
+  pageId,
+  token,
+  options = {},
+  depth = 0,
+  visited = new Set()
+) {
+  const cacheKey = `${pageId}|${options.preferredProperty || ""}`;
+
+  if (PAGE_TEXT_CACHE.has(cacheKey)) {
+    return PAGE_TEXT_CACHE.get(cacheKey);
+  }
+
+  if (!pageId || depth > 4 || visited.has(pageId)) {
+    return "";
+  }
+
+  const nextVisited = new Set(visited);
+  nextVisited.add(pageId);
+
+  const page = await notionPage(pageId, token);
+
+  if (!page) {
+    return "";
+  }
+
+  const properties = page.properties || {};
+
+  /*
+   * Dans les bases de prises de service, la propriété « Conducteur »
+   * pointe vers une page Affectation. Cette page contient elle-même
+   * une relation « Conducteur » vers la fiche réelle du conducteur.
+   */
+  const preferredNames = [
+    options.preferredProperty,
+    "Conducteur",
+    "Conducteurs",
+    "Nom du conducteur",
+    "Chauffeur",
+    "Agent"
+  ].filter(Boolean);
+
+  const preferredProperty = findProperty(
+    properties,
+    preferredNames
+  );
+
+  if (preferredProperty) {
+    const preferredValue = await propertyText(
+      preferredProperty,
+      token,
+      {
+        ...options,
+        depth: depth + 1,
+        visited: nextVisited
+      }
+    );
+
+    if (preferredValue) {
+      PAGE_TEXT_CACHE.set(cacheKey, preferredValue);
+      return preferredValue;
+    }
+  }
+
+  const titleProperty = Object.values(properties)
+    .find(property => property.type === "title");
+
+  const title = basicPropertyText(titleProperty);
+
+  if (title) {
+    PAGE_TEXT_CACHE.set(cacheKey, title);
+    return title;
+  }
+
+  /*
+   * Dernier recours : rechercher une relation unique et la suivre.
+   * Cela rend le lecteur robuste si la propriété est renommée.
+   */
+  const relationProperties = Object.values(properties)
+    .filter(property =>
+      property.type === "relation" &&
+      Array.isArray(property.relation) &&
+      property.relation.length > 0
+    );
+
+  if (relationProperties.length === 1) {
+    const fallback = await propertyText(
+      relationProperties[0],
+      token,
+      {
+        ...options,
+        depth: depth + 1,
+        visited: nextVisited
+      }
+    );
+
+    PAGE_TEXT_CACHE.set(cacheKey, fallback);
+    return fallback;
+  }
+
+  PAGE_TEXT_CACHE.set(cacheKey, "");
+  return "";
+}
+
+async function propertyText(property, token, options = {}) {
   const simple = basicPropertyText(property);
 
   if (simple) {
@@ -128,17 +260,25 @@ async function propertyText(property, token) {
   }
 
   if (property?.type === "relation") {
-    const titles = [];
+    const values = [];
+    const depth = options.depth || 0;
+    const visited = options.visited || new Set();
 
     for (const relation of property.relation || []) {
-      const title = await pageTitle(relation.id, token);
+      const value = await relationPageText(
+        relation.id,
+        token,
+        options,
+        depth,
+        visited
+      );
 
-      if (title) {
-        titles.push(title);
+      if (value && !values.includes(value)) {
+        values.push(value);
       }
     }
 
-    return titles.join(", ");
+    return values.join(", ");
   }
 
   return "";
@@ -352,7 +492,13 @@ export async function onRequestPost(context) {
 
       const psTime = await propertyText(properties["PS"], token);
       const qubReference = await propertyText(properties["QUB"], token);
-      const driverName = await propertyText(properties["Conducteur"], token);
+      const driverName = await propertyText(
+        properties["Conducteur"],
+        token,
+        {
+          preferredProperty: "Conducteur"
+        }
+      );
       const firstCourse = await propertyText(properties["Course 1"], token);
       const vehicleRegistration = await propertyText(
         properties["Véhicule"],

@@ -147,10 +147,10 @@ Nouvelle page `prises-service.html` :
 - présentation PC et smartphone.
 
 
-## V6.0 — Gestion du dépôt
+## V6.1 — Gestion du dépôt
 
 Cette version corrige les chemins d’import des nouvelles fonctions
-Cloudflare Pages et affiche le numéro `V6.0` à côté du nom BreizhStops.
+Cloudflare Pages et affiche le numéro `V6.1` à côté du nom BreizhStops.
 
 Fonctions incluses :
 
@@ -161,3 +161,18 @@ Fonctions incluses :
 - validation quotidienne ;
 - remise à zéro visuelle au changement de date ;
 - historique conservé dans D1.
+
+
+## V6.1 — résolution des conducteurs
+
+Le synchroniseur suit désormais les relations Notion imbriquées :
+
+```text
+Prise de service
+→ Affectation
+→ Conducteur
+→ Nom de la fiche conducteur
+```
+
+Un cache évite les appels répétés pour les mêmes pages Notion.
+Aucune modification D1 supplémentaire n’est nécessaire.
