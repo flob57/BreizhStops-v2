@@ -117,3 +117,17 @@ navigateur.
 - carte placée avant la progression ;
 - commandes GPS réduites ;
 - aucune modification des fonctions Cloudflare de la V5.2 stable.
+
+
+## V5.5 — progression sous la carte
+
+Correction de l'ordre des blocs du SAE sur iPhone :
+
+1. arrêt actuel ;
+2. prochain arrêt ;
+3. carte GPS ;
+4. progression de la course.
+
+La cause était le conteneur `.sae-progress-wrapper`, qui n'avait pas de valeur
+`order` en affichage mobile. Aucune fonction SAE, GPS, Notion ou Cloudflare
+n'a été modifiée.

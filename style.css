@@ -1778,3 +1778,62 @@ button:disabled {
     font-size: 11px;
   }
 }
+
+
+/* ==========================================================
+   V5.5 — ordre définitif du SAE sur iPhone
+   Arrêt actuel > Prochain arrêt > Carte > Progression
+   ========================================================== */
+
+@media (max-width: 650px) {
+  /*
+   * .sae-main-panel utilise display: contents sur mobile.
+   * Les deux cartes qu'il contient deviennent donc des éléments directs
+   * du conteneur flex .sae-layout.
+   */
+  .sae-current-card {
+    order: 1 !important;
+  }
+
+  .sae-next-card {
+    order: 2 !important;
+  }
+
+  .sae-map-panel {
+    order: 3 !important;
+  }
+
+  /*
+   * La progression est contenue dans .sae-progress-wrapper.
+   * C'est ce parent qu'il faut ordonner, et non seulement la carte interne.
+   */
+  .sae-progress-wrapper {
+    order: 4 !important;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sae-progress-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-top: 0;
+    margin-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  /*
+   * La carte reste la zone centrale du SAE.
+   */
+  .sae-map-panel {
+    width: 100%;
+    min-height: 350px;
+    height: 48vh;
+  }
+
+  #saeMap {
+    width: 100%;
+    min-height: 350px;
+    height: 100%;
+  }
+}
