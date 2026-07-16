@@ -369,6 +369,125 @@ async function propertyText(property, token, options = {}) {
   return "";
 }
 
+
+async function strictDriverNameFromPage(
+  pageId,
+  token,
+  depth = 0,
+  visited = new Set()
+) {
+  if (!pageId || depth > 6 || visited.has(pageId)) {
+    return "";
+  }
+
+  const nextVisited = new Set(visited);
+  nextVisited.add(pageId);
+
+  const page = await notionPage(pageId, token);
+
+  if (!page) {
+    return "";
+  }
+
+  const properties = page.properties || {};
+
+  const driverRelation = Object.entries(properties).find(
+    ([name, property]) =>
+      ["conducteur", "conducteurs", "chauffeur", "agent"]
+        .includes(name.trim().toLowerCase()) &&
+      property?.type === "relation" &&
+      Array.isArray(property.relation) &&
+      property.relation.length > 0
+  );
+
+  if (driverRelation) {
+    for (const relation of driverRelation[1].relation) {
+      const nestedName = await strictDriverNameFromPage(
+        relation.id,
+        token,
+        depth + 1,
+        nextVisited
+      );
+
+      if (nestedName) {
+        return nestedName;
+      }
+    }
+  }
+
+  const titleProperty = Object.values(properties)
+    .find(property => property?.type === "title");
+
+  const title = basicPropertyText(titleProperty);
+
+  if (title) {
+    return title;
+  }
+
+  const relationProperties = Object.values(properties)
+    .filter(property =>
+      property?.type === "relation" &&
+      Array.isArray(property.relation) &&
+      property.relation.length > 0
+    );
+
+  if (relationProperties.length === 1) {
+    for (const relation of relationProperties[0].relation) {
+      const nestedName = await strictDriverNameFromPage(
+        relation.id,
+        token,
+        depth + 1,
+        nextVisited
+      );
+
+      if (nestedName) {
+        return nestedName;
+      }
+    }
+  }
+
+  return "";
+}
+
+async function strictDriverNameFromProperty(property, token) {
+  if (!property) {
+    return "";
+  }
+
+  if (property.type === "relation") {
+    for (const relation of property.relation || []) {
+      const name = await strictDriverNameFromPage(
+        relation.id,
+        token
+      );
+
+      if (name) {
+        return name;
+      }
+    }
+
+    return "";
+  }
+
+  if (
+    property.type === "rollup" &&
+    property.rollup?.type === "array"
+  ) {
+    for (const item of property.rollup.array || []) {
+      const name = await strictDriverNameFromProperty(
+        item,
+        token
+      );
+
+      if (name) {
+        return name;
+      }
+    }
+  }
+
+  return "";
+}
+
 async function allDatabasePages(databaseId, token) {
   const results = [];
   let cursor;
@@ -577,43 +696,38 @@ export async function onRequestPost(context) {
 
       const psTime = await propertyText(properties["PS"], token);
       const qubReference = await propertyText(properties["QUB"], token);
-      let driverName = await propertyText(
+      let driverName = await strictDriverNameFromProperty(
         properties["Conducteur"],
-        token,
-        {
-          preferredProperty: "Conducteur"
-        }
+        token
       );
 
-      /*
-       * Certaines bases Notion exposent Conducteur comme un rollup :
-       * Véhicule -> Affectation -> Conducteur.
-       * Si le rollup est vide côté API, on suit directement les relations
-       * disponibles sur la ligne jusqu’à trouver une propriété Conducteur.
-       */
       if (!driverName) {
-        const relationProperties = Object.entries(properties)
-          .filter(([, property]) =>
+        const relationProperties = Object.values(properties)
+          .filter(property =>
             property?.type === "relation" &&
             Array.isArray(property.relation) &&
             property.relation.length > 0
           );
 
-        for (const [, relationProperty] of relationProperties) {
-          const candidate = await propertyText(
-            relationProperty,
-            token,
-            {
-              preferredProperty: "Conducteur"
-            }
-          );
+        for (const relationProperty of relationProperties) {
+          for (const relation of relationProperty.relation) {
+            const candidate = await strictDriverNameFromPage(
+              relation.id,
+              token
+            );
 
-          if (candidate) {
-            driverName = candidate;
+            if (candidate) {
+              driverName = candidate;
+              break;
+            }
+          }
+
+          if (driverName) {
             break;
           }
         }
       }
+
       const firstCourse = await propertyText(properties["Course 1"], token);
       const vehicleRegistration = await propertyText(
         properties["Véhicule"],
