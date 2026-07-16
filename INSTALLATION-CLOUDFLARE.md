@@ -145,3 +145,17 @@ stop_overrides
 
 Cette table conserve les changements de nom, le sens entrant/sortant et les
 suppressions sans modifier directement le gros fichier `data/stops.json`.
+
+
+## Migration V5.4
+
+Aucune nouvelle table D1 et aucune nouvelle variable Cloudflare ne sont
+nécessaires.
+
+La version repart de la V5.2 stable. Les changements portent uniquement sur :
+
+- `sae.js` pour la proposition automatique ;
+- `style.css` pour la présentation iPhone.
+
+Les correspondances choisies sont toujours enregistrées par le mécanisme SAE
+déjà présent.

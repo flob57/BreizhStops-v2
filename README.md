@@ -97,12 +97,23 @@ navigateur.
 - commandes GPS plus compactes.
 
 
-## Nouveautés V5.3 iPhone — largeur
+## Nouveautés V5.4 — SAE automatique et iPhone
 
-- suppression des débordements horizontaux ;
-- largeur limitée à l’écran réel de l’iPhone ;
-- boutons montées/descentes flexibles ;
-- badge avance/retard contenu dans la carte ;
-- prochain arrêt correctement réparti sur une ligne ;
-- carte et progression limitées à 100 % de la largeur ;
-- en-tête réorganisé pour éviter les éléments hors écran.
+### Correspondance automatique
+
+- analyse de tous les arrêts de la fiche Notion ;
+- détection du réseau couvrant le mieux l’ensemble de la course ;
+- points inRoute conservés comme compléments ;
+- choix du bon arrêt par optimisation de la séquence complète ;
+- pénalisation des détours, zigzags et demi-tours ;
+- indice de confiance pour chaque proposition ;
+- toutes les correspondances restent modifiables avant le lancement.
+
+### Interface iPhone
+
+- version mobile en une seule colonne ;
+- aucun élément ne dépasse horizontalement ;
+- comptages voyageurs compacts ;
+- carte placée avant la progression ;
+- commandes GPS réduites ;
+- aucune modification des fonctions Cloudflare de la V5.2 stable.

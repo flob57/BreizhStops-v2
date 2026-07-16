@@ -1421,283 +1421,360 @@ button:disabled {
 
 
 /* ==========================================================
-   V5.3 — Correction largeur iPhone 16
+   V5.4 — interface SAE iPhone stable et sans débordement
    ========================================================== */
 
-html,
-body {
-  max-width: 100%;
-  overflow-x: hidden;
+.sae-auto-summary {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 16px;
+  padding: 12px;
+  border: 1px solid #9bcf72;
+  border-radius: 11px;
+  background: #eef9e8;
+  color: #17320b;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+.sae-auto-summary > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
 }
 
-.sae-screen {
-  width: 100vw;
-  max-width: 100vw;
-  overflow-x: hidden;
+.sae-auto-network {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #d8efc6;
+  font-size: 12px;
 }
 
-.sae-header,
-.sae-layout-iphone,
-.sae-main-panel,
-.sae-current-card,
-.sae-next-card,
-.sae-map-panel,
-.sae-progress-wrapper,
-.sae-progress-card {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
+.sae-auto-summary small {
+  color: #42602f;
 }
 
-.sae-current-topline > div:first-child {
-  min-width: 0;
-  flex: 1 1 auto;
+.sae-confidence {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 11px;
 }
 
-.sae-current-card-compact .sae-current-stop,
-.sae-next-card-compact .sae-next-stop-name {
-  overflow-wrap: anywhere;
-  word-break: normal;
+.sae-confidence.high {
+  background: #dff4d4;
+  color: #28650f;
 }
 
-.sae-current-card-compact .sae-delay {
-  flex: 0 0 auto;
-  max-width: 42%;
-  min-width: 0;
-  white-space: normal;
+.sae-confidence.medium {
+  background: #fff0bf;
+  color: #725700;
 }
 
-.sae-current-meta {
-  width: 100%;
-}
-
-.sae-current-meta span {
-  min-width: 0;
-}
-
-.sae-count-inline {
-  width: 100%;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-}
-
-.sae-count-inline-group {
-  width: 100%;
-  min-width: 0;
-  grid-template-columns:
-    minmax(20px, 0.55fr)
-    minmax(32px, 1fr)
-    minmax(24px, 0.65fr)
-    minmax(32px, 1fr);
-}
-
-.sae-count-inline-group button {
-  width: 100%;
-  min-width: 0;
-  max-width: none;
-}
-
-.sae-next-card-compact {
-  width: 100%;
-}
-
-.sae-next-card-compact > div:first-child {
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.sae-next-card-compact .sae-next-data {
-  flex: 0 0 auto;
-  white-space: nowrap;
-}
-
-.sae-map-panel-iphone {
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.sae-map-panel-iphone #saeMap {
-  width: 100%;
-  max-width: 100%;
-}
-
-.sae-map-buttons-compact {
-  max-width: calc(100% - 16px);
-  grid-template-columns: repeat(5, minmax(36px, 42px));
-}
-
-.sae-stop-progress {
-  max-width: 100%;
+.sae-confidence.low {
+  background: #ffe0dc;
+  color: #9b2318;
 }
 
 @media (max-width: 650px) {
+  html,
+  body,
+  .sae-screen {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .sae-screen *,
+  .sae-screen *::before,
+  .sae-screen *::after {
+    box-sizing: border-box;
+  }
+
   .sae-header {
+    width: 100%;
+    min-width: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto;
-    align-items: start;
-    gap: 5px 8px;
+    gap: 6px;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      8px
+      7px;
   }
 
   .sae-header > div:first-child {
-    grid-column: 1;
-    grid-row: 1 / 3;
     min-width: 0;
   }
 
+  .sae-course-name {
+    max-width: 100%;
+    font-size: 17px;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .sae-header-details {
+    gap: 4px;
+    margin-top: 5px;
+    font-size: 10px;
+  }
+
+  .sae-header-details span {
+    padding: 2px 5px;
+  }
+
   .sae-header-actions {
-    grid-column: 2;
-    grid-row: 1 / 3;
     display: grid;
     grid-template-columns: auto auto;
-    align-items: center;
-    justify-content: end;
     gap: 5px;
+    justify-items: stretch;
   }
 
   .sae-header-actions .danger {
     grid-column: 1 / 3;
     width: 100%;
+    padding: 7px 9px;
   }
 
-  .sae-course-name {
+  .sae-badge {
+    padding: 5px 7px;
+    font-size: 10px;
+  }
+
+  /*
+   * A single mobile column. The original desktop structure remains
+   * untouched, which avoids the V5.3 JavaScript regression.
+   */
+  .sae-layout {
+    width: 100%;
+    min-width: 0;
     max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 7px;
+  }
+
+  .sae-main-panel,
+  .sae-map-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sae-main-panel {
+    display: contents;
+  }
+
+  .sae-current-card {
+    order: 1;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 10px;
+  }
+
+  .sae-next-card {
+    order: 2;
+    width: 100%;
+    min-width: 0;
+    min-height: 62px;
+    margin: 0;
+    padding: 10px;
+  }
+
+  .sae-map-panel {
+    order: 3;
+    min-height: 330px;
+    height: 46vh;
+    border-radius: 12px;
+  }
+
+  #saeMap {
+    width: 100%;
+    min-height: 330px;
+    height: 100%;
+  }
+
+  .sae-progress-card {
+    order: 4;
+    width: 100%;
+    min-width: 0;
+    margin: 0 0 max(8px, env(safe-area-inset-bottom));
+    padding: 10px;
+  }
+
+  .sae-current-row {
+    align-items: center;
+    gap: 7px;
+  }
+
+  .sae-current-row > div:first-child {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .sae-current-stop {
+    max-width: 100%;
+    font-size: 23px;
+    line-height: 1.05;
     overflow-wrap: anywhere;
   }
 
-  .sae-header-details {
-    display: flex;
-    max-width: 100%;
-  }
-
-  .sae-layout-iphone {
-    width: 100%;
-    max-width: 100vw;
-    padding-left: 6px;
-    padding-right: 6px;
-  }
-
-  .sae-current-card-compact,
-  .sae-next-card-compact,
-  .sae-progress-card-compact {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .sae-current-topline {
-    align-items: center;
-  }
-
-  .sae-current-card-compact .sae-current-stop {
-    max-width: 100%;
-    font-size: 22px;
-  }
-
-  .sae-current-card-compact .sae-delay {
-    max-width: 44%;
+  .sae-delay {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 43%;
     padding: 7px 8px;
     font-size: 13px;
+    white-space: normal;
   }
 
-  .sae-current-meta {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 6px;
+  .sae-time-row {
+    margin-top: 4px;
     font-size: 12px;
   }
 
-  .sae-count-inline {
-    gap: 6px;
-  }
-
-  .sae-count-inline-group {
-    grid-template-columns:
-      20px
-      minmax(30px, 1fr)
-      24px
-      minmax(30px, 1fr);
-    gap: 3px;
-    padding: 5px 4px;
-  }
-
-  .sae-count-inline-label {
-    font-size: 16px;
-  }
-
-  .sae-count-inline-group strong {
-    font-size: 16px;
-  }
-
-  .sae-count-inline-group button {
-    height: 32px;
-    font-size: 18px;
-  }
-
-  .sae-validate-button-compact {
+  /*
+   * Keep the original controls but flatten both passenger blocks onto
+   * one compact row. No IDs are removed, so the stable event handlers
+   * continue to work.
+   */
+  .sae-count-grid {
     width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    margin-top: 9px;
   }
 
-  .sae-next-card-compact {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
+  .sae-count-box {
+    min-width: 0;
+    padding: 5px;
+    border-radius: 9px;
+  }
+
+  .sae-count-title {
     align-items: center;
+    font-size: 0;
   }
 
-  .sae-next-card-compact .sae-next-stop-name {
+  .sae-count-box:first-child .sae-count-title::before {
+    content: "⬆️";
     font-size: 17px;
   }
 
-  .sae-next-card-compact .sae-next-data {
+  .sae-count-box:last-child .sae-count-title::before {
+    content: "⬇️";
+    font-size: 17px;
+  }
+
+  .sae-count-title span {
     font-size: 16px;
   }
 
-  .sae-map-buttons-compact {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    width: auto;
-    grid-template-columns: repeat(5, 38px);
+  .sae-count-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 4px;
+    margin-top: 4px;
   }
 
-  .sae-map-buttons-compact button {
-    width: 38px;
-    min-width: 38px;
-    height: 38px;
-  }
-}
-
-@media (max-width: 390px) {
-  .sae-header-actions {
-    grid-template-columns: auto;
+  .sae-count-controls button {
+    width: 100%;
+    min-width: 0;
+    height: 31px;
+    padding: 0;
+    font-size: 18px;
   }
 
-  .sae-header-actions .danger {
-    grid-column: 1;
+  .sae-validate-button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    font-size: 15px;
   }
 
-  .sae-count-inline-group {
-    grid-template-columns:
-      18px
-      minmax(28px, 1fr)
-      22px
-      minmax(28px, 1fr);
+  .sae-next-card > div:first-child {
+    min-width: 0;
+    flex: 1;
   }
 
-  .sae-map-buttons-compact {
-    grid-template-columns: repeat(5, 35px);
+  .sae-next-stop-name {
+    max-width: 100%;
+    margin-top: 3px;
+    font-size: 17px;
+    overflow-wrap: anywhere;
   }
 
-  .sae-map-buttons-compact button {
-    width: 35px;
-    min-width: 35px;
-    height: 35px;
+  .sae-next-data {
+    flex: 0 0 auto;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .sae-next-data strong {
+    display: none;
+  }
+
+  .sae-map-buttons {
+    top: 7px;
+    right: 7px;
+    max-width: calc(100% - 14px);
+    grid-template-columns: repeat(5, 37px);
+    grid-auto-flow: column;
+    overflow: visible;
+  }
+
+  .sae-map-buttons button {
+    width: 37px;
+    min-width: 37px;
+    height: 37px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  #saeZoomIn::after {
+    content: "+";
+    font-size: 20px;
+  }
+
+  #saeZoomOut::after {
+    content: "−";
+    font-size: 20px;
+  }
+
+  #saeFollowToggle::after {
+    content: "🎯";
+    font-size: 16px;
+  }
+
+  #saeOrientationToggle::after {
+    content: "🧭";
+    font-size: 16px;
+  }
+
+  #saeNorthUp::after {
+    content: "N";
+    font-size: 16px;
+  }
+
+  .sae-progress-header {
+    margin-bottom: 7px;
+    font-size: 12px;
+  }
+
+  .sae-stop-progress {
+    max-width: 100%;
+    padding: 5px 2px;
+  }
+
+  .sae-progress-stop {
+    min-width: 100px;
+    padding: 6px;
+    font-size: 11px;
   }
 }

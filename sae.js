@@ -21,7 +21,10 @@ const SAE = {
   orientationEnabled: true,
   bearing: 0,
   deviceHeading: null,
-  selectedNetwork: ""
+  selectedNetwork: "",
+  inferredNetwork: "",
+  inferredCommune: "",
+  automaticMatchSummary: null
 };
 
 function saeTodayIso() {
@@ -182,96 +185,588 @@ function saeSimilarity(left, right) {
   return 1 - saeEditDistance(a, b) / longest;
 }
 
-function inferSaeCourseContext(courseStops) {
-  const networkCounts = new Map();
-  const cityCounts = new Map();
 
-  for (const courseStop of courseStops) {
-    const wanted = saeMatchKey(courseStop.name);
+function saeCandidateSourceIsInRoute(stop) {
+  const network = saeMatchKey(stop?.reseau);
 
-    if (!wanted) continue;
-
-    const exact = stops.filter(stop => {
-      const candidate = saeMatchKey(stop.nom);
-      return candidate === wanted || candidate.includes(wanted) || wanted.includes(candidate);
-    }).slice(0, 8);
-
-    for (const candidate of exact) {
-      if (candidate.reseau) {
-        networkCounts.set(
-          candidate.reseau,
-          (networkCounts.get(candidate.reseau) || 0) + 1
-        );
-      }
-
-      if (candidate.commune) {
-        cityCounts.set(
-          candidate.commune,
-          (cityCounts.get(candidate.commune) || 0) + 1
-        );
-      }
-    }
+  if (network === "inroute") {
+    return true;
   }
 
-  const best = counts => [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])[0]?.[0] || "";
-
-  SAE.inferredNetwork = SAE.selectedCourse?.network || best(networkCounts);
-  SAE.inferredCommune = best(cityCounts);
+  return Array.isArray(stop?.sources) &&
+    stop.sources.some(source =>
+      saeMatchKey(source).includes("inroute")
+    );
 }
 
-function normalizedStopCandidates(name) {
+function saeStopCoordinates(stop) {
+  const lat = Number(stop?.lat);
+  const lon = Number(stop?.lon);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return null;
+  }
+
+  return { lat, lon };
+}
+
+function saeGeoDistance(left, right) {
+  const a = saeStopCoordinates(left);
+  const b = saeStopCoordinates(right);
+
+  if (!a || !b) {
+    return 9999;
+  }
+
+  return distanceKm(a, b);
+}
+
+function saeBearingBetween(left, right) {
+  const a = saeStopCoordinates(left);
+  const b = saeStopCoordinates(right);
+
+  if (!a || !b) {
+    return null;
+  }
+
+  const lat1 = a.lat * Math.PI / 180;
+  const lat2 = b.lat * Math.PI / 180;
+  const deltaLon = (b.lon - a.lon) * Math.PI / 180;
+
+  const y = Math.sin(deltaLon) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) -
+    Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
+
+  return normalizeBearing(Math.atan2(y, x) * 180 / Math.PI);
+}
+
+function saeTurnAngle(previous, current, next) {
+  const first = saeBearingBetween(previous, current);
+  const second = saeBearingBetween(current, next);
+
+  if (!Number.isFinite(first) || !Number.isFinite(second)) {
+    return 0;
+  }
+
+  return Math.abs(shortestBearingDelta(first, second));
+}
+
+function normalizedStopCandidates(name, maximum = 35) {
   const wanted = saeMatchKey(name);
 
-  if (!wanted) return [];
+  if (!wanted) {
+    return [];
+  }
 
   return stops
     .map(stop => {
       const candidate = saeMatchKey(stop.nom);
       let similarity = saeSimilarity(wanted, candidate);
 
-      if (candidate === wanted) similarity += 0.6;
-      else if (candidate.includes(wanted) || wanted.includes(candidate)) similarity += 0.25;
+      if (candidate === wanted) {
+        similarity += 0.65;
+      } else if (
+        candidate.includes(wanted) ||
+        wanted.includes(candidate)
+      ) {
+        similarity += 0.28;
+      }
 
-      return { stop, similarity };
+      return {
+        stop,
+        similarity
+      };
     })
-    // 0,52 tolère Kerroué/Kerrou� et Béchales/Bécharles,
-    // sans proposer toute la base Bretagne.
-    .filter(item => item.similarity >= 0.52)
-    .sort((a, b) => b.similarity - a.similarity)
-    .slice(0, 35)
+    .filter(item => item.similarity >= 0.50)
+    .sort((left, right) => right.similarity - left.similarity)
+    .slice(0, maximum)
     .map(item => item.stop);
 }
 
-function rankStopCandidate(candidate, courseStop) {
-  let score = saeSimilarity(candidate.nom, courseStop.name) * 100;
+function saeNetworkCoverage(courseStops) {
+  const networks = new Map();
 
-  if (saeMatchKey(candidate.nom) === saeMatchKey(courseStop.name)) {
-    score += 100;
+  courseStops.forEach(courseStop => {
+    const candidates = normalizedStopCandidates(courseStop.name, 45);
+    const seenForThisStop = new Set();
+
+    candidates.forEach(candidate => {
+      const network = String(candidate.reseau || "").trim();
+
+      if (!network || saeCandidateSourceIsInRoute(candidate)) {
+        return;
+      }
+
+      const key = saeMatchKey(network);
+
+      if (seenForThisStop.has(key)) {
+        return;
+      }
+
+      seenForThisStop.add(key);
+
+      const current = networks.get(network) || {
+        network,
+        coveredStops: 0,
+        exactStops: 0,
+        similarityTotal: 0
+      };
+
+      const similarity = saeSimilarity(
+        candidate.nom,
+        courseStop.name
+      );
+
+      current.coveredStops += 1;
+      current.similarityTotal += similarity;
+
+      if (
+        saeMatchKey(candidate.nom) ===
+        saeMatchKey(courseStop.name)
+      ) {
+        current.exactStops += 1;
+      }
+
+      networks.set(network, current);
+    });
+  });
+
+  const totalStops = Math.max(1, courseStops.length);
+
+  return [...networks.values()]
+    .map(item => ({
+      ...item,
+      coverage: item.coveredStops / totalStops,
+      averageSimilarity:
+        item.coveredStops
+          ? item.similarityTotal / item.coveredStops
+          : 0,
+      score:
+        item.coveredStops * 100 +
+        item.exactStops * 18 +
+        item.averageSimilarity * 25
+    }))
+    .sort((left, right) => right.score - left.score);
+}
+
+function inferSaeCourseContext(courseStops) {
+  const coverage = saeNetworkCoverage(courseStops);
+  const explicitNetwork =
+    String(SAE.selectedCourse?.network || "").trim();
+
+  let inferredNetwork = explicitNetwork;
+
+  if (!inferredNetwork && coverage.length) {
+    const best = coverage[0];
+    const second = coverage[1];
+
+    const clearlyDominant =
+      best.coverage >= 0.80 &&
+      (
+        !second ||
+        best.coveredStops >= second.coveredStops + 2 ||
+        best.score >= second.score + 80
+      );
+
+    if (clearlyDominant || best.coverage === 1) {
+      inferredNetwork = best.network;
+    }
   }
 
-  const expectedCity = courseStop.commune || SAE.inferredCommune;
-  const expectedNetwork = SAE.selectedCourse?.network || SAE.inferredNetwork;
+  SAE.inferredNetwork = inferredNetwork;
+  SAE.selectedNetwork = inferredNetwork;
+
+  const communeCounts = new Map();
+
+  courseStops.forEach(courseStop => {
+    normalizedStopCandidates(courseStop.name, 12)
+      .filter(candidate =>
+        !inferredNetwork ||
+        saeMatchKey(candidate.reseau) === saeMatchKey(inferredNetwork) ||
+        saeCandidateSourceIsInRoute(candidate)
+      )
+      .forEach(candidate => {
+        const commune = String(candidate.commune || "").trim();
+
+        if (commune) {
+          communeCounts.set(
+            commune,
+            (communeCounts.get(commune) || 0) + 1
+          );
+        }
+      });
+  });
+
+  SAE.inferredCommune =
+    [...communeCounts.entries()]
+      .sort((left, right) => right[1] - left[1])[0]?.[0] ||
+    "";
+
+  return coverage;
+}
+
+function rankStopCandidate(candidate, courseStop, network) {
+  let score =
+    saeSimilarity(candidate.nom, courseStop.name) * 115;
 
   if (
-    expectedCity &&
-    saeMatchKey(candidate.commune) === saeMatchKey(expectedCity)
+    saeMatchKey(candidate.nom) ===
+    saeMatchKey(courseStop.name)
   ) {
-    score += 35;
+    score += 115;
+  }
+
+  if (network) {
+    if (
+      saeMatchKey(candidate.reseau) ===
+      saeMatchKey(network)
+    ) {
+      score += 70;
+    } else if (saeCandidateSourceIsInRoute(candidate)) {
+      score += 22;
+    } else {
+      score -= 85;
+    }
   }
 
   if (
-    expectedNetwork &&
-    saeMatchKey(candidate.reseau) === saeMatchKey(expectedNetwork)
+    courseStop.commune &&
+    saeMatchKey(candidate.commune) ===
+    saeMatchKey(courseStop.commune)
   ) {
-    score += 45;
+    score += 38;
   }
 
   if (candidate.verified_terrain || candidate.trusted) {
     score += 12;
   }
 
+  if (candidate.direction) {
+    score += 3;
+  }
+
   return score;
+}
+
+function saeBuildCandidateSets(courseStops, network) {
+  return courseStops.map(courseStop => {
+    let candidates = normalizedStopCandidates(
+      courseStop.name,
+      45
+    );
+
+    if (network) {
+      const networkCandidates = candidates.filter(candidate =>
+        saeMatchKey(candidate.reseau) === saeMatchKey(network)
+      );
+
+      const inRouteCandidates = candidates.filter(
+        saeCandidateSourceIsInRoute
+      );
+
+      const allowed = [
+        ...networkCandidates,
+        ...inRouteCandidates
+      ];
+
+      if (allowed.length) {
+        const unique = new Map();
+
+        allowed.forEach(candidate =>
+          unique.set(String(candidate.id), candidate)
+        );
+
+        candidates = [...unique.values()];
+      }
+    }
+
+    return candidates
+      .sort(
+        (left, right) =>
+          rankStopCandidate(right, courseStop, network) -
+          rankStopCandidate(left, courseStop, network)
+      )
+      .slice(0, 12);
+  });
+}
+
+function saeCandidateLocalCost(candidate, courseStop, network) {
+  const ranking = rankStopCandidate(
+    candidate,
+    courseStop,
+    network
+  );
+
+  return Math.max(0, 250 - ranking);
+}
+
+function saeTransitionCost(previous, current) {
+  const distance = saeGeoDistance(previous, current);
+
+  if (!Number.isFinite(distance)) {
+    return 500;
+  }
+
+  // A scheduled urban/interurban stop sequence should normally
+  // progress by short or moderate jumps. Very long jumps are possible,
+  // but receive a progressive penalty.
+  let cost = distance * 2.2;
+
+  if (distance > 25) {
+    cost += (distance - 25) * 5;
+  }
+
+  return cost;
+}
+
+function saeTurnPenalty(previous, current, next) {
+  if (!previous || !current || !next) {
+    return 0;
+  }
+
+  const angle = saeTurnAngle(previous, current, next);
+  const firstLeg = saeGeoDistance(previous, current);
+  const secondLeg = saeGeoDistance(current, next);
+  const direct = saeGeoDistance(previous, next);
+
+  let penalty = 0;
+
+  // Strongly discourage a near U-turn.
+  if (angle >= 155) {
+    penalty += 150;
+  } else if (angle >= 125) {
+    penalty += 65;
+  } else if (angle >= 100) {
+    penalty += 20;
+  }
+
+  // If the two legs are much longer than the direct progression,
+  // the chosen stop is probably on the wrong side or wrong branch.
+  if (
+    Number.isFinite(firstLeg) &&
+    Number.isFinite(secondLeg) &&
+    Number.isFinite(direct) &&
+    firstLeg + secondLeg > direct * 2.6 + 0.8
+  ) {
+    penalty += Math.min(
+      120,
+      (firstLeg + secondLeg - direct) * 16
+    );
+  }
+
+  return penalty;
+}
+
+function saeOptimizeCandidateSequence(
+  courseStops,
+  candidateSets,
+  network
+) {
+  if (!candidateSets.length) {
+    return [];
+  }
+
+  /*
+   * Beam search with the two previous choices retained.
+   * This allows the score to detect route reversals and incoherent
+   * zigzags without making the browser evaluate every combination.
+   */
+  let beam = candidateSets[0].map(candidate => ({
+    choices: [candidate],
+    cost: saeCandidateLocalCost(
+      candidate,
+      courseStops[0],
+      network
+    )
+  }));
+
+  beam.sort((left, right) => left.cost - right.cost);
+  beam = beam.slice(0, 45);
+
+  for (let index = 1; index < candidateSets.length; index++) {
+    const nextBeam = [];
+
+    for (const state of beam) {
+      const previous =
+        state.choices[state.choices.length - 1];
+      const beforePrevious =
+        state.choices[state.choices.length - 2] || null;
+
+      for (const candidate of candidateSets[index]) {
+        let cost = state.cost;
+
+        cost += saeCandidateLocalCost(
+          candidate,
+          courseStops[index],
+          network
+        );
+
+        cost += saeTransitionCost(previous, candidate);
+
+        cost += saeTurnPenalty(
+          beforePrevious,
+          previous,
+          candidate
+        );
+
+        nextBeam.push({
+          choices: [...state.choices, candidate],
+          cost
+        });
+      }
+    }
+
+    nextBeam.sort((left, right) => left.cost - right.cost);
+    beam = nextBeam.slice(0, 55);
+
+    if (!beam.length) {
+      break;
+    }
+  }
+
+  return beam[0]?.choices || [];
+}
+
+function saeAutomaticConfidence(
+  courseStop,
+  selected,
+  candidates,
+  network
+) {
+  if (!selected) {
+    return 0;
+  }
+
+  const selectedScore = rankStopCandidate(
+    selected,
+    courseStop,
+    network
+  );
+
+  const alternatives = candidates
+    .filter(candidate =>
+      String(candidate.id) !== String(selected.id)
+    )
+    .map(candidate =>
+      rankStopCandidate(candidate, courseStop, network)
+    )
+    .sort((left, right) => right - left);
+
+  const margin =
+    selectedScore - (alternatives[0] ?? selectedScore - 40);
+
+  const baseSimilarity =
+    saeSimilarity(selected.nom, courseStop.name);
+
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        baseSimilarity * 70 +
+        Math.max(0, Math.min(30, margin / 2))
+      )
+    )
+  );
+}
+
+function saeAutomaticMatchCourse(course) {
+  const coverage = inferSaeCourseContext(course.stops);
+  const network = SAE.inferredNetwork;
+  const candidateSets = saeBuildCandidateSets(
+    course.stops,
+    network
+  );
+
+  const choices = saeOptimizeCandidateSequence(
+    course.stops,
+    candidateSets,
+    network
+  );
+
+  const matchedStops = course.stops.map(
+    (courseStop, index) => {
+      const selected = choices[index] || candidateSets[index][0];
+      const confidence = saeAutomaticConfidence(
+        courseStop,
+        selected,
+        candidateSets[index],
+        network
+      );
+
+      return {
+        ...courseStop,
+        matched_stop_id: selected?.id || null,
+        lat: selected ? Number(selected.lat) : null,
+        lon: selected ? Number(selected.lon) : null,
+        commune:
+          courseStop.commune ||
+          selected?.commune ||
+          "",
+        candidates: candidateSets[index],
+        automatic_confidence: confidence
+      };
+    }
+  );
+
+  const recognized = matchedStops.filter(stop =>
+    stop.matched_stop_id
+  ).length;
+
+  const uncertain = matchedStops.filter(stop =>
+    !stop.matched_stop_id ||
+    stop.automatic_confidence < 70
+  ).length;
+
+  SAE.automaticMatchSummary = {
+    network,
+    recognized,
+    total: matchedStops.length,
+    uncertain,
+    coverage
+  };
+
+  return matchedStops;
+}
+
+function saeAutomaticSummaryHtml() {
+  const summary = SAE.automaticMatchSummary;
+
+  if (!summary) {
+    return "";
+  }
+
+  const networkLabel =
+    summary.network ||
+    "aucun réseau dominant";
+
+  const warning =
+    summary.uncertain > 0
+      ? `<strong>${summary.uncertain}</strong> proposition(s) à vérifier.`
+      : "Toutes les propositions paraissent cohérentes.";
+
+  return `
+    <div class="sae-auto-summary">
+      <div>
+        <strong>Proposition automatique</strong>
+        <span class="sae-auto-network">
+          Réseau : ${escapeHtml(networkLabel)}
+        </span>
+      </div>
+
+      <div>
+        ${summary.recognized}/${summary.total} arrêts reconnus.
+        ${warning}
+      </div>
+
+      <small>
+        Le parcours a été comparé dans son ensemble pour limiter
+        les détours, retours en arrière et demi-tours.
+        Chaque choix reste modifiable.
+      </small>
+    </div>
+  `;
 }
 
 async function prepareSaeCourse(courseId) {
@@ -281,36 +776,13 @@ async function prepareSaeCourse(courseId) {
     );
 
     SAE.selectedCourse = course;
-    inferSaeCourseContext(course.stops);
 
-    SAE.matchedStops = course.stops.map(courseStop => {
-      if (
-        Number.isFinite(Number(courseStop.lat)) &&
-        Number.isFinite(Number(courseStop.lon))
-      ) {
-        return {
-          ...courseStop,
-          matched_stop_id: courseStop.matched_stop_id || null
-        };
-      }
-
-      const candidates = normalizedStopCandidates(courseStop.name)
-        .sort(
-          (a, b) =>
-            rankStopCandidate(b, courseStop) -
-            rankStopCandidate(a, courseStop)
-        );
-
-      const best = candidates[0];
-
-      return {
-        ...courseStop,
-        matched_stop_id: best?.id || null,
-        lat: best ? Number(best.lat) : null,
-        lon: best ? Number(best.lon) : null,
-        candidates
-      };
-    });
+    /*
+     * Previously confirmed coordinates stay available in the candidate
+     * pool, but the whole course is evaluated again so that a stale or
+     * incoherent match cannot force a bad itinerary.
+     */
+    SAE.matchedStops = saeAutomaticMatchCourse(course);
 
     populateSaeNetworkFilter();
     renderSaeMatches();
@@ -383,7 +855,10 @@ function populateSaeNetworkFilter() {
       </option>
     `).join("");
 
-  const dominant = SAE.selectedCourse?.network || "";
+  const dominant =
+    SAE.selectedCourse?.network ||
+    SAE.inferredNetwork ||
+    "";
 
   if (
     dominant &&
@@ -399,7 +874,9 @@ function populateSaeNetworkFilter() {
 }
 
 function renderSaeMatches() {
-  $("saeMatchList").innerHTML = SAE.matchedStops.map((stop, index) => {
+  $("saeMatchList").innerHTML =
+    saeAutomaticSummaryHtml() +
+    SAE.matchedStops.map((stop, index) => {
     const candidates = filteredSaeCandidates(stop);
 
     return `
@@ -410,6 +887,19 @@ function renderSaeMatches() {
           </div>
           <div class="sae-match-time">
             ${escapeHtml(stop.scheduled_time || "—")}
+            ${
+              stop.automatic_confidence !== undefined
+                ? `<span class="sae-confidence ${
+                    stop.automatic_confidence >= 85
+                      ? "high"
+                      : stop.automatic_confidence >= 70
+                        ? "medium"
+                        : "low"
+                  }">
+                    ${stop.automatic_confidence} %
+                  </span>`
+                : ""
+            }
           </div>
         </div>
 
@@ -1135,6 +1625,57 @@ $("saeNorthUp").addEventListener("click", () => {
 
 $("saeNetworkFilter").addEventListener("change", event => {
   SAE.selectedNetwork = event.target.value;
+  SAE.inferredNetwork = event.target.value;
+
+  const candidateSets = saeBuildCandidateSets(
+    SAE.selectedCourse.stops,
+    SAE.selectedNetwork
+  );
+
+  const choices = saeOptimizeCandidateSequence(
+    SAE.selectedCourse.stops,
+    candidateSets,
+    SAE.selectedNetwork
+  );
+
+  SAE.matchedStops = SAE.selectedCourse.stops.map(
+    (courseStop, index) => {
+      const selected = choices[index] || candidateSets[index][0];
+
+      return {
+        ...courseStop,
+        matched_stop_id: selected?.id || null,
+        lat: selected ? Number(selected.lat) : null,
+        lon: selected ? Number(selected.lon) : null,
+        commune:
+          courseStop.commune ||
+          selected?.commune ||
+          "",
+        candidates: candidateSets[index],
+        automatic_confidence: saeAutomaticConfidence(
+          courseStop,
+          selected,
+          candidateSets[index],
+          SAE.selectedNetwork
+        )
+      };
+    }
+  );
+
+  SAE.automaticMatchSummary = {
+    network: SAE.selectedNetwork,
+    recognized: SAE.matchedStops.filter(
+      stop => stop.matched_stop_id
+    ).length,
+    total: SAE.matchedStops.length,
+    uncertain: SAE.matchedStops.filter(
+      stop =>
+        !stop.matched_stop_id ||
+        stop.automatic_confidence < 70
+    ).length,
+    coverage: []
+  };
+
   renderSaeMatches();
 });
 
