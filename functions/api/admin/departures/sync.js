@@ -309,85 +309,97 @@ export async function onRequestPost(context) {
     }
 
     const servicePages = await allDatabasePages(dbId, token);
-    const existingDuties = await db.prepare(
-      `SELECT notion_page_id, driver_name, vehicle_registration, qub_reference
-       FROM duty_services
-       WHERE service_date = ?`
-    ).bind(date).all();
+    const offset = Math.max(0, Number(body.offset || 0));
+    const reset = body.reset === true;
 
-    const dutyByPage = new Map(
-      (existingDuties.results || []).map(row => [row.notion_page_id, row])
-    );
-
-    const rows = [];
-    const courseCache = new Map();
-
-    for (const servicePage of servicePages) {
-      const properties = servicePage.properties || {};
-      const duty = dutyByPage.get(servicePage.id) || {};
-
-      const courseEntries = Object.entries(properties)
-        .map(([name, property]) => {
-          const match = name.match(/^Course\s*(\d+)$/i);
-          return match ? {
-            index: Number(match[1]),
-            property
-          } : null;
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.index - b.index);
-
-      for (const entry of courseEntries) {
-        const coursePageId = relationIds(entry.property)[0];
-        if (!coursePageId) continue;
-
-        const scheduleProperty =
-          properties[`Horaire ${entry.index}`] ||
-          properties[`Horaire${entry.index}`];
-
-        let departureTime = departureTimeFromProperty(scheduleProperty);
-
-        let course = courseCache.get(coursePageId);
-        if (!course) {
-          course = await parseCoursePage(coursePageId, token);
-          courseCache.set(coursePageId, course);
-        }
-
-        if (!course.stops.length) continue;
-        if (!departureTime) departureTime = course.stops[0].time;
-
-        const originName = course.stops[0]?.name || "";
-        const arrivalTime = course.stops.at(-1)?.time || "";
-
-        rows.push({
-          id: `departure-${date}-${servicePage.id}-${entry.index}`,
-          source_service_page_id: servicePage.id,
-          course_index: entry.index,
-          course_page_id: coursePageId,
-          departure_time: departureTime,
-          course_name: course.name,
-          origin_name: originName,
-          arrival_time: arrivalTime,
-          driver_name: duty.driver_name || "",
-          vehicle_registration: duty.vehicle_registration || "",
-          qub_reference: duty.qub_reference || "",
-          stops_json: JSON.stringify(course.stops)
-        });
-      }
-    }
-
-    const ids = rows.map(row => row.id);
-    if (ids.length) {
-      const placeholders = ids.map(() => "?").join(",");
-      await db.prepare(
-        `DELETE FROM daily_departures
-         WHERE service_date = ? AND id NOT IN (${placeholders})`
-      ).bind(date, ...ids).run();
-    } else {
+    if (reset) {
       await db.prepare(
         "DELETE FROM daily_departures WHERE service_date = ?"
       ).bind(date).run();
     }
+
+    if (offset >= servicePages.length) {
+      return json({
+        date,
+        profile: resolution.profile,
+        profile_label: resolution.label,
+        imported: 0,
+        processed: offset,
+        total_services: servicePages.length,
+        done: true,
+        next_offset: null
+      });
+    }
+
+    const servicePage = servicePages[offset];
+
+    const duty = await db.prepare(
+      `SELECT driver_name, vehicle_registration, qub_reference
+       FROM duty_services
+       WHERE service_date = ?
+         AND notion_page_id = ?
+       LIMIT 1`
+    ).bind(date, servicePage.id).first() || {};
+
+    const properties = servicePage.properties || {};
+    const rows = [];
+    const courseCache = new Map();
+
+    const courseEntries = Object.entries(properties)
+      .map(([name, property]) => {
+        const match = name.match(/^Course\s*(\d+)$/i);
+        return match ? {
+          index: Number(match[1]),
+          property
+        } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.index - b.index);
+
+    for (const entry of courseEntries) {
+      const coursePageId = relationIds(entry.property)[0];
+      if (!coursePageId) continue;
+
+      const scheduleProperty =
+        properties[`Horaire ${entry.index}`] ||
+        properties[`Horaire${entry.index}`];
+
+      let departureTime = departureTimeFromProperty(scheduleProperty);
+
+      let course = courseCache.get(coursePageId);
+      if (!course) {
+        course = await parseCoursePage(coursePageId, token);
+        courseCache.set(coursePageId, course);
+      }
+
+      if (!course.stops.length) continue;
+      if (!departureTime) departureTime = course.stops[0].time;
+
+      rows.push({
+        id: `departure-${date}-${servicePage.id}-${entry.index}`,
+        source_service_page_id: servicePage.id,
+        course_index: entry.index,
+        course_page_id: coursePageId,
+        departure_time: departureTime,
+        course_name: course.name,
+        origin_name: course.stops[0]?.name || "",
+        arrival_time: course.stops.at(-1)?.time || "",
+        driver_name: duty.driver_name || "",
+        vehicle_registration: duty.vehicle_registration || "",
+        qub_reference: duty.qub_reference || "",
+        stops_json: JSON.stringify(course.stops)
+      });
+    }
+
+    /*
+     * Replace only the departures belonging to the current service.
+     * Other services are handled by subsequent invocations.
+     */
+    await db.prepare(
+      `DELETE FROM daily_departures
+       WHERE service_date = ?
+         AND source_service_page_id = ?`
+    ).bind(date, servicePage.id).run();
 
     for (const row of rows) {
       await db.prepare(
@@ -421,11 +433,17 @@ export async function onRequestPost(context) {
       ).run();
     }
 
+    const nextOffset = offset + 1;
+
     return json({
       date,
       profile: resolution.profile,
       profile_label: resolution.label,
-      imported: rows.length
+      imported: rows.length,
+      processed: nextOffset,
+      total_services: servicePages.length,
+      done: nextOffset >= servicePages.length,
+      next_offset: nextOffset >= servicePages.length ? null : nextOffset
     });
   } catch (exception) {
     return error(exception.message, 500);

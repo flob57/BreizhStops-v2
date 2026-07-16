@@ -232,21 +232,49 @@ async function load() {
 
 async function syncAll() {
   showMessage("Synchronisation des prises de service…");
+
   try {
     await api("/api/admin/duties/sync", {
       method: "POST",
       body: JSON.stringify({ date: state.date })
     });
 
-    showMessage("Lecture des courses et fiches horaires Notion…");
-    const result = await api("/api/admin/departures/sync", {
-      method: "POST",
-      body: JSON.stringify({ date: state.date })
-    });
+    let offset = 0;
+    let totalImported = 0;
+    let done = false;
+    let profileLabel = "";
 
-    $("profileLabel").textContent = `Base du jour : ${result.profile_label}`;
+    while (!done) {
+      showMessage(
+        offset === 0
+          ? "Lecture des courses et fiches horaires Notion…"
+          : `Synchronisation Notion : service ${offset + 1}…`
+      );
+
+      const result = await api("/api/admin/departures/sync", {
+        method: "POST",
+        body: JSON.stringify({
+          date: state.date,
+          offset,
+          reset: offset === 0
+        })
+      });
+
+      totalImported += Number(result.imported || 0);
+      profileLabel = result.profile_label || profileLabel;
+      done = result.done === true;
+      offset = result.next_offset ?? result.total_services ?? offset + 1;
+
+      if (!done) {
+        await new Promise(resolve => setTimeout(resolve, 120));
+      }
+    }
+
+    $("profileLabel").textContent =
+      `Base du jour : ${profileLabel || "synchronisée"}`;
+
     await load();
-    showMessage(`${result.imported} course(s) synchronisée(s).`);
+    showMessage(`${totalImported} course(s) synchronisée(s).`);
   } catch (error) {
     showMessage(error.message, true);
   }
