@@ -253,16 +253,25 @@ async function relationPageText(
 }
 
 async function propertyText(property, token, options = {}) {
+  if (!property) {
+    return "";
+  }
+
   const simple = basicPropertyText(property);
 
   if (simple) {
     return simple;
   }
 
-  if (property?.type === "relation") {
+  const depth = options.depth || 0;
+  const visited = options.visited || new Set();
+
+  if (depth > 6) {
+    return "";
+  }
+
+  if (property.type === "relation") {
     const values = [];
-    const depth = options.depth || 0;
-    const visited = options.visited || new Set();
 
     for (const relation of property.relation || []) {
       const value = await relationPageText(
@@ -279,6 +288,82 @@ async function propertyText(property, token, options = {}) {
     }
 
     return values.join(", ");
+  }
+
+  if (property.type === "rollup") {
+    const rollup = property.rollup;
+
+    if (!rollup) {
+      return "";
+    }
+
+    if (rollup.type === "array") {
+      const values = [];
+
+      for (const item of rollup.array || []) {
+        /*
+         * Notion renvoie les éléments d’un rollup sous la même forme
+         * que des propriétés : relation, title, rich_text, etc.
+         */
+        const value = await propertyText(
+          item,
+          token,
+          {
+            ...options,
+            depth: depth + 1,
+            visited
+          }
+        );
+
+        if (value) {
+          value
+            .split(",")
+            .map(part => part.trim())
+            .filter(Boolean)
+            .forEach(part => {
+              if (!values.includes(part)) {
+                values.push(part);
+              }
+            });
+        }
+      }
+
+      return values.join(", ");
+    }
+
+    if (rollup.type === "number") {
+      return rollup.number === null || rollup.number === undefined
+        ? ""
+        : String(rollup.number);
+    }
+
+    if (rollup.type === "date") {
+      return rollup.date?.start || "";
+    }
+
+    return "";
+  }
+
+  if (property.type === "formula") {
+    const formula = property.formula || {};
+
+    if (formula.type === "string") {
+      return formula.string || "";
+    }
+
+    if (formula.type === "number") {
+      return formula.number === null || formula.number === undefined
+        ? ""
+        : String(formula.number);
+    }
+
+    if (formula.type === "boolean") {
+      return formula.boolean ? "Oui" : "Non";
+    }
+
+    if (formula.type === "date") {
+      return formula.date?.start || "";
+    }
   }
 
   return "";
@@ -492,13 +577,43 @@ export async function onRequestPost(context) {
 
       const psTime = await propertyText(properties["PS"], token);
       const qubReference = await propertyText(properties["QUB"], token);
-      const driverName = await propertyText(
+      let driverName = await propertyText(
         properties["Conducteur"],
         token,
         {
           preferredProperty: "Conducteur"
         }
       );
+
+      /*
+       * Certaines bases Notion exposent Conducteur comme un rollup :
+       * Véhicule -> Affectation -> Conducteur.
+       * Si le rollup est vide côté API, on suit directement les relations
+       * disponibles sur la ligne jusqu’à trouver une propriété Conducteur.
+       */
+      if (!driverName) {
+        const relationProperties = Object.entries(properties)
+          .filter(([, property]) =>
+            property?.type === "relation" &&
+            Array.isArray(property.relation) &&
+            property.relation.length > 0
+          );
+
+        for (const [, relationProperty] of relationProperties) {
+          const candidate = await propertyText(
+            relationProperty,
+            token,
+            {
+              preferredProperty: "Conducteur"
+            }
+          );
+
+          if (candidate) {
+            driverName = candidate;
+            break;
+          }
+        }
+      }
       const firstCourse = await propertyText(properties["Course 1"], token);
       const vehicleRegistration = await propertyText(
         properties["Véhicule"],

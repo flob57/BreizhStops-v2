@@ -147,10 +147,10 @@ Nouvelle page `prises-service.html` :
 - présentation PC et smartphone.
 
 
-## V6.1 — Gestion du dépôt
+## V6.2 — Gestion du dépôt
 
 Cette version corrige les chemins d’import des nouvelles fonctions
-Cloudflare Pages et affiche le numéro `V6.1` à côté du nom BreizhStops.
+Cloudflare Pages et affiche le numéro `V6.2` à côté du nom BreizhStops.
 
 Fonctions incluses :
 
@@ -163,7 +163,7 @@ Fonctions incluses :
 - historique conservé dans D1.
 
 
-## V6.1 — résolution des conducteurs
+## V6.2 — résolution des conducteurs
 
 Le synchroniseur suit désormais les relations Notion imbriquées :
 
@@ -176,3 +176,24 @@ Prise de service
 
 Un cache évite les appels répétés pour les mêmes pages Notion.
 Aucune modification D1 supplémentaire n’est nécessaire.
+
+
+## V6.2 — Conducteur via rollup Notion
+
+Correction du champ Conducteur lorsque Notion le calcule ainsi :
+
+```text
+Prise de service
+→ relation Véhicule
+→ propriété Affectation
+→ relation Conducteur
+→ nom du conducteur
+```
+
+Le synchroniseur sait maintenant résoudre récursivement :
+
+- les relations ;
+- les rollups contenant des relations ;
+- les relations imbriquées sur plusieurs niveaux.
+
+Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
