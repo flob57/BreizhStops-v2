@@ -2,7 +2,7 @@ import {
   json,
   error,
   requireDb
-} from "../../../_lib.js";
+} from "../../../../_lib.js";
 
 export async function onRequestDelete(context) {
   try {

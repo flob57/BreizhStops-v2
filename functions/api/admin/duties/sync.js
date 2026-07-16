@@ -3,7 +3,7 @@ import {
   error,
   requireDb,
   createId
-} from "../../_lib.js";
+} from "../../../_lib.js";
 
 const NOTION_VERSION = "2022-06-28";
 const PAGE_CACHE = new Map();

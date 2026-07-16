@@ -2,7 +2,7 @@ import {
   json,
   error,
   requireDb
-} from "../_lib.js";
+} from "../../_lib.js";
 
 function parisDate(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {

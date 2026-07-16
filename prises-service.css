@@ -446,3 +446,16 @@ dialog::backdrop {
     grid-column: 1;
   }
 }
+
+
+.duty-version {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 2px 6px;
+  border: 1px solid #516158;
+  border-radius: 999px;
+  color: #b9c6bf;
+  font-size: 9px;
+  line-height: 1.2;
+  vertical-align: middle;
+}

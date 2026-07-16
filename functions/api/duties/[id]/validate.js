@@ -3,7 +3,7 @@ import {
   error,
   requireDb,
   createId
-} from "../../_lib.js";
+} from "../../../_lib.js";
 
 export async function onRequestPost(context) {
   try {
