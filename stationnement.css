@@ -1,0 +1,63 @@
+:root{
+  color-scheme:dark;
+  --bg:#050806;
+  --panel:#0e1510;
+  --panel2:#131d15;
+  --line:#334238;
+  --green:#7be12d;
+  --free:#27883c;
+  --occupied:#a52b27;
+  --danger:#ff2117;
+  --neutral:#626b65;
+  --text:#f5f8f5;
+  --muted:#aeb9b1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,a{font:inherit}
+.parking-header{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:18px max(18px,calc((100% - 1320px)/2));border-bottom:1px solid var(--line);background:#071009}
+.back-link{display:inline-block;margin-bottom:10px;color:#dce5df;text-decoration:none}
+.title-line{display:flex;align-items:center;gap:13px}
+.parking-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:10px;background:#2379ba;color:#fff;font-size:29px;font-weight:900}
+h1,h2,p{margin:0}
+h1{font-size:27px} h1 small{padding:3px 7px;border:1px solid #526159;border-radius:999px;font-size:10px;color:#bac5bd}
+.title-line p{margin-top:4px;color:var(--muted);font-size:13px}
+.header-summary{text-align:right}.header-summary strong,.header-summary span{display:block}.header-summary strong{font-size:28px;color:var(--green)}.header-summary span{color:var(--muted);font-size:12px}
+main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:16px}
+.toolbar-actions{display:flex;gap:8px;flex-wrap:wrap}
+.toolbar button,.tab{border:1px solid #425147;border-radius:10px;padding:11px 15px;background:#151f18;color:#fff;font-weight:800;cursor:pointer}
+.toolbar button:first-child{background:var(--green);color:#071005;border-color:var(--green)}
+.last-update{color:var(--muted);font-size:12px}
+.message{margin:12px 0;padding:13px 15px;border-radius:10px;background:#173150;color:#eaf4ff}.message.error{background:#541e1e}
+.tabs{display:flex;gap:8px;margin-bottom:15px;overflow:auto}.tab.active{background:var(--green);color:#071005;border-color:var(--green)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.panel-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;margin:12px 0}
+.panel-heading span{color:var(--green);font-size:10px;font-weight:900;letter-spacing:.15em}.panel-heading h2{font-size:31px}
+.panel-stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.stat-chip{padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:#101712;color:#dfe8e2;font-size:12px}
+.depot-plan{position:relative;min-height:720px;overflow:hidden;border:1px solid #405046;border-radius:18px;background:#727872;box-shadow:0 24px 55px rgba(0,0,0,.27)}
+.building{position:absolute;display:grid;place-items:center;background:#315d9f;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.07)}
+.lestonan-building{left:21%;top:5%;width:40%;height:42%;font-size:28px}.lestonan-building span{font-size:16px}
+.gourvily-building{left:0;bottom:2%;width:55%;height:35%;font-size:30px}
+.facility{position:absolute;display:grid;place-items:center;padding:5px;background:#d7dfd8;color:#27312a;border:2px solid #5b685e;text-align:center;font-size:12px;font-weight:800}
+.office{left:55%;top:25%;width:8%;height:15%}.wash{left:73%;top:13%;width:5%;height:30%;writing-mode:vertical-rl}.adblue{left:68%;top:13%;width:5%;height:13%;background:#9eb4db}.local{left:46%;bottom:2%;width:10%;height:10%;background:#a8cf7e}.algeco{left:56%;bottom:14%;width:7%;height:11%;background:#b9d69c}.gourvily-vl-zone{left:64%;bottom:2%;width:7%;height:27%;background:#e0e2dd}
+.traffic-arrow{position:absolute;color:#71b744;font-size:70px;font-weight:900;text-shadow:0 2px 0 #315d9f}.arrow-left{left:34%;top:-1%}.arrow-down{left:9%;top:16%}.arrow-up{right:8%;top:28%}.arrow-exit{right:21%;bottom:6%}
+.trees{position:absolute;background:radial-gradient(ellipse at center,#3b8e2c 0 44%,transparent 47%) 0 0/80px 45px repeat-x}.top-trees{left:0;right:0;top:0;height:55px}.right-trees{right:0;top:12%;bottom:0;width:55px;background:radial-gradient(ellipse at center,#3b8e2c 0 44%,transparent 47%) 0 0/45px 75px repeat-y}
+.parking-spot{position:absolute;z-index:4;display:flex;flex-direction:column;justify-content:center;min-width:84px;min-height:72px;padding:8px;border:3px solid rgba(255,255,255,.82);border-radius:9px;background:var(--neutral);box-shadow:0 7px 16px rgba(0,0,0,.28);transition:.18s}
+.parking-spot.free.standard{background:var(--free)}.parking-spot.occupied{background:var(--occupied)}.parking-spot.free.neutral{background:var(--neutral)}.parking-spot.occupied.overload{background:var(--danger);box-shadow:0 0 0 5px rgba(255,33,23,.25),0 8px 22px rgba(0,0,0,.4);animation:dangerPulse 1.35s infinite}.parking-spot.occupied.overload::before{content:"⚠";position:absolute;right:-11px;top:-15px;font-size:26px}
+@keyframes dangerPulse{50%{filter:brightness(1.32);transform:scale(1.025)}}
+.spot-head{display:flex;justify-content:space-between;gap:5px;align-items:flex-start}.spot-name{font-size:11px;text-transform:uppercase}.spot-state{font-size:9px;opacity:.85}
+.spot-vehicles{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}.vehicle-badge{display:inline-flex;align-items:center;gap:3px;padding:4px 6px;border-radius:5px;background:rgba(0,0,0,.58);color:#fff;font-size:11px;font-weight:900}.empty-label{font-size:10px;color:rgba(255,255,255,.78)}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.legend-item{display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:#101712;color:#dce5df;font-size:11px}.legend-color{width:13px;height:13px;border-radius:4px}
+.external-groups{display:grid;gap:18px}.external-group{padding:18px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#111a13,#090e0a)}.external-group h3{margin:0 0 12px;font-size:20px}.external-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.external-card{padding:13px;border:1px solid #3b493f;border-radius:12px;background:#141e16}.external-card h4{margin:0 0 9px}.external-card .spot-vehicles{margin:0}
+@media(max-width:850px){
+ .parking-header,.toolbar,.panel-heading{align-items:flex-start;flex-direction:column}
+ .header-summary{text-align:left}
+ .depot-plan{min-height:680px;overflow:auto}
+ .parking-spot{transform:scale(.82);transform-origin:center}
+}
+@media(max-width:520px){
+ main{width:calc(100% - 14px)}
+ .depot-plan{min-width:780px}
+ .tab-panel{overflow-x:auto}
+}

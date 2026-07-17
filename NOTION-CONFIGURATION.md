@@ -95,3 +95,24 @@ Conducteur
 Course 1
 Véhicule
 ```
+
+
+## Stationnement V7.2
+
+Partager avec l'intégration Cloudflare :
+
+1. la base Stationnement ;
+2. la base véhicules liée par la propriété `Mon parc`.
+
+Propriétés reconnues :
+
+- `Emplacement`
+- `Depot` ou `Dépôt`
+- `Mon parc`
+- `X`
+- `Y`
+- `Type`
+- `Statut`
+
+Identifiant par défaut de la base Stationnement :
+`35e6bbfa7ec180a18deff12d69f95ebc`

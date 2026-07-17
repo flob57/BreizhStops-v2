@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050806">
+  <title>Stationnement — BreizhStops V7.2</title>
+  <link rel="stylesheet" href="./stationnement.css">
+</head>
+<body>
+  <header class="parking-header">
+    <div>
+      <a href="./index.html" class="back-link">‹ Accueil</a>
+      <div class="title-line">
+        <span class="parking-icon">P</span>
+        <div>
+          <h1>Stationnement <small>V7.2</small></h1>
+          <p>Affectation du parc par emplacement</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-summary">
+      <strong id="occupiedSummary">—</strong>
+      <span>véhicules affectés</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <div class="toolbar-actions">
+        <button id="syncButton">↻ Synchroniser depuis Notion</button>
+        <button id="refreshButton">Actualiser</button>
+      </div>
+      <div id="lastUpdate" class="last-update">Dernière mise à jour : —</div>
+    </section>
+
+    <div id="message" class="message" hidden></div>
+
+    <nav class="tabs" aria-label="Dépôts">
+      <button class="tab active" data-tab="lestonan">Lestonan</button>
+      <button class="tab" data-tab="gourvily">Gourvily</button>
+      <button class="tab" data-tab="external">Extérieurs</button>
+    </nav>
+
+    <section id="lestonanPanel" class="tab-panel active">
+      <div class="panel-heading">
+        <div><span>DÉPÔT PRINCIPAL</span><h2>Lestonan</h2></div>
+        <div id="lestonanStats" class="panel-stats"></div>
+      </div>
+      <div id="lestonanPlan" class="depot-plan lestonan-plan">
+        <div class="building lestonan-building"><strong>GARAGE</strong><span>BOURBIGOT</span></div>
+        <div class="facility office">Salle PS<br>Bureau</div>
+        <div class="facility wash">LAVAGE</div>
+        <div class="facility adblue">AdBlue</div>
+        <div class="traffic-arrow arrow-left">←</div>
+        <div class="traffic-arrow arrow-down">↓</div>
+        <div class="traffic-arrow arrow-up">↑</div>
+        <div class="traffic-arrow arrow-exit">↘</div>
+        <div id="lestonanSpots"></div>
+      </div>
+      <div id="lestonanLegend" class="legend"></div>
+    </section>
+
+    <section id="gourvilyPanel" class="tab-panel">
+      <div class="panel-heading">
+        <div><span>DÉPÔT SECONDAIRE</span><h2>Gourvily</h2></div>
+        <div id="gourvilyStats" class="panel-stats"></div>
+      </div>
+      <div id="gourvilyPlan" class="depot-plan gourvily-plan">
+        <div class="building gourvily-building"><strong>GARAGE</strong></div>
+        <div class="facility local">LOCAL</div>
+        <div class="facility algeco">ALGECO</div>
+        <div class="facility gourvily-vl-zone">VL</div>
+        <div class="trees top-trees"></div>
+        <div class="trees right-trees"></div>
+        <div id="gourvilySpots"></div>
+      </div>
+      <div id="gourvilyLegend" class="legend"></div>
+    </section>
+
+    <section id="externalPanel" class="tab-panel">
+      <div class="panel-heading">
+        <div><span>AFFECTATIONS HORS DÉPÔT</span><h2>Emplacements extérieurs</h2></div>
+        <div id="externalStats" class="panel-stats"></div>
+      </div>
+      <div id="externalGroups" class="external-groups"></div>
+    </section>
+  </main>
+
+  <template id="spotTemplate">
+    <article class="parking-spot">
+      <div class="spot-head">
+        <strong class="spot-name"></strong>
+        <span class="spot-state"></span>
+      </div>
+      <div class="spot-vehicles"></div>
+    </article>
+  </template>
+
+  <script src="./stationnement.js"></script>
+</body>
+</html>
