@@ -147,10 +147,10 @@ Nouvelle page `prises-service.html` :
 - présentation PC et smartphone.
 
 
-## V6.7 — Gestion du dépôt
+## V6.8 — Gestion du dépôt
 
 Cette version corrige les chemins d’import des nouvelles fonctions
-Cloudflare Pages et affiche le numéro `V6.7` à côté du nom BreizhStops.
+Cloudflare Pages et affiche le numéro `V6.8` à côté du nom BreizhStops.
 
 Fonctions incluses :
 
@@ -163,7 +163,7 @@ Fonctions incluses :
 - historique conservé dans D1.
 
 
-## V6.7 — résolution des conducteurs
+## V6.8 — résolution des conducteurs
 
 Le synchroniseur suit désormais les relations Notion imbriquées :
 
@@ -178,7 +178,7 @@ Un cache évite les appels répétés pour les mêmes pages Notion.
 Aucune modification D1 supplémentaire n’est nécessaire.
 
 
-## V6.7 — Conducteur via rollup Notion
+## V6.8 — Conducteur via rollup Notion
 
 Correction du champ Conducteur lorsque Notion le calcule ainsi :
 
@@ -199,7 +199,7 @@ Le synchroniseur sait maintenant résoudre récursivement :
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V6.7 — nom réel du conducteur
+## V6.8 — nom réel du conducteur
 
 Le synchroniseur suit les relations jusqu’à la fiche du conducteur,
 puis lit exclusivement sa propriété `title`.
@@ -210,7 +210,7 @@ comme nom de conducteur.
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V6.7 — Tableau des départs
+## V6.8 — Tableau des départs
 
 Nouvelle page `departs.html` :
 
@@ -225,7 +225,7 @@ Nouvelle page `departs.html` :
 - prise en charge des courses passant minuit.
 
 
-## V6.7 — synchronisation par lots
+## V6.8 — synchronisation par lots
 
 Correction de l’erreur Cloudflare :
 
@@ -237,7 +237,7 @@ puis enchaîne automatiquement les services jusqu’à la fin.
 Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V6.7 — synchronisation complète par lots
+## V6.8 — synchronisation complète par lots
 
 Les prises de service sont désormais synchronisées une par une,
 afin de respecter la limite Cloudflare sur les sous-requêtes.
@@ -251,7 +251,7 @@ de la réponse Cloudflare au lieu du seul message « réponse illisible ».
 Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V6.7 — Accueil et identité visuelle
+## V6.8 — Accueil et identité visuelle
 
 - nouvelle page d’accueil Océlorn ;
 - horloge d’autocar avec indication ARRÊT DEMANDÉ ;
@@ -263,3 +263,15 @@ Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 - services sans conducteur et sans véhicule automatiquement masqués.
 
 Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
+
+
+## V6.8 — ajustements visuels ciblés
+
+- logo de bus londonien dans la section Aujourd’hui ;
+- carte routière de Bretagne/Finistère en fond de la tuile BreizhStops ;
+- conservation du logo de car au premier plan ;
+- suppression des trois raccourcis redondants du bas de l’accueil ;
+- bouton Accueil BreizhStops rendu pleinement visible ;
+- suppression des boutons Dépôt et Départs de la barre BreizhStops.
+
+Aucune modification D1 ni nouvelle variable Cloudflare n’est nécessaire.
