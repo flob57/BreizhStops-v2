@@ -84,8 +84,13 @@ function classify(spot) {
 function makeSpot(spot, layout) {
   const template = $("spotTemplate").content.firstElementChild.cloneNode(true);
   const { overload, neutral } = classify(spot);
+  const normalizedName = normalize(spot.name);
+  const normalizedDepot = normalize(spot.depot);
+
   template.classList.add(spot.occupied ? "occupied" : "free");
   template.classList.add(overload ? "overload" : neutral ? "neutral" : "standard");
+  template.dataset.spotName = normalizedName;
+  template.dataset.depot = normalizedDepot;
   template.querySelector(".spot-name").textContent = spot.name;
   template.querySelector(".spot-state").textContent = spot.occupied ? "Occupé" : "Libre";
 
@@ -183,7 +188,7 @@ function renderExternal() {
 
     groupSpots.sort((a,b) => a.name.localeCompare(b.name, "fr")).forEach(spot => {
       const card = document.createElement("article");
-      card.className = "external-card";
+      card.className = `external-card ${spot.occupied ? "occupied" : "free"}`;
       card.innerHTML = `<h4>${spot.name}</h4><div class="spot-vehicles"></div>`;
       const vehicles = card.querySelector(".spot-vehicles");
       if (spot.registrations.length) {

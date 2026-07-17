@@ -183,3 +183,222 @@ body { background: radial-gradient(circle at top right, rgba(89,145,45,.08), tra
 button, .toolbar-link, .toolbar a { transition: transform .15s ease, border-color .15s ease; }
 button:hover, .toolbar-link:hover, .toolbar a:hover { transform: translateY(-1px); border-color: #7be12d; }
 .version { color: #bfe7a4; border-color: #52733c; }
+
+
+/* ==================================================================
+   V7.3 — page Départs optimisée pour iPhone et diagramme libre
+   ================================================================== */
+
+.thermometer {
+  cursor: grab;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.thermometer.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.thermo-track {
+  padding-bottom: 4px;
+}
+
+/* Le navigateur ne doit jamais recentrer automatiquement la timeline */
+.thermometer,
+.thermo-track {
+  scroll-behavior: auto !important;
+  scroll-snap-type: none !important;
+}
+
+@media (max-width: 760px) {
+  .departures-header {
+    align-items: flex-end;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .header-actions {
+    align-items: center;
+  }
+
+  #clock {
+    font-size: 22px;
+  }
+
+  .departures-page {
+    padding: 12px;
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .toolbar button,
+  .toolbar a {
+    width: 100%;
+    min-height: 52px;
+    font-size: 16px;
+    text-align: center;
+  }
+
+  #profileLabel {
+    grid-column: auto;
+    width: 100%;
+    margin: 0;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .intro {
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  h2 {
+    margin-top: 28px;
+    font-size: 21px;
+  }
+
+  .board {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .running-card {
+    margin-bottom: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: linear-gradient(145deg, #101a13, #0b120d);
+  }
+
+  .running-main {
+    position: relative;
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 10px 14px;
+    padding: 18px 16px;
+  }
+
+  .running-main > div {
+    grid-column: auto !important;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    font-size: 17px;
+  }
+
+  .running-main .time {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 20px;
+  }
+
+  .running-main .course {
+    grid-column: 2;
+    grid-row: 1;
+    padding-right: 50px;
+    font-size: 19px;
+  }
+
+  .running-main > div:nth-child(3),
+  .running-main > div:nth-child(4),
+  .running-main > div:nth-child(5),
+  .running-main > div:nth-child(6),
+  .running-main > div:nth-child(7),
+  .running-main > div:nth-child(8) {
+    grid-column: 1 / -1 !important;
+    padding-left: 92px;
+  }
+
+  .label {
+    display: inline-block;
+    min-width: 112px;
+    margin-right: 8px;
+    font-size: 11px;
+  }
+
+  .trace-button {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-color: #4a5b50;
+    font-size: 23px;
+  }
+
+  .running-card.open .trace-button {
+    border-color: var(--green);
+  }
+
+  .thermometer {
+    width: 100%;
+    padding: 22px 15px 26px;
+    border-top: 1px solid #27332b;
+  }
+
+  .thermo-stop {
+    width: 125px;
+  }
+
+  .stop-time {
+    font-size: 13px;
+  }
+
+  .stop-name {
+    max-width: 118px;
+    font-size: 13px;
+  }
+
+  .bus {
+    font-size: 27px;
+  }
+
+  /* Tableau des prochains départs : défilement horizontal stable */
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  table {
+    min-width: 900px;
+  }
+
+  th, td {
+    padding: 14px 12px;
+    font-size: 15px;
+  }
+
+  th {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 430px) {
+  .running-main {
+    grid-template-columns: 78px 1fr;
+    padding: 16px 13px;
+  }
+
+  .running-main > div:nth-child(3),
+  .running-main > div:nth-child(4),
+  .running-main > div:nth-child(5),
+  .running-main > div:nth-child(6),
+  .running-main > div:nth-child(7),
+  .running-main > div:nth-child(8) {
+    padding-left: 78px;
+  }
+
+  .label {
+    min-width: 102px;
+  }
+}

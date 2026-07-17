@@ -322,7 +322,7 @@ ON daily_departures(service_date, departure_time);
 
 
 -- ============================================================
--- V7.2.3 — Prise de poste, conduite, pleins et statistiques
+-- V7.3 — Prise de poste, conduite, pleins et statistiques
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS personal_settings (
@@ -412,7 +412,7 @@ CREATE INDEX IF NOT EXISTS idx_vehicles_registration
 ON vehicles_cache(registration);
 
 
--- V7.2.3 — Stationnement
+-- V7.3 — Stationnement
 CREATE TABLE IF NOT EXISTS parking_spots (
   notion_page_id TEXT PRIMARY KEY,
   name TEXT NOT NULL,

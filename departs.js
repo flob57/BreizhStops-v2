@@ -2,7 +2,8 @@ const state = {
   date: "",
   departures: [],
   refreshTimer: null,
-  openTraceIds: new Set()
+  openTraceIds: new Set(),
+  traceScrollPositions: new Map()
 };
 
 const $ = id => document.getElementById(id);
@@ -222,7 +223,7 @@ function runningCard(departure, status) {
         <div><span class="label">Arrivée</span>${escapeHtml(departure.arrival_time.slice(0,5) || "—")}</div>
         <button class="trace-button" data-trace-id="${escapeHtml(departure.id)}">${state.openTraceIds.has(departure.id) ? "⌃" : "⌄"}</button>
       </div>
-      <div class="thermometer">
+      <div class="thermometer" data-thermometer-id="${escapeHtml(departure.id)}">
         <div class="thermo-track">
           <div class="thermo-line"></div>
           <div class="thermo-progress" style="width:calc((100% - 56px) * ${status.progress})"></div>
@@ -234,7 +235,29 @@ function runningCard(departure, status) {
   `;
 }
 
+function saveTraceScrollPositions() {
+  document.querySelectorAll("[data-thermometer-id]").forEach(element => {
+    state.traceScrollPositions.set(
+      element.dataset.thermometerId,
+      element.scrollLeft
+    );
+  });
+}
+
+function restoreTraceScrollPositions() {
+  requestAnimationFrame(() => {
+    document.querySelectorAll("[data-thermometer-id]").forEach(element => {
+      const saved = state.traceScrollPositions.get(
+        element.dataset.thermometerId
+      );
+      if (Number.isFinite(saved)) element.scrollLeft = saved;
+    });
+  });
+}
+
 function render() {
+  saveTraceScrollPositions();
+
   const classified = state.departures.map(departure => ({
     departure,
     status: statusOf(departure)
@@ -269,6 +292,55 @@ function render() {
   }).join("");
 
   $("upcomingEmpty").style.display = upcoming.length ? "none" : "block";
+  restoreTraceScrollPositions();
+}
+
+function enableTimelineDragging() {
+  let active = null;
+  let startX = 0;
+  let startScroll = 0;
+
+  document.addEventListener("pointerdown", event => {
+    const thermometer = event.target.closest(".thermometer");
+    if (!thermometer || event.pointerType === "touch") return;
+
+    active = thermometer;
+    startX = event.clientX;
+    startScroll = thermometer.scrollLeft;
+    thermometer.classList.add("dragging");
+    thermometer.setPointerCapture(event.pointerId);
+  });
+
+  document.addEventListener("pointermove", event => {
+    if (!active) return;
+    active.scrollLeft = startScroll - (event.clientX - startX);
+    state.traceScrollPositions.set(
+      active.dataset.thermometerId,
+      active.scrollLeft
+    );
+  });
+
+  const finish = event => {
+    if (!active) return;
+    state.traceScrollPositions.set(
+      active.dataset.thermometerId,
+      active.scrollLeft
+    );
+    active.classList.remove("dragging");
+    try { active.releasePointerCapture(event.pointerId); } catch {}
+    active = null;
+  };
+
+  document.addEventListener("pointerup", finish);
+  document.addEventListener("pointercancel", finish);
+  document.addEventListener("scroll", event => {
+    const thermometer = event.target.closest?.("[data-thermometer-id]");
+    if (!thermometer) return;
+    state.traceScrollPositions.set(
+      thermometer.dataset.thermometerId,
+      thermometer.scrollLeft
+    );
+  }, true);
 }
 
 function showMessage(text, error = false) {
@@ -355,6 +427,7 @@ document.addEventListener("click", event => {
 
 $("syncButton").addEventListener("click", syncAll);
 $("refreshButton").addEventListener("click", load);
+enableTimelineDragging();
 
 async function start() {
   state.date = localDate();

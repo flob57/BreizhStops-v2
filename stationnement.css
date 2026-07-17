@@ -63,7 +63,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V7.2.3 — correction du chevauchement des emplacements */
+/* V7.3 — correction du chevauchement des emplacements */
 .parking-spot {
   min-width: 0;
   min-height: 0;
@@ -117,7 +117,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V7.2.3 — schéma validé */
+/* V7.3 — schéma validé */
 .lestonan-plan {
   min-height: 760px;
 }
@@ -167,5 +167,201 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 @media (min-width: 1100px) {
   .depot-plan {
     min-width: 1180px;
+  }
+}
+
+
+/* ==================================================================
+   V7.3 — optimisation PC et iPhone des plans de stationnement
+   ================================================================== */
+
+/* Immatriculations plus visibles sur ordinateur */
+@media (min-width: 851px) {
+  .parking-spot .vehicle-badge {
+    font-size: 13px;
+    font-weight: 950;
+    padding: 5px 7px;
+    letter-spacing: .35px;
+  }
+
+  .external-card .vehicle-badge {
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+}
+
+/* Les emplacements extérieurs occupés suivent la même couleur rouge */
+.external-card {
+  transition: border-color .16s ease, background .16s ease;
+}
+
+.external-card.occupied {
+  background: linear-gradient(145deg, #9f302b, #76221f);
+  border-color: rgba(255,255,255,.8);
+  box-shadow: 0 8px 18px rgba(0,0,0,.25);
+}
+
+.external-card.occupied h4 {
+  color: #fff;
+}
+
+.external-card.free {
+  background: #141e16;
+}
+
+/* Défilement horizontal propre des plans */
+.tab-panel {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
+}
+
+.depot-plan {
+  touch-action: pan-x pan-y;
+}
+
+/* Optimisation iPhone */
+@media (max-width: 850px) {
+  main {
+    width: calc(100% - 14px);
+    margin-top: 12px;
+  }
+
+  .parking-header {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    padding: 5px 0;
+    background: var(--bg);
+  }
+
+  .panel-heading h2 {
+    font-size: 29px;
+  }
+
+  .panel-stats {
+    justify-content: flex-start;
+  }
+
+  .stat-chip {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .05em;
+  }
+
+  .tab-panel {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 8px;
+  }
+
+  /* On conserve un plan large afin d'éviter toute superposition.
+     L'utilisateur peut le faire glisser horizontalement comme une carte. */
+  .depot-plan {
+    min-width: 1180px;
+    min-height: 760px;
+    overflow: hidden;
+  }
+
+  .gourvily-plan {
+    min-width: 1320px;
+  }
+
+  .parking-spot {
+    transform-origin: center;
+    padding: 6px;
+  }
+
+  /* Sur les places occupées, priorité absolue à l'immatriculation. */
+  .parking-spot.occupied .spot-head {
+    min-height: 18px;
+  }
+
+  .parking-spot.occupied .spot-name {
+    display: none;
+  }
+
+  .parking-spot.occupied .spot-state {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    font-size: 9px;
+  }
+
+  .parking-spot.occupied .spot-vehicles {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    margin: 13px 0 0;
+  }
+
+  .parking-spot.occupied .vehicle-badge {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+    padding: 6px 8px;
+    font-size: 14px;
+    font-weight: 950;
+    letter-spacing: .45px;
+  }
+
+  /* Les places libres gardent leur nom pour pouvoir être identifiées. */
+  .parking-spot.free .spot-name {
+    font-size: 10px;
+  }
+
+  /* Les emplacements inclinés de Gourvily restent dans le même sens que
+     sur ordinateur. L'immatriculation est remise à l'horizontale. */
+  .gourvily-plan .parking-spot[data-spot-name="gourvily mini"] .vehicle-badge,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 1"] .vehicle-badge,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 2"] .vehicle-badge,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 3"] .vehicle-badge,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 4"] .vehicle-badge,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 5"] .vehicle-badge,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 6"] .vehicle-badge,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 7"] .vehicle-badge,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 8"] .vehicle-badge {
+    transform: rotate(42deg);
+  }
+
+  .gourvily-plan .parking-spot[data-spot-name="gourvily mini"].occupied .spot-state,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 1"].occupied .spot-state,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 2"].occupied .spot-state,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 3"].occupied .spot-state,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 4"].occupied .spot-state,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 5"].occupied .spot-state,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 6"].occupied .spot-state,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 7"].occupied .spot-state,
+  .gourvily-plan .parking-spot[data-spot-name="gourvily 8"].occupied .spot-state {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .depot-plan {
+    min-width: 1120px;
+  }
+
+  .gourvily-plan {
+    min-width: 1380px;
+  }
+
+  .parking-spot.occupied .vehicle-badge {
+    font-size: 15px;
+  }
+
+  .external-list {
+    grid-template-columns: 1fr;
+  }
+
+  .external-card .vehicle-badge {
+    font-size: 15px;
   }
 }
