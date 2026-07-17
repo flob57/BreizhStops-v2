@@ -63,7 +63,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V7.3 — correction du chevauchement des emplacements */
+/* V7.4 — correction du chevauchement des emplacements */
 .parking-spot {
   min-width: 0;
   min-height: 0;
@@ -117,7 +117,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V7.3 — schéma validé */
+/* V7.4 — schéma validé */
 .lestonan-plan {
   min-height: 760px;
 }
@@ -172,7 +172,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 
 
 /* ==================================================================
-   V7.3 — optimisation PC et iPhone des plans de stationnement
+   V7.4 — optimisation PC et iPhone des plans de stationnement
    ================================================================== */
 
 /* Immatriculations plus visibles sur ordinateur */
@@ -363,5 +363,220 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 
   .external-card .vehicle-badge {
     font-size: 15px;
+  }
+}
+
+
+/* =================================================================
+   V7.4 — proportions ciblées et compteurs de flotte
+   ================================================================= */
+
+.header-counters {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.header-counters .header-summary {
+  min-width: 155px;
+  padding: 9px 13px;
+  border: 1px solid #34483b;
+  border-radius: 14px;
+  background: #101813;
+}
+
+.header-counters .header-summary strong {
+  color: var(--green);
+  font-size: 20px;
+}
+
+.header-counters .header-summary span {
+  font-size: 10px;
+  letter-spacing: .04em;
+}
+
+/* Lestonan 1 à 5 : format vertical, surface équivalente à une place horizontale */
+.parking-spot.vertical-lestonan {
+  padding: 6px 5px;
+  overflow: visible;
+}
+
+.parking-spot.vertical-lestonan .spot-head {
+  position: absolute;
+  inset: 5px auto 5px 5px;
+  width: 34%;
+  display: block;
+}
+
+.parking-spot.vertical-lestonan .spot-name {
+  display: block !important;
+  font-size: 9px;
+  line-height: .98;
+  text-align: center;
+  letter-spacing: .04em;
+}
+
+.parking-spot.vertical-lestonan .spot-state {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 4px;
+  font-size: 7px;
+}
+
+.parking-spot.vertical-lestonan .spot-vehicles {
+  position: absolute;
+  top: 18px;
+  right: 4px;
+  bottom: 5px;
+  width: 58%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.parking-spot.vertical-lestonan .vehicle-badge-vertical {
+  display: block;
+  padding: 4px 3px;
+  font-size: 10px;
+  line-height: 1.04;
+  text-align: center;
+  white-space: normal;
+}
+
+/* Gourvily mini et 1 à 8 : carte agrandie, contenu parfaitement lisible */
+.gourvily-plan .parking-spot.large-gourvily {
+  padding: 7px 8px;
+}
+
+.gourvily-plan .parking-spot.large-gourvily .spot-name {
+  font-size: 9px;
+  line-height: 1.05;
+}
+
+.gourvily-plan .parking-spot.large-gourvily .spot-state {
+  font-size: 7px;
+}
+
+.gourvily-plan .parking-spot.large-gourvily .vehicle-badge {
+  font-size: 12px;
+  font-weight: 950;
+  padding: 5px 6px;
+}
+
+/* Paysage iPhone : même schéma et mêmes proportions que sur PC,
+   ajustés à la largeur disponible pour montrer le dépôt complet. */
+@media (max-width: 950px) and (orientation: landscape) {
+  body {
+    min-width: 0;
+  }
+
+  .parking-header {
+    padding: 8px 10px;
+  }
+
+  .parking-header .title-line p,
+  .parking-header .back-link {
+    display: none;
+  }
+
+  .parking-header h1 {
+    font-size: 19px;
+  }
+
+  .header-counters {
+    gap: 5px;
+  }
+
+  .header-counters .header-summary {
+    min-width: 120px;
+    padding: 5px 8px;
+  }
+
+  .header-counters .header-summary strong {
+    font-size: 15px;
+  }
+
+  main {
+    width: calc(100% - 8px);
+    max-width: none;
+    margin: 4px auto;
+  }
+
+  .toolbar,
+  .message,
+  .panel-heading,
+  .legend {
+    margin-left: 4px;
+    margin-right: 4px;
+  }
+
+  .tabs {
+    position: static;
+    padding: 3px 0;
+  }
+
+  .tab-panel {
+    overflow: hidden;
+  }
+
+  .depot-plan,
+  .gourvily-plan {
+    min-width: 0 !important;
+    width: 100% !important;
+    height: min(69vw, 610px) !important;
+    min-height: 0 !important;
+  }
+
+  .parking-spot.occupied .spot-name,
+  .parking-spot.occupied .spot-state {
+    display: block;
+  }
+
+  .parking-spot .vehicle-badge {
+    font-size: clamp(7px, 1.15vw, 11px);
+    padding: 3px 4px;
+  }
+
+  .parking-spot.vertical-lestonan .spot-name {
+    font-size: clamp(5px, .82vw, 8px);
+  }
+
+  .parking-spot.vertical-lestonan .vehicle-badge-vertical {
+    font-size: clamp(6px, .92vw, 9px);
+  }
+
+  .gourvily-plan .parking-spot.large-gourvily .spot-name {
+    font-size: clamp(5px, .78vw, 8px);
+  }
+
+  .gourvily-plan .parking-spot.large-gourvily .vehicle-badge {
+    font-size: clamp(6px, .95vw, 10px);
+  }
+}
+
+/* Portrait : plan défilable conservé, avec priorité aux immatriculations */
+@media (max-width: 850px) and (orientation: portrait) {
+  .header-counters {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .header-counters .header-summary {
+    min-width: 140px;
+  }
+
+  .parking-spot.vertical-lestonan .spot-name {
+    display: block !important;
+  }
+
+  .parking-spot.vertical-lestonan .vehicle-badge-vertical {
+    font-size: 14px;
+  }
+
+  .gourvily-plan .parking-spot.large-gourvily .vehicle-badge {
+    font-size: 14px;
   }
 }

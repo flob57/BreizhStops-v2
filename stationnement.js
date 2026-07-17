@@ -2,11 +2,11 @@ const $ = id => document.getElementById(id);
 const state = { spots: [] };
 
 const LESTONAN_LAYOUT = {
-  "lestonan 1": [57.0, 5.0, 7.5, 12.5],
-  "lestonan 2": [57.0, 27.0, 7.5, 12.5],
-  "lestonan 3": [65.0, 5.0, 7.5, 12.5],
-  "lestonan 4": [65.0, 27.0, 7.5, 12.5],
-  "lestonan 5": [73.0, 27.0, 7.5, 12.5],
+  "lestonan 1": [57.0, 5.0, 8.5, 11.0],
+  "lestonan 2": [57.0, 27.0, 8.5, 11.0],
+  "lestonan 3": [66.5, 5.0, 8.5, 11.0],
+  "lestonan 4": [66.5, 27.0, 8.5, 11.0],
+  "lestonan 5": [76.0, 27.0, 8.5, 11.0],
 
   "lestonan 6": [1.5, 72.0, 11.0, 8.5],
   "lestonan 7": [1.5, 58.0, 11.0, 8.5],
@@ -28,15 +28,15 @@ const LESTONAN_LAYOUT = {
 
 const GOURVILY_LAYOUT = {
   /* Ligne supérieure étalée sur presque toute la largeur */
-  "gourvily mini": [1.0, 5.5, 6.4, 10.0, -42],
-  "gourvily 1": [8.5, 5.5, 6.4, 10.0, -42],
-  "gourvily 2": [16.0, 5.5, 6.4, 10.0, -42],
-  "gourvily 3": [23.5, 5.5, 6.4, 10.0, -42],
-  "gourvily 4": [31.0, 5.5, 6.4, 10.0, -42],
-  "gourvily 5": [38.5, 5.5, 6.4, 10.0, -42],
-  "gourvily 6": [46.0, 5.5, 6.4, 10.0, -42],
-  "gourvily 7": [53.5, 5.5, 6.4, 10.0, -42],
-  "gourvily 8": [61.0, 5.5, 6.4, 10.0, -42],
+  "gourvily mini": [1.5, 4.0, 13.5, 8.5, -42],
+  "gourvily 1": [11.7, 4.0, 13.5, 8.5, -42],
+  "gourvily 2": [21.9, 4.0, 13.5, 8.5, -42],
+  "gourvily 3": [32.1, 4.0, 13.5, 8.5, -42],
+  "gourvily 4": [42.3, 4.0, 13.5, 8.5, -42],
+  "gourvily 5": [52.5, 4.0, 13.5, 8.5, -42],
+  "gourvily 6": [62.7, 4.0, 13.5, 8.5, -42],
+  "gourvily 7": [72.9, 4.0, 13.5, 8.5, -42],
+  "gourvily 8": [83.1, 4.0, 13.5, 8.5, -42],
 
   "gourvily 9": [52.0, 22.0, 12.0, 8.0, -10],
   "gourvily 10": [56.0, 34.0, 12.0, 8.0, -10],
@@ -81,29 +81,126 @@ function classify(spot) {
   return { overload, neutral };
 }
 
+function isExcludedFleetLocation(spot) {
+  const name = normalize(spot.name);
+  const depot = normalize(spot.depot);
+  return name.includes("atelier") ||
+    depot.includes("atelier") ||
+    name.includes("autre depot") ||
+    depot.includes("autre depot");
+}
+
+function isCoachFleetLocation(spot) {
+  const name = normalize(spot.name);
+  const depot = normalize(spot.depot);
+
+  const lestonan = /^lestonan (?:[1-9]|10|11)$/.test(name);
+  const lestonanOverload = /^lestonan surcharge [12]$/.test(name);
+  const gourvily = /^gourvily (?:[1-9]|10|11)$/.test(name);
+  const gourvilyOverload = /^gourvily surcharge [12]$/.test(name);
+
+  const external = !isExcludedFleetLocation(spot) && (
+    name.includes("quimper") ||
+    name.includes("briec") ||
+    depot.includes("quimper") ||
+    depot.includes("briec") ||
+    depot === "exterieur"
+  );
+
+  return lestonan || lestonanOverload || gourvily || gourvilyOverload || external;
+}
+
+function isCoachCapacityLocation(spot) {
+  const name = normalize(spot.name);
+  if (/surcharge/.test(name)) return false;
+  return isCoachFleetLocation(spot);
+}
+
+function isMinibusLocation(spot) {
+  const name = normalize(spot.name);
+  return name === "lestonan mini" ||
+    name === "lestonan mini 1" ||
+    name === "lestonan mini 2" ||
+    name === "gourvily mini";
+}
+
+function updateGlobalFleetCounters() {
+  const coachLocations = state.spots.filter(isCoachFleetLocation);
+  const coachCapacity = state.spots.filter(isCoachCapacityLocation).length;
+  const coaches = coachLocations.reduce(
+    (sum, spot) => sum + spot.registrations.length,
+    0
+  );
+
+  const minibusLocations = state.spots.filter(isMinibusLocation);
+  const minibusCapacity = minibusLocations.length;
+  const minibuses = minibusLocations.reduce(
+    (sum, spot) => sum + spot.registrations.length,
+    0
+  );
+
+  $("occupiedSummary").textContent = `${coaches} / ${coachCapacity}`;
+  $("occupiedSummaryLabel").textContent = "cars affectés / places";
+  $("minibusSummary").textContent = `${minibuses} / ${minibusCapacity}`;
+  $("minibusSummaryLabel").textContent = "minibus / places";
+}
+
+function verticalText(value) {
+  return String(value || "").replace(/\s+/g, "").split("").join("<br>");
+}
+
+function verticalRegistration(value) {
+  const registration = String(value || "").toUpperCase();
+  const match = registration.match(/^([A-Z]{2})-(\d{3})-([A-Z]{2})$/);
+  if (!match) return `🚌<br>${registration}`;
+  return `🚌<br>${match[1]}-<br>${match[2]}<br>-${match[3]}`;
+}
+
+
 function makeSpot(spot, layout) {
   const template = $("spotTemplate").content.firstElementChild.cloneNode(true);
   const { overload, neutral } = classify(spot);
   const normalizedName = normalize(spot.name);
   const normalizedDepot = normalize(spot.depot);
+  const verticalLestonan = /^lestonan [1-5]$/.test(normalizedName);
+  const largeGourvily = /^gourvily (?:mini|[1-8])$/.test(normalizedName);
 
   template.classList.add(spot.occupied ? "occupied" : "free");
   template.classList.add(overload ? "overload" : neutral ? "neutral" : "standard");
+  if (verticalLestonan) template.classList.add("vertical-lestonan");
+  if (largeGourvily) template.classList.add("large-gourvily");
+
   template.dataset.spotName = normalizedName;
   template.dataset.depot = normalizedDepot;
-  template.querySelector(".spot-name").textContent = spot.name;
-  template.querySelector(".spot-state").textContent = spot.occupied ? "Occupé" : "Libre";
+
+  const nameElement = template.querySelector(".spot-name");
+  const stateElement = template.querySelector(".spot-state");
+
+  if (verticalLestonan) {
+    const number = normalizedName.split(" ").pop();
+    nameElement.innerHTML = `${verticalText("LESTONAN")}<br>${number}`;
+  } else {
+    nameElement.textContent = spot.name;
+  }
+  stateElement.textContent = spot.occupied ? "Occupé" : "Libre";
 
   const vehicles = template.querySelector(".spot-vehicles");
   if (spot.registrations.length) {
     spot.registrations.forEach(registration => {
       const badge = document.createElement("span");
-      badge.className = "vehicle-badge";
-      badge.textContent = `🚌 ${registration}`;
+      badge.className = verticalLestonan
+        ? "vehicle-badge vehicle-badge-vertical"
+        : "vehicle-badge";
+      if (verticalLestonan) {
+        badge.innerHTML = verticalRegistration(registration);
+      } else {
+        badge.textContent = `🚌 ${registration}`;
+      }
       vehicles.appendChild(badge);
     });
   } else {
-    vehicles.innerHTML = `<span class="empty-label">${overload ? "Doit rester libre" : "Disponible"}</span>`;
+    vehicles.innerHTML =
+      `<span class="empty-label">${overload ? "Doit rester libre" : "Disponible"}</span>`;
   }
 
   if (layout) {
@@ -214,8 +311,7 @@ function render() {
   renderDepot("gourvily", "gourvilySpots", GOURVILY_LAYOUT, "gourvilyStats", "gourvilyLegend");
   renderExternal();
 
-  const vehicles = state.spots.reduce((sum, spot) => sum + spot.registrations.length, 0);
-  $("occupiedSummary").textContent = vehicles;
+  updateGlobalFleetCounters();
 }
 
 async function load() {

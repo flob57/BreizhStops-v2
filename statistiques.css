@@ -17,7 +17,7 @@ dialog{width:min(560px,calc(100% - 24px));border:1px solid #455448;border-radius
 @media(max-width:520px){header{padding:12px;grid-template-columns:auto 1fr}header button{grid-column:1/-1}.summary-grid,.period-grid,.two{grid-template-columns:1fr}}
 
 
-/* V7.3 — barres de progression des heures réelles */
+/* V7.4 — barres de progression des heures réelles */
 .period-progress{
   height:9px;
   margin:12px 0 10px;
