@@ -17,17 +17,46 @@ function formatDate(date) {
 }
 
 async function driverName(token, properties, page) {
-  const property = firstProperty(properties, [
-    "Mes Conducteurs", "Mes Conducteur", "Conducteurs",
-    "Conducteur", "Nom du conducteur"
-  ]);
+  // 1) Recherche prioritaire par noms de propriétés connus.
+  const preferredNames = [
+    "Mes Conducteurs",
+    "Mes conducteurs",
+    "Mes Conducteur",
+    "Conducteurs",
+    "Conducteur",
+    "Nom du conducteur"
+  ];
 
-  if (property?.type === "relation") {
-    const names = await relationTitles(token, property);
-    if (names.length) return names.join(", ");
+  for (const name of preferredNames) {
+    const property = properties?.[name];
+    if (!property) continue;
+
+    if (property.type === "relation") {
+      const names = await relationTitles(token, property);
+      if (names.length) return names.join(", ");
+    }
+
+    const value = propertyText(property);
+    if (value) return value;
   }
 
-  return propertyText(property) || pageTitle(page);
+  // 2) Repli robuste : inspecter toutes les relations de la ligne.
+  // Cela couvre les propriétés renommées, préfixées par un emoji ou légèrement différentes.
+  for (const property of Object.values(properties || {})) {
+    if (property?.type !== "relation" || !(property.relation || []).length) continue;
+
+    const names = await relationTitles(token, property);
+    if (names.length) {
+      // On évite de reprendre par erreur le titre technique de la fiche d'arrêt.
+      const technicalTitle = pageTitle(page);
+      const meaningful = names.filter(name => name && name !== technicalTitle);
+      if (meaningful.length) return meaningful.join(", ");
+      return names.join(", ");
+    }
+  }
+
+  // 3) Dernier recours seulement.
+  return pageTitle(page);
 }
 
 export async function onRequestGet(context) {
