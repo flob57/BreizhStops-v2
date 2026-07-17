@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#005493">
+  <title>BreizhStops V6.7</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body class="breizhstops-page">
+  <header class="app-header">
+    <div>
+      <h1 class="brand-title"><img src="./assets/london-bus-side.png" class="brand-bus-icon" alt=""> BreizhStops <span class="app-version">V6.7</span></h1>
+      <div class="subtitle">Arrêts, lignes et itinéraires</div>
+    </div>
+
+    <div class="header-actions">
+      <a href="./index.html" class="header-button home-button">⌂ Accueil</a>
+      <button id="openRoutesLibrary" class="header-button">📚 Mes itinéraires</button>
+      <button id="openLinesExplorer" class="header-button">🚌 Lignes</button>
+      <button id="openGpsLauncher" class="header-button">🧭 GPS</button>
+      <button id="openSae" class="header-button">🚌 SAE</button>
+      <button id="openDepotManagement" class="header-button">🏢 Dépôt</button>
+      <button id="openDepartures" class="header-button">🚉 Départs</button>
+      <button id="openDataAdmin" class="header-button">🗃️ Données</button>
+      <span id="status">Chargement…</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="search-tools">
+      <input
+        id="search"
+        type="search"
+        placeholder="Rechercher un arrêt, une commune, un réseau…"
+        autocomplete="off"
+      >
+
+      <div class="filters">
+        <select id="networkFilter">
+          <option value="">Tous les réseaux</option>
+        </select>
+
+        <select id="cityFilter">
+          <option value="">Toutes les communes</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="results-panel">
+      <div id="counter"></div>
+      <div id="results"></div>
+    </section>
+
+    <section class="map-panel">
+      <div id="map"></div>
+
+      <div id="mapToolbar" class="map-toolbar">
+        <button id="toggleWaypointMode">
+          📌 Ajouter un passage par une rue
+        </button>
+
+        <button id="clearWaypoints" class="secondary">
+          Effacer les passages
+        </button>
+
+        <button id="showAllStops" class="secondary hidden">
+          👁 Réafficher tous les arrêts
+        </button>
+
+        <button id="startCreateStop">
+          ➕ Créer un arrêt
+        </button>
+      </div>
+    </section>
+
+    <aside class="route-panel">
+      <h2>Mon itinéraire</h2>
+
+      <fieldset class="departure-options">
+        <legend>Point de départ</legend>
+
+        <label>
+          <input type="radio" name="departureMode" value="current" checked>
+          Ma position actuelle
+        </label>
+
+        <label>
+          <input type="radio" name="departureMode" value="stop">
+          Choisir un arrêt de départ
+        </label>
+
+        <label>
+          <input type="radio" name="departureMode" value="automatic">
+          Laisser l’optimisation choisir
+        </label>
+      </fieldset>
+
+      <div id="locationStatus" class="information-box">
+        La position sera demandée lors de la création de l’itinéraire.
+      </div>
+
+      <div id="startStopArea" class="start-stop-area hidden">
+        <label for="startStopSearch">Arrêt de départ</label>
+
+        <input
+          id="startStopSearch"
+          type="search"
+          placeholder="Rechercher l’arrêt de départ…"
+          autocomplete="off"
+        >
+
+        <div id="startStopResults"></div>
+        <div id="selectedStartStop"></div>
+      </div>
+
+      <h3>Étapes sélectionnées</h3>
+      <div id="routeList" class="empty">Aucun arrêt ajouté.</div>
+
+      <div id="routeSummary" class="route-summary hidden"></div>
+
+      <div class="route-actions">
+        <button id="traceRoute" disabled>🛣️ Tracer dans BreizhStops</button>
+        <button id="optimizeRoute" disabled>🧮 Optimiser l’ordre</button>
+        <button id="saveRoute" disabled>💾 Enregistrer l’itinéraire</button>
+        <button id="shareRoute" disabled>🔗 Partager</button>
+        <button id="openRoute" disabled>📍 Google Maps</button>
+        <button id="openInRoute" disabled>🧭 Ouvrir dans inRoute</button>
+        <button id="exportGpx" disabled>📁 Exporter en GPX</button>
+        <button id="clearRoute" class="secondary">🗑 Vider</button>
+      </div>
+    </aside>
+  </main>
+
+  <dialog id="stopDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="stopDialogTitle">Fiche arrêt</h2>
+          <div id="stopDialogMeta" class="meta"></div>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Nom de l’arrêt
+          <input id="stopEditableName" type="text">
+        </label>
+
+        <label>
+          Sens de circulation
+          <select id="stopDirection">
+            <option value="">Non renseigné</option>
+            <option value="entrant">Entrant</option>
+            <option value="sortant">Sortant</option>
+          </select>
+        </label>
+
+        <label>
+          Lignes desservant l’arrêt
+          <input id="stopLines" type="text" placeholder="Ex. 1, 2, 16, scolaire S4">
+        </label>
+
+        <label>
+          État de l’arrêt
+          <select id="stopStatus">
+            <option value="">Non renseigné</option>
+            <option value="conforme">Conforme</option>
+            <option value="surveillance">À surveiller</option>
+            <option value="travaux">Travaux</option>
+            <option value="deplace">Arrêt déplacé</option>
+            <option value="inaccessible">Inaccessible</option>
+          </select>
+        </label>
+
+        <label class="full-width">
+          Remarques
+          <textarea
+            id="stopNotes"
+            rows="5"
+            placeholder="Accès, quai, demi-tour, danger, information conducteur…"
+          ></textarea>
+        </label>
+
+        <label class="full-width">
+          Ajouter une photo
+          <input
+            id="stopPhoto"
+            type="file"
+            accept="image/*"
+            capture="environment"
+          >
+        </label>
+      </div>
+
+      <div id="stopPhotos" class="photo-grid"></div>
+
+      <div class="modal-actions">
+        <button type="button" id="saveStopDetails">💾 Enregistrer</button>
+        <button type="button" id="uploadStopPhoto">📷 Envoyer la photo</button>
+        <button type="button" id="deleteStop" class="danger">🗑 Supprimer l’arrêt</button>
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="routeDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <h2>Enregistrer l’itinéraire</h2>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Nom
+          <input id="routeName" type="text" placeholder="Ex. Ligne 16 – Aller">
+        </label>
+
+        <label>
+          Réseau
+          <input id="routeNetwork" type="text" placeholder="Ex. QUB">
+        </label>
+
+        <label>
+          Couleur
+          <input id="routeColor" type="color" value="#005493">
+        </label>
+
+        <label>
+          Visibilité
+          <select id="routeVisibility">
+            <option value="private">Privé</option>
+            <option value="link">Accessible par lien</option>
+          </select>
+        </label>
+
+        <label class="full-width">
+          Description
+          <textarea id="routeDescription" rows="4"></textarea>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="confirmSaveRoute">💾 Enregistrer</button>
+        <button value="cancel" class="secondary">Annuler</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="routesLibraryDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <h2>Mes itinéraires</h2>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div id="routesLibrary"></div>
+    </form>
+  </dialog>
+
+
+
+  <dialog id="dataAdminDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <div>
+          <h2>Administration des arrêts</h2>
+          <div class="meta">
+            Les imports ajoutent ou mettent à jour les arrêts, sans supprimer les anciens.
+          </div>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <section class="admin-section">
+        <h3>Importer une source</h3>
+
+        <div class="form-grid">
+          <label>
+            Type de source
+            <select id="importSourceType">
+              <option value="gtfs-full">GTFS complet (lignes + arrêts)</option>
+              <option value="gtfs">GTFS arrêts uniquement</option>
+              <option value="inroute">inRoute</option>
+              <option value="other">Autre source</option>
+            </select>
+          </label>
+
+          <label>
+            Nom de la source
+            <input
+              id="importSourceName"
+              type="text"
+              value="GTFS complémentaire"
+              placeholder="Ex. GTFS BreizhGo juillet 2026"
+            >
+          </label>
+
+          <label class="full-width">
+            Fichier
+            <input
+              id="importFile"
+              type="file"
+              accept=".zip,.txt,.csv,.gpx,.xml"
+            >
+          </label>
+        </div>
+
+        <div class="information-box">
+          Formats acceptés : ZIP GTFS complet, stops.txt, CSV GTFS et GPX inRoute.
+          Les arrêts absents du nouveau fichier sont conservés.
+        </div>
+
+        <div class="modal-actions left">
+          <button type="button" id="analyseImport">🔎 Analyser</button>
+          <button type="button" id="confirmImport" disabled>⬆️ Importer</button>
+        </div>
+
+        <div id="importReport" class="import-report"></div>
+      </section>
+
+      <hr>
+
+      <section class="admin-section">
+        <h3>Créer un arrêt manuellement</h3>
+
+        <p>
+          Clique sur « Créer un arrêt » sur la carte, puis choisis son emplacement.
+          Tu peux aussi utiliser la position du smartphone.
+        </p>
+
+        <button type="button" id="createStopFromPosition">
+          📍 Utiliser ma position actuelle
+        </button>
+      </section>
+    </form>
+  </dialog>
+
+  <dialog id="createStopDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <h2>Créer un arrêt</h2>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Nom de l’arrêt
+          <input id="newStopName" type="text" required>
+        </label>
+
+        <label>
+          Commune
+          <input id="newStopCity" type="text">
+        </label>
+
+        <label>
+          Réseau
+          <input id="newStopNetwork" type="text">
+        </label>
+
+        <label>
+          Source
+          <input id="newStopSource" type="text" value="Création manuelle">
+        </label>
+
+        <label>
+          Latitude
+          <input id="newStopLat" type="number" step="any" readonly>
+        </label>
+
+        <label>
+          Longitude
+          <input id="newStopLon" type="number" step="any" readonly>
+        </label>
+
+        <label class="full-width">
+          Remarque initiale
+          <textarea id="newStopNotes" rows="4"></textarea>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="confirmCreateStop">💾 Créer l’arrêt</button>
+        <button value="cancel" class="secondary">Annuler</button>
+      </div>
+    </form>
+  </dialog>
+
+
+  <dialog id="linesExplorerDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <div>
+          <h2>Recherche de ligne</h2>
+          <div class="meta">Choisis un réseau, une ligne puis une variante de parcours.</div>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Réseau
+          <select id="lineAgencySelect">
+            <option value="">Choisir un réseau</option>
+          </select>
+        </label>
+
+        <label>
+          Ligne
+          <select id="lineRouteSelect" disabled>
+            <option value="">Choisir une ligne</option>
+          </select>
+        </label>
+
+        <label class="full-width">
+          Variante / direction
+          <select id="linePatternSelect" disabled>
+            <option value="">Choisir une variante</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="lineDetails" class="line-details">
+        <p>Sélectionne une ligne pour afficher son parcours.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="showSelectedLine" disabled>🗺️ Afficher sur la carte</button>
+        <button type="button" id="startGpsFromLine" disabled>🧭 Démarrer le GPS</button>
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="gpsLauncherDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <h2>Lancer le GPS</h2>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label class="full-width">
+          Type de parcours
+          <select id="gpsSourceType">
+            <option value="gtfs">Ligne GTFS</option>
+            <option value="saved">Itinéraire BreizhStops enregistré</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="gpsGtfsChooser">
+        <div class="form-grid">
+          <label>
+            Réseau
+            <select id="gpsAgencySelect"></select>
+          </label>
+          <label>
+            Ligne
+            <select id="gpsRouteSelect" disabled></select>
+          </label>
+          <label class="full-width">
+            Variante
+            <select id="gpsPatternSelect" disabled></select>
+          </label>
+        </div>
+      </div>
+
+      <div id="gpsSavedChooser" class="hidden">
+        <label>
+          Itinéraire enregistré
+          <select id="gpsSavedRouteSelect"></select>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="confirmStartGps">▶️ Démarrer</button>
+        <button value="cancel" class="secondary">Annuler</button>
+      </div>
+    </form>
+  </dialog>
+
+  <section id="gpsScreen" class="gps-screen hidden">
+    <header class="gps-header">
+      <div>
+        <div id="gpsRouteName" class="gps-route-name">GPS BreizhStops</div>
+        <div id="gpsDirection" class="gps-direction"></div>
+      </div>
+      <button id="stopGps" class="danger">Quitter</button>
+    </header>
+
+    <div class="gps-information">
+      <div class="gps-next-label">Prochain arrêt</div>
+      <div id="gpsNextStop" class="gps-next-stop">—</div>
+      <div id="gpsNextDistance" class="gps-distance">—</div>
+      <div id="gpsFollowingStop" class="gps-following"></div>
+      <div id="gpsRouteStatus" class="gps-status">Recherche de la position…</div>
+    </div>
+
+    <div id="gpsMap" class="gps-map"></div>
+
+    <footer class="gps-footer">
+      <button id="gpsZoomIn">＋ Zoom</button>
+      <button id="gpsZoomOut">－ Zoom</button>
+      <button id="gpsFollowToggle">🎯 Suivi actif</button>
+      <button id="gpsOrientationToggle">🧭 Orientation active</button>
+      <button id="gpsNorthUp" class="secondary">N Nord en haut</button>
+      <button id="gpsPreviousStop" class="secondary">← Arrêt précédent</button>
+      <button id="gpsNextStopButton">Arrêt suivant →</button>
+      
+    </footer>
+  </section>
+
+  <dialog id="adminLoginDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-header">
+        <h2>Connexion à l’administration</h2>
+        <button class="icon-button" value="cancel">✕</button>
+      </div>
+
+      <p class="information-box">
+        Cloudflare Access doit être ouvert une fois avant les imports et les
+        modifications. La connexion restera ensuite active dans ce navigateur.
+      </p>
+
+      <div class="modal-actions">
+        <button type="button" id="openAccessLogin">🔐 Ouvrir la connexion</button>
+        <button type="button" id="testAdminSession">✅ Tester la connexion</button>
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
+
+      <div id="adminSessionStatus"></div>
+    </form>
+  </dialog>
+
+
+  <dialog id="saeTodayDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <div>
+          <h2>🚌 SAE — Mes courses</h2>
+          <div id="saeTodayDate" class="meta"></div>
+        </div>
+
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="modal-actions left">
+        <button type="button" id="saeSyncNotion">🔄 Synchroniser Notion</button>
+        <button type="button" id="saeRefreshToday" class="secondary">Actualiser</button>
+      </div>
+
+      <div id="saeSyncStatus"></div>
+      <div id="saeTodayList" class="sae-course-list"></div>
+    </form>
+  </dialog>
+
+  <dialog id="saeMatchDialog" class="modal">
+    <form method="dialog" class="modal-card large">
+      <div class="modal-header">
+        <div>
+          <h2>Correspondance des arrêts</h2>
+          <div class="meta">
+            Vérifie les arrêts reconnus avant de lancer le SAE.
+          </div>
+        </div>
+
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Réseau principal
+          <select id="saeNetworkFilter">
+            <option value="">Tous les réseaux</option>
+          </select>
+        </label>
+
+        <div class="information-box">
+          Les arrêts du réseau choisi sont proposés en priorité.
+          Les points issus d’inRoute restent toujours disponibles.
+        </div>
+      </div>
+
+      <div id="saeMatchList"></div>
+
+      <div class="modal-actions">
+        <button type="button" id="saeConfirmMatches">✅ Valider et ouvrir le SAE</button>
+        <button value="cancel" class="secondary">Annuler</button>
+      </div>
+    </form>
+  </dialog>
+
+  <section id="saeScreen" class="sae-screen hidden">
+    <header class="sae-header">
+      <div>
+        <div id="saeCourseName" class="sae-course-name">Course</div>
+        <div class="sae-header-details">
+          <span id="saeGirouette">Girouette : —</span>
+          <span id="saeService">Service : —</span>
+        </div>
+      </div>
+
+      <div class="sae-header-actions">
+        <span id="saeGpsBadge" class="sae-badge sae-badge-warning">GPS…</span>
+        <span id="saePassengerBadge" class="sae-badge sae-badge-passengers">👥 0</span>
+        <button id="saeQuit" class="danger">Quitter</button>
+      </div>
+    </header>
+
+    <main class="sae-layout sae-layout-iphone">
+      <section class="sae-main-panel">
+        <article class="sae-current-card sae-current-card-compact">
+          <div class="sae-current-topline">
+            <div>
+              <div class="sae-section-label">ARRÊT ACTUEL</div>
+              <div id="saeCurrentStop" class="sae-current-stop">—</div>
+            </div>
+            <div id="saeDelay" class="sae-delay sae-delay-neutral">—</div>
+          </div>
+
+          <div class="sae-current-meta">
+            <span>Théorique : <strong id="saeCurrentScheduled">—</strong></span>
+            <span>Distance : <strong id="saeCurrentDistance">—</strong></span>
+          </div>
+
+          <div class="sae-count-inline">
+            <div class="sae-count-inline-group">
+              <span class="sae-count-inline-label">⬆️</span>
+              <button id="saeBoardingsMinus" class="secondary">−</button>
+              <strong id="saeBoardingsValue">0</strong>
+              <button id="saeBoardingsPlus">+</button>
+            </div>
+
+            <div class="sae-count-inline-group">
+              <span class="sae-count-inline-label">⬇️</span>
+              <button id="saeAlightingsMinus" class="secondary">−</button>
+              <strong id="saeAlightingsValue">0</strong>
+              <button id="saeAlightingsPlus">+</button>
+            </div>
+          </div>
+
+          <button id="saeValidateStop" class="sae-validate-button sae-validate-button-compact">
+            ✓ Valider l’arrêt
+          </button>
+        </article>
+
+        <article class="sae-next-card sae-next-card-compact">
+          <div>
+            <div class="sae-section-label">PROCHAIN ARRÊT</div>
+            <div id="saeNextStopName" class="sae-next-stop-name">—</div>
+          </div>
+          <div class="sae-next-data">
+            <span id="saeNextScheduled">—</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="sae-map-panel sae-map-panel-iphone">
+        <div id="saeMap"></div>
+        <div class="sae-map-buttons sae-map-buttons-compact">
+          <button id="saeZoomIn">＋</button>
+          <button id="saeZoomOut">－</button>
+          <button id="saeFollowToggle">🎯</button>
+          <button id="saeOrientationToggle">🧭</button>
+          <button id="saeNorthUp" class="secondary">N</button>
+        </div>
+      </section>
+
+      <section class="sae-progress-wrapper">
+        <article class="sae-progress-card sae-progress-card-compact">
+          <div class="sae-progress-header">
+            <span>PROGRESSION DE LA COURSE</span>
+            <strong id="saeProgressCount">0 / 0</strong>
+          </div>
+          <div id="saeStopProgress" class="sae-stop-progress"></div>
+        </article>
+      </section>
+    </main>
+  </section>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+  <script src="./app.js"></script>
+  <script src="./v4.js"></script>
+  <script src="./sae.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+:root {
+  color-scheme: dark;
+  --bg: #050806;
+  --panel: #0e1410;
+  --panel-soft: #141c16;
+  --line: #2c3930;
+  --green: #7be12d;
+  --green-dark: #4ca617;
+  --text: #f5f8f5;
+  --muted: #a9b4ad;
+  --red: #ff4f37;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+a { color: inherit; }
+.home-topbar { height: 66px; padding: max(10px, env(safe-area-inset-top)) 24px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); background: rgba(5,8,6,.96); }
+.home-brand { display: flex; align-items: center; gap: 12px; }
+.home-brand strong, .home-brand span { display: block; }
+.home-brand strong { font-size: 18px; }
+.home-brand span { color: var(--muted); font-size: 12px; }
+.brand-mark { display: grid !important; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--green); color: #071005 !important; font-weight: 950; font-style: italic; font-size: 24px !important; }
+.version-pill { padding: 4px 9px; border: 1px solid #516155; border-radius: 999px; color: #bec9c1; font-size: 10px; }
+.hero { position: relative; min-height: 460px; background: url('./assets/ocelorn-hero.jpg') center 52% / cover no-repeat; overflow: hidden; }
+.hero-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,6,4,.95) 0%, rgba(3,6,4,.76) 42%, rgba(3,6,4,.18) 75%), linear-gradient(0deg, #050806 0%, transparent 32%); }
+.hero-content { position: relative; z-index: 1; width: min(1200px, calc(100% - 40px)); margin: auto; padding: 72px 0 90px; }
+.eyebrow, .section-kicker { margin: 0 0 8px; color: var(--green); letter-spacing: .14em; font-size: 11px; font-weight: 850; }
+.hero h1 { margin: 0; font-size: clamp(42px, 7vw, 82px); line-height: .95; }
+.hero-date { margin: 14px 0 26px; color: #d7ded9; font-size: 18px; text-transform: capitalize; }
+.coach-clock { display: inline-flex; align-items: stretch; overflow: hidden; border: 9px solid #767b6e; border-radius: 18px 22px 22px 18px; background: #070807; box-shadow: 0 16px 40px rgba(0,0,0,.45), inset 0 0 18px rgba(255,52,20,.08); }
+.digital-time { min-width: 250px; padding: 13px 20px 10px; color: #ff4e2e; font-family: "Courier New", monospace; font-size: clamp(54px, 8vw, 86px); font-weight: 900; letter-spacing: .03em; line-height: 1; text-shadow: 0 0 14px rgba(255,50,20,.6); font-variant-numeric: tabular-nums; }
+.stop-request { display: flex; gap: 9px; align-items: center; min-width: 190px; padding: 11px 18px; border-left: 3px solid #272a25; color: #ff5a35; font-weight: 900; font-size: 25px; line-height: 1.05; text-shadow: 0 0 10px rgba(255,60,25,.45); }
+.request-led { width: 9px; height: 9px; border-radius: 50%; background: #ff4a2a; box-shadow: 0 0 10px #ff4a2a; }
+.dashboard-grid { width: min(1200px, calc(100% - 40px)); margin: -56px auto 0; position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.status-card, .module-card { overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(145deg, rgba(19,28,21,.98), rgba(8,13,9,.98)); box-shadow: 0 20px 55px rgba(0,0,0,.28); }
+.status-card { grid-column: 1 / -1; padding: 25px; }
+.card-heading { display: flex; justify-content: space-between; align-items: center; }
+.card-heading h2, .module-content h2 { margin: 0; font-size: 27px; }
+.card-vehicle { width: 150px; height: 76px; object-fit: contain; object-position: center; }
+.validation-meter { display: grid; grid-template-columns: auto 1fr; gap: 2px 13px; align-items: end; margin: 18px 0 10px; }
+.validation-meter strong { font-size: 42px; color: var(--green); }
+.validation-meter > span { color: var(--muted); padding-bottom: 7px; }
+.meter-track { grid-column: 1 / -1; height: 8px; overflow: hidden; border-radius: 999px; background: #29312b; }
+.meter-track span { display: block; width: 0; height: 100%; background: linear-gradient(90deg, var(--green-dark), var(--green)); transition: width .4s ease; }
+.next-info { color: #cad3cd; }
+.primary-link, .module-links a { display: inline-flex; align-items: center; justify-content: center; padding: 11px 15px; border-radius: 10px; background: var(--green); color: #081006; text-decoration: none; font-weight: 850; }
+.primary-link.dark { background: #fff; color: #070a08; }
+.module-card { min-height: 390px; display: flex; flex-direction: column; }
+.module-photo, .breizh-visual { height: 205px; }
+.depot-photo { background: linear-gradient(0deg, rgba(5,8,6,.45), transparent), url('./assets/ocelorn-coach.jpg') center / cover; }
+.module-content { padding: 22px; }
+.module-content p { min-height: 50px; color: var(--muted); line-height: 1.55; }
+.module-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.module-links a { background: #202a23; color: #fff; border: 1px solid #405047; }
+.breizh-visual { position: relative; overflow: hidden; background: #fff; }
+.breton-stripes { position: absolute; inset: 0; background: repeating-linear-gradient(to bottom, #fff 0 24px, #050505 24px 48px); }
+.breton-stripes::before { content: "♟  ♟  ♟\A ♟  ♟  ♟\A♟  ♟  ♟"; white-space: pre; position: absolute; top: 13px; left: 22px; width: 180px; height: 118px; padding: 10px; background: #fff; color: #050505; font-size: 26px; line-height: 1.05; font-weight: 900; }
+.breizh-bus { position: absolute; z-index: 2; right: 22px; bottom: -14px; width: 230px; filter: drop-shadow(0 15px 12px rgba(0,0,0,.35)); }
+.quick-strip { width: min(1200px, calc(100% - 40px)); margin: 18px auto 46px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.quick-strip a { display: flex; gap: 12px; align-items: center; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: #0b100d; text-decoration: none; }
+.quick-strip a > span { font-size: 26px; }
+.quick-strip strong, .quick-strip small { display: block; }
+.quick-strip small { margin-top: 3px; color: var(--muted); }
+footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-align: center; font-size: 12px; }
+@media (max-width: 760px) {
+  .home-topbar { padding-left: 14px; padding-right: 14px; }
+  .hero { min-height: 510px; }
+  .hero-content { width: calc(100% - 28px); padding-top: 58px; }
+  .coach-clock { width: 100%; border-width: 6px; }
+  .digital-time { min-width: 0; flex: 1; padding: 13px 9px; font-size: 53px; }
+  .stop-request { min-width: 128px; padding: 9px; font-size: 17px; }
+  .dashboard-grid { width: calc(100% - 20px); grid-template-columns: 1fr; }
+  .status-card { grid-column: auto; }
+  .card-vehicle { width: 105px; }
+  .module-card { min-height: 350px; }
+  .quick-strip { width: calc(100% - 20px); grid-template-columns: 1fr; }
+}

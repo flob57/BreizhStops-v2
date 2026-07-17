@@ -761,13 +761,11 @@ export async function onRequestPost(context) {
 
     let imported = 0;
 
-    if (
-      psTime ||
-      qubReference ||
-      driverName ||
-      firstCourse ||
-      vehicleRegistration
-    ) {
+    /*
+     * Un service sans conducteur ET sans véhicule est considéré
+     * comme non programmé pour la journée et n'est pas affiché.
+     */
+    if (driverName || vehicleRegistration) {
       const row = {
         id: `duty-${date}-${page.id}`,
         notion_page_id: page.id,

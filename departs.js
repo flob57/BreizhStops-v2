@@ -1,7 +1,8 @@
 const state = {
   date: "",
   departures: [],
-  refreshTimer: null
+  refreshTimer: null,
+  openTraceIds: new Set()
 };
 
 const $ = id => document.getElementById(id);
@@ -209,7 +210,7 @@ function runningCard(departure, status) {
   }).join("");
 
   return `
-    <article class="running-card" data-running-id="${escapeHtml(departure.id)}">
+    <article class="running-card ${state.openTraceIds.has(departure.id) ? "open" : ""}" data-running-id="${escapeHtml(departure.id)}">
       <div class="running-main">
         <div class="time">${escapeHtml(departure.departure_time.slice(0,5))}</div>
         <div class="course">${escapeHtml(departure.course_name)}</div>
@@ -219,7 +220,7 @@ function runningCard(departure, status) {
         <div><span class="label">QUB</span>${escapeHtml(departure.qub_reference || "—")}</div>
         <div><span class="label">Prochain arrêt</span>${escapeHtml((next.time || "").slice(0,5))} ${escapeHtml(next.name || "—")}</div>
         <div><span class="label">Arrivée</span>${escapeHtml(departure.arrival_time.slice(0,5) || "—")}</div>
-        <button class="trace-button" data-trace-id="${escapeHtml(departure.id)}">⌄</button>
+        <button class="trace-button" data-trace-id="${escapeHtml(departure.id)}">${state.openTraceIds.has(departure.id) ? "⌃" : "⌄"}</button>
       </div>
       <div class="thermometer">
         <div class="thermo-track">
@@ -342,11 +343,14 @@ document.addEventListener("click", event => {
   const button = event.target.closest("[data-trace-id]");
   if (!button) return;
 
-  const card = document.querySelector(`[data-running-id="${CSS.escape(button.dataset.traceId)}"]`);
-  if (!card) return;
+  const id = button.dataset.traceId;
+  if (state.openTraceIds.has(id)) {
+    state.openTraceIds.delete(id);
+  } else {
+    state.openTraceIds.add(id);
+  }
 
-  card.classList.toggle("open");
-  button.textContent = card.classList.contains("open") ? "⌃" : "⌄";
+  render();
 });
 
 $("syncButton").addEventListener("click", syncAll);

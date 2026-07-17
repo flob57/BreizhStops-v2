@@ -472,3 +472,9 @@ dialog::backdrop {
   font-weight: 700;
   text-decoration: none;
 }
+
+/* V6.7 — identité Océlorn */
+body { background: radial-gradient(circle at top right, rgba(89,145,45,.08), transparent 35%), #040806; }
+button, .toolbar-link, .toolbar a { transition: transform .15s ease, border-color .15s ease; }
+button:hover, .toolbar-link:hover, .toolbar a:hover { transform: translateY(-1px); border-color: #7be12d; }
+.version { color: #bfe7a4; border-color: #52733c; }

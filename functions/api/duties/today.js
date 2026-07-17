@@ -39,6 +39,10 @@ export async function onRequestGet(context) {
          ON duty_validations.duty_service_id = duty_services.id
         AND duty_validations.service_date = duty_services.service_date
        WHERE duty_services.service_date = ?
+         AND (
+           TRIM(COALESCE(duty_services.driver_name, '')) <> ''
+           OR TRIM(COALESCE(duty_services.vehicle_registration, '')) <> ''
+         )
        ORDER BY duty_services.ps_time, duty_services.qub_reference`
     ).bind(date).all();
 
