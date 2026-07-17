@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#050806">
-  <title>Océlorn — Tableau de bord V7.5</title>
+  <title>Océlorn — Tableau de bord V7.6</title>
   <link rel="stylesheet" href="./home.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
         <span>Océlorn · BreizhStops</span>
       </div>
     </div>
-    <span class="version-pill">V7.5</span>
+    <span class="version-pill">V7.6</span>
   </header>
 
   <main>
@@ -125,7 +125,7 @@
         </div>
       </article>
 
-      <article class="module-card stats-card">
+      <article class="module-card activity-module-card">
         <div class="stats-visual tachograph-stats-visual">
           <img src="./assets/tachograph-activity.png" alt="Disque de chronotachygraphe">
           <div class="tachograph-shade"></div>
@@ -203,7 +203,35 @@
     </form>
   </dialog>
 
-  <footer>Océlorn · Outil personnel d’exploitation · BreizhStops V7.5</footer>
+  
+      <section class="home-status-grid" aria-label="Informations d'exploitation">
+        <article class="status-panel workshop-panel">
+          <div class="status-panel-heading">
+            <div>
+              <span class="section-kicker">MAINTENANCE</span>
+              <h2>Véhicules à l’atelier</h2>
+            </div>
+            <span id="workshopCount" class="status-count">—</span>
+          </div>
+          <div id="workshopMessage" class="status-message">Chargement…</div>
+          <div id="workshopCards" class="mini-card-grid"></div>
+        </article>
+
+        <article class="status-panel sickleave-panel">
+          <div class="status-panel-heading">
+            <div>
+              <span class="section-kicker">ÉQUIPE</span>
+              <h2>Conducteurs en arrêt</h2>
+            </div>
+            <span id="sickleaveCount" class="status-count">—</span>
+          </div>
+          <div id="sickleaveMessage" class="status-message">Chargement…</div>
+          <div id="sickleaveCards" class="mini-card-grid"></div>
+        </article>
+      </section>
+
+
+<footer>Océlorn · Outil personnel d’exploitation · BreizhStops V7.6</footer>
   <script src="./home.js"></script>
 </body>
 </html>
