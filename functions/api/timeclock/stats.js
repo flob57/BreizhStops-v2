@@ -1,7 +1,6 @@
 import {
   json, error, requireDb, ensureSettings, dateRangeDays,
-  calendarForRange, expectedMinutesForDate, parisDate
-} from "../../_personal.js";
+  calendarForRange, expectedMinutesForDate, parisDate, ensurePersonalSchema} from "../../_personal.js";
 
 function firstDayOfWeek(date) {
   const d = new Date(`${date}T12:00:00Z`);
@@ -57,6 +56,7 @@ function paidLeaveBalance(settings, events, today) {
 export async function onRequestGet(context) {
   try {
     const db = requireDb(context);
+    await ensurePersonalSchema(db);
     const url = new URL(context.request.url);
     const today = url.searchParams.get("date") || parisDate();
     const weekStart = url.searchParams.get("week_start") || firstDayOfWeek(today);

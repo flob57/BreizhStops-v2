@@ -139,6 +139,7 @@ function declarationTotal() {
   $("declareTotal").textContent=`Total : ${fmtMinutes(total)}`;
 }
 async function openDeclaration() {
+  try {
   const date=parisDate();
   const payload=await api(`/api/timeclock/declarations?date=${date}`);
   const d=payload.declaration||payload.prefill||{};
@@ -150,6 +151,7 @@ async function openDeclaration() {
   $("declareNotes").value=d.notes||"";
   declarationTotal();
   $("declareDialog").showModal();
+  } catch (e) { alert(e.message); }
 }
 async function submitDeclaration(e) {
   e.preventDefault();

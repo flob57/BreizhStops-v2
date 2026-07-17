@@ -1,4 +1,4 @@
-import { json, error, requireDb } from "../../../_personal.js";
+import { json, error, requireDb, ensurePersonalSchema} from "../../../_personal.js";
 
 const FALLBACK_DATABASE_ID = "2e66bbfa7ec1804f963bc019a4d6de92";
 
@@ -38,6 +38,7 @@ function registrationFromPage(page) {
 export async function onRequestPost(context) {
   try {
     const db = requireDb(context);
+    await ensurePersonalSchema(db);
     const token = context.env.NOTION_TOKEN;
     const databaseId = context.env.NOTION_VEHICLES_DATABASE_ID || FALLBACK_DATABASE_ID;
     if (!token) return error("Secret NOTION_TOKEN absent.", 500);

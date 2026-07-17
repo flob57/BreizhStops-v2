@@ -1,4 +1,4 @@
-import { json, error, requireDb } from "../../../../_personal.js";
+import { json, error, requireDb, ensurePersonalSchema} from "../../../../_personal.js";
 
 const tables = {
   work: "work_sessions",
@@ -9,6 +9,7 @@ const tables = {
 export async function onRequestDelete(context) {
   try {
     const db = requireDb(context);
+    await ensurePersonalSchema(db);
     const table = tables[context.params.type];
     if (!table) return error("Type inconnu.", 400);
     await db.prepare(`DELETE FROM ${table} WHERE id = ?`).bind(context.params.id).run();

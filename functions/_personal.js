@@ -56,7 +56,27 @@ export function sqlDateExpression(column) {
   return `date(${column}, '+2 hours')`;
 }
 
+
+export async function ensurePersonalSchema(db) {
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS personal_settings (id TEXT PRIMARY KEY, overtime_balance_minutes INTEGER NOT NULL DEFAULT 0, overtime_baseline_date TEXT NOT NULL DEFAULT '2026-07-17', paid_leave_n1 REAL NOT NULL DEFAULT 0, paid_leave_n REAL NOT NULL DEFAULT 0, paid_leave_baseline_date TEXT NOT NULL DEFAULT '2026-07-17', updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS work_sessions (id TEXT PRIMARY KEY, started_at TEXT NOT NULL, ended_at TEXT, notes TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS driving_sessions (id TEXT PRIMARY KEY, work_session_id TEXT NOT NULL, vehicle_registration TEXT NOT NULL, started_at TEXT NOT NULL, ended_at TEXT, km_start INTEGER NOT NULL, km_end INTEGER, notes TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS fuel_fillups (id TEXT PRIMARY KEY, driving_session_id TEXT, vehicle_registration TEXT NOT NULL, filled_at TEXT NOT NULL, odometer_km INTEGER NOT NULL, litres REAL NOT NULL, notes TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS declared_hours (id TEXT PRIMARY KEY, work_date TEXT NOT NULL UNIQUE, morning_start TEXT NOT NULL DEFAULT '', morning_end TEXT NOT NULL DEFAULT '', afternoon_start TEXT NOT NULL DEFAULT '', afternoon_end TEXT NOT NULL DEFAULT '', total_minutes INTEGER NOT NULL DEFAULT 0, notes TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS vehicles_cache (id TEXT PRIMARY KEY, notion_page_id TEXT NOT NULL UNIQUE, registration TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE INDEX IF NOT EXISTS idx_work_sessions_started ON work_sessions(started_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_driving_sessions_started ON driving_sessions(started_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_fuel_fillups_vehicle ON fuel_fillups(vehicle_registration, odometer_km)`,
+    `CREATE INDEX IF NOT EXISTS idx_declared_hours_date ON declared_hours(work_date)`,
+    `CREATE INDEX IF NOT EXISTS idx_vehicles_registration ON vehicles_cache(registration)`
+  ];
+  for (const statement of statements) await db.prepare(statement).run();
+  await db.prepare(`INSERT OR IGNORE INTO personal_settings (id, overtime_balance_minutes, overtime_baseline_date, paid_leave_n1, paid_leave_n, paid_leave_baseline_date) VALUES ('main',720,'2026-07-17',28,5,'2026-07-17')`).run();
+}
+
 export async function ensureSettings(db) {
+  await ensurePersonalSchema(db);
   await db.prepare(
     `INSERT OR IGNORE INTO personal_settings (
        id, overtime_balance_minutes, overtime_baseline_date,

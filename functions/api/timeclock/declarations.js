@@ -1,11 +1,11 @@
 import {
   json, error, requireDb, createId, declaredTotal,
-  calendarForRange, prefillForDate, parisDate
-} from "../../_personal.js";
+  calendarForRange, prefillForDate, parisDate, ensurePersonalSchema} from "../../_personal.js";
 
 export async function onRequestGet(context) {
   try {
     const db = requireDb(context);
+    await ensurePersonalSchema(db);
     const url = new URL(context.request.url);
     const date = url.searchParams.get("date");
     const start = url.searchParams.get("start");

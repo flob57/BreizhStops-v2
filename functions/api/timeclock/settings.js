@@ -1,8 +1,9 @@
-import { json, error, requireDb, ensureSettings } from "../../_personal.js";
+import { json, error, requireDb, ensureSettings, ensurePersonalSchema} from "../../_personal.js";
 
 export async function onRequestGet(context) {
   try {
     const db = requireDb(context);
+    await ensurePersonalSchema(db);
     return json({ settings: await ensureSettings(db) });
   } catch (exception) {
     return error(exception.message, 500);

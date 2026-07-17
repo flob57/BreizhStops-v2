@@ -1,8 +1,9 @@
-import { json, error, requireDb, createId, isoNow } from "../../_personal.js";
+import { json, error, requireDb, createId, isoNow, ensurePersonalSchema} from "../../_personal.js";
 
 export async function onRequestPost(context) {
   try {
     const db = requireDb(context);
+    await ensurePersonalSchema(db);
     const body = await context.request.json();
     const action = body.action;
 

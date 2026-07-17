@@ -1,8 +1,9 @@
-import { json, error, requireDb, declaredTotal } from "../../../_personal.js";
+import { json, error, requireDb, declaredTotal, ensurePersonalSchema} from "../../../_personal.js";
 
 export async function onRequestPatch(context) {
   try {
     const db = requireDb(context);
+    await ensurePersonalSchema(db);
     const body = await context.request.json();
     const total = declaredTotal(body);
     await db.prepare(

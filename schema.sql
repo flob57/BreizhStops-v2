@@ -322,7 +322,7 @@ ON daily_departures(service_date, departure_time);
 
 
 -- ============================================================
--- V7.0 — Prise de poste, conduite, pleins et statistiques
+-- V7.0.1 — Prise de poste, conduite, pleins et statistiques
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS personal_settings (

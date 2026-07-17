@@ -1,8 +1,9 @@
-import { json, error, requireDb, minutesBetween, parisDate } from "../../_personal.js";
+import { json, error, requireDb, minutesBetween, parisDate, ensurePersonalSchema} from "../../_personal.js";
 
 export async function onRequestGet(context) {
   try {
     const db = requireDb(context);
+    await ensurePersonalSchema(db);
     const work = await db.prepare(
       `SELECT * FROM work_sessions WHERE ended_at IS NULL ORDER BY started_at DESC LIMIT 1`
     ).first();
