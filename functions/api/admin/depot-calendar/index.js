@@ -33,7 +33,7 @@ export async function onRequestPost(context) {
     const body = await context.request.json();
 
     const label = String(body.label || "").trim();
-    const eventType = ["school_holiday", "public_holiday"]
+    const eventType = ["school_holiday", "public_holiday", "recovery", "paid_leave"]
       .includes(body.event_type)
       ? body.event_type
       : "school_holiday";

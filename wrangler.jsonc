@@ -18,4 +18,8 @@
       "bucket_name": "breizhstops-photos"
     }
   ]
+,
+  "vars": {
+    "NOTION_VEHICLES_DATABASE_ID": "2e66bbfa7ec1804f963bc019a4d6de92"
+  }
 }

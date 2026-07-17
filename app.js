@@ -2020,3 +2020,12 @@ if (departuresButton) {
     window.location.href = "./departs.html";
   });
 }
+
+
+// V7.0 — ouverture directe du module SAE depuis la prise de poste.
+window.addEventListener("load", () => {
+  const params = new URLSearchParams(location.search);
+  if (params.get("open") === "sae") {
+    setTimeout(() => document.getElementById("openSae")?.click(), 450);
+  }
+});

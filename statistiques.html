@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050806">
+  <title>Mes statistiques — V7.0</title>
+  <link rel="stylesheet" href="./statistiques.css">
+</head>
+<body>
+<header>
+  <a href="./index.html">‹ Accueil</a>
+  <div><h1>📊 Mes statistiques <span>V7.0</span></h1><p id="statsDate"></p></div>
+  <button id="settingsButton">⚙ Soldes initiaux</button>
+</header>
+<main>
+  <section class="summary-grid">
+    <article><span>HEURES SUPPLÉMENTAIRES</span><strong id="overtime">—</strong><small>calculées sur les heures déclarées</small></article>
+    <article><span>CONGÉS PAYÉS</span><strong id="paidLeave">—</strong><small id="paidLeaveDetail"></small></article>
+    <article><span>ACTIVITÉ DU JOUR</span><strong id="todayActivity">—</strong><small id="todayDriving"></small></article>
+    <article><span>CONSOMMATION MOYENNE</span><strong id="averageConsumption">—</strong><small id="consumptionVehicle"></small></article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title"><h2>Heures déclarées</h2><input id="weekPicker" type="week"><button id="declareHere">+ Déclarer</button></div>
+    <div id="weekTitle" class="subtle"></div>
+    <div id="declarationsList" class="list"></div>
+    <div id="weekDeclaredTotal" class="total-line"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Statistiques réelles</h2>
+    <div id="periodCards" class="period-grid"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title"><h2>Consommation par véhicule</h2></div>
+    <div id="consumptionList" class="table-wrap"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title"><h2>Pleins de carburant</h2></div>
+    <div id="fuelList" class="table-wrap"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title"><h2>Statistiques journalières</h2>
+      <select id="dailyPeriod"><option value="week">Semaine</option><option value="month">Mois</option><option value="year">Année</option></select>
+    </div>
+    <div id="dailyList" class="table-wrap"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Sessions de travail réelles</h2>
+    <div id="workSessions" class="table-wrap"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Sessions de conduite</h2>
+    <div id="drivingSessions" class="table-wrap"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Distances parcourues</h2>
+    <div id="distanceSummary" class="distance-grid"></div>
+  </section>
+</main>
+
+<dialog id="settingsDialog"><form id="settingsForm" method="dialog">
+  <h2>Soldes initiaux</h2>
+  <label>Solde d’heures supplémentaires (minutes)<input id="settingOvertime" type="number"></label>
+  <label>Date de référence<input id="settingOvertimeDate" type="date"></label>
+  <label>Congés N−1<input id="settingN1" type="number" step="0.5"></label>
+  <label>Congés N<input id="settingN" type="number" step="0.5"></label>
+  <label>Date de référence congés<input id="settingLeaveDate" type="date"></label>
+  <div class="actions"><button value="cancel">Annuler</button><button value="default">Enregistrer</button></div>
+</form></dialog>
+
+<dialog id="declareDialog"><form id="declareForm" method="dialog">
+  <h2>Déclarer / modifier les heures</h2>
+  <label>Date<input id="declareDate" type="date" required></label>
+  <div class="two"><label>Matin début<input id="morningStart" type="time"></label><label>Matin fin<input id="morningEnd" type="time"></label>
+  <label>Après-midi début<input id="afternoonStart" type="time"></label><label>Après-midi fin<input id="afternoonEnd" type="time"></label></div>
+  <label>Commentaire<textarea id="declareNotes"></textarea></label>
+  <div class="actions"><button value="cancel">Annuler</button><button value="default">Enregistrer</button></div>
+</form></dialog>
+<script src="./statistiques.js"></script>
+</body>
+</html>

@@ -115,7 +115,7 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
 }
 
 
-/* V6.9 — visuels fournis par l’utilisateur */
+/* V7.0 — visuels fournis par l’utilisateur */
 .card-vehicle.london {
   width: 180px;
   height: 96px;
@@ -137,4 +137,41 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
   max-height: 195px;
   object-fit: contain;
   filter: drop-shadow(0 18px 16px rgba(0,0,0,.45));
+}
+
+
+/* V7.0 — Prise de poste */
+.work-activity { margin: 18px 0; padding: 17px; border: 1px solid var(--line); border-radius: 15px; background: rgba(5,9,6,.56); }
+.activity-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.activity-badge { padding:5px 10px; border-radius:999px; background:#2a302b; color:#c3ccc6; font-size:12px; }
+.activity-badge.active { background:rgba(123,225,45,.18); color:var(--green); }
+.activity-counters { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.activity-counters > div { padding:12px; border:1px solid #334038; border-radius:12px; }
+.activity-counters span,.activity-counters strong { display:block; }
+.activity-counters span { color:var(--muted); font-size:12px; }
+.activity-counters strong { margin-top:5px; font-size:24px; }
+.activity-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.activity-button,.module-button { appearance:none; border:1px solid #405047; border-radius:10px; padding:11px 15px; background:#202a23; color:#fff; font-weight:800; cursor:pointer; text-decoration:none; }
+.activity-button.primary { background:var(--green); color:#081006; border-color:var(--green); }
+.activity-button.danger { background:#b93328; border-color:#d34a3d; }
+.stats-card { grid-column:1 / -1; min-height:300px; display:grid; grid-template-columns:40% 60%; }
+.stats-visual { min-height:300px; display:flex; align-items:center; justify-content:center; gap:22px; background:linear-gradient(135deg,#152018,#080d09); }
+.stats-symbol { display:grid; place-items:center; width:92px; height:92px; border-radius:50%; background:var(--green); color:#081006; font-size:55px; font-weight:900; }
+.stats-visual span,.stats-visual small { display:block; }
+.stats-visual span { font-size:48px; color:var(--green); font-weight:900; }
+.stats-visual small { color:var(--muted); letter-spacing:.12em; }
+.home-dialog { width:min(560px,calc(100% - 24px)); border:1px solid #455448; border-radius:18px; background:#0e1410; color:#fff; padding:22px; }
+.home-dialog::backdrop { background:rgba(0,0,0,.72); backdrop-filter:blur(4px); }
+.home-dialog form { display:grid; gap:14px; }
+.home-dialog label { display:grid; gap:6px; color:#c8d1ca; font-size:13px; }
+.home-dialog input,.home-dialog select,.home-dialog textarea { width:100%; border:1px solid #3b493f; border-radius:10px; padding:11px; background:#080d09; color:#fff; }
+.time-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.dialog-actions { display:flex; justify-content:flex-end; gap:8px; }
+.dialog-actions button { padding:10px 16px; border:1px solid #465349; border-radius:9px; background:#202720; color:#fff; font-weight:800; }
+.dialog-actions button:last-child { background:var(--green); color:#071005; }
+@media(max-width:760px){
+ .activity-counters,.time-grid,.stats-card{grid-template-columns:1fr}
+ .stats-card{display:flex}
+ .stats-visual{min-height:190px}
+ .stats-visual span{font-size:36px}
 }
