@@ -649,6 +649,27 @@ function sortTime(value) {
   return `${String(Number(match[1])).padStart(2, "0")}:${match[2]}`;
 }
 
+
+function normalizedDutyValue(value) {
+  return String(value || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function looksLikeCourseReference(value) {
+  const text = normalizedDutyValue(value);
+
+  if (!text) {
+    return false;
+  }
+
+  return (
+    /^(?:PVS\s*)?(?:Ligne\s*)?[A-Z]?\d{1,3}(?:\.\d{1,2})?$/i.test(text) ||
+    /^(?:PVS\s*)?Ligne\s+\d+/i.test(text)
+  );
+}
+
 export async function onRequestPost(context) {
   try {
     const db = requireDb(context);
@@ -722,42 +743,34 @@ export async function onRequestPost(context) {
       token
     );
 
-    if (!driverName) {
-      const relationProperties = Object.values(properties)
-        .filter(property =>
-          property?.type === "relation" &&
-          Array.isArray(property.relation) &&
-          property.relation.length > 0
-        );
 
-      for (const relationProperty of relationProperties) {
-        for (const relation of relationProperty.relation) {
-          const candidate = await strictDriverNameFromPage(
-            relation.id,
-            token
-          );
+    const firstCourse = normalizedDutyValue(
+      await propertyText(
+        properties["Course 1"],
+        token
+      )
+    );
 
-          if (candidate) {
-            driverName = candidate;
-            break;
-          }
-        }
+    const vehicleRegistration = normalizedDutyValue(
+      await propertyText(
+        properties["Véhicule"],
+        token
+      )
+    );
 
-        if (driverName) {
-          break;
-        }
-      }
+    driverName = normalizedDutyValue(driverName);
+
+    /*
+     * Sécurité définitive :
+     * une référence de course ne peut jamais être un conducteur.
+     * Cela corrige notamment P140.02 affiché dans la colonne Conducteur.
+     */
+    if (
+      driverName === firstCourse ||
+      looksLikeCourseReference(driverName)
+    ) {
+      driverName = "";
     }
-
-    const firstCourse = await propertyText(
-      properties["Course 1"],
-      token
-    );
-
-    const vehicleRegistration = await propertyText(
-      properties["Véhicule"],
-      token
-    );
 
     let imported = 0;
 
@@ -765,7 +778,13 @@ export async function onRequestPost(context) {
      * Un service sans conducteur ET sans véhicule est considéré
      * comme non programmé pour la journée et n'est pas affiché.
      */
-    if (driverName || vehicleRegistration) {
+    if (!driverName && !vehicleRegistration) {
+      await db.prepare(
+        `DELETE FROM duty_services
+         WHERE service_date = ?
+           AND notion_page_id = ?`
+      ).bind(date, page.id).run();
+    } else {
       const row = {
         id: `duty-${date}-${page.id}`,
         notion_page_id: page.id,

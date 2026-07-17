@@ -40,7 +40,13 @@ export async function onRequestGet(context) {
         AND duty_validations.service_date = duty_services.service_date
        WHERE duty_services.service_date = ?
          AND (
-           TRIM(COALESCE(duty_services.driver_name, '')) <> ''
+           (
+             TRIM(COALESCE(duty_services.driver_name, '')) <> ''
+             AND TRIM(COALESCE(duty_services.driver_name, ''))
+                 <> TRIM(COALESCE(duty_services.first_course, ''))
+             AND UPPER(TRIM(COALESCE(duty_services.driver_name, '')))
+                 NOT GLOB 'P[0-9]*.[0-9]*'
+           )
            OR TRIM(COALESCE(duty_services.vehicle_registration, '')) <> ''
          )
        ORDER BY duty_services.ps_time, duty_services.qub_reference`

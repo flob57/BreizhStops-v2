@@ -65,7 +65,7 @@ a { color: inherit; }
 .road-map-visual {
   background:
     linear-gradient(90deg, rgba(3,8,5,.28), rgba(3,8,5,.02)),
-    url('./assets/bretagne-road-map.jpg') center 54% / cover no-repeat;
+    url('./assets/bretagne-road-map-v69.jpg') center 54% / cover no-repeat;
 }
 .map-visual-overlay {
   position: absolute;
@@ -112,4 +112,29 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
   .status-card { grid-column: auto; }
   .card-vehicle { width: 105px; }
   .module-card { min-height: 350px; }
+}
+
+
+/* V6.9 — visuels fournis par l’utilisateur */
+.card-vehicle.london {
+  width: 180px;
+  height: 96px;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 12px 14px rgba(0,0,0,.38));
+}
+
+.road-map-visual {
+  background:
+    linear-gradient(90deg, rgba(3,8,5,.22), rgba(3,8,5,.02)),
+    url('./assets/bretagne-road-map-v69.jpg') center 52% / cover no-repeat;
+}
+
+.breizh-coach {
+  right: 24px;
+  bottom: -18px;
+  width: 260px;
+  max-height: 195px;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 16px rgba(0,0,0,.45));
 }

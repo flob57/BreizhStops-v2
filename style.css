@@ -1900,22 +1900,7 @@ button:disabled {
 .brand-title { display: flex; align-items: center; gap: 8px; }
 .brand-bus-icon { width: 38px; height: 30px; object-fit: contain; }
 .header-button { text-decoration: none; }
-.home-button,
-.home-button:link,
-.home-button:visited {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: #7be12d !important;
-  border-color: #7be12d !important;
-  color: #071005 !important;
-  font-weight: 900;
-}
-.home-button:hover,
-.home-button:focus-visible {
-  background: #98ef59 !important;
-  color: #071005 !important;
-}
+
 .breizhstops-page button, .breizhstops-page .map-link { background: #101010; }
 .breizhstops-page button:hover, .breizhstops-page .map-link:hover { background: #2a2a2a; }
 .breizhstops-page .route-actions button:first-child,
@@ -1924,4 +1909,29 @@ button:disabled {
 @media (max-width: 760px) {
   .breizhstops-page .app-header { background: linear-gradient(90deg, #050505, #252525); }
   .brand-bus-icon { width: 32px; }
+}
+
+
+/* V6.9 — Accueil adopte exactement le style des autres boutons */
+.home-button,
+.home-button:link,
+.home-button:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid #475047;
+  border-radius: 8px;
+  background: #111512;
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.home-button:hover,
+.home-button:focus-visible {
+  background: #222923;
+  color: #ffffff;
 }
