@@ -61,3 +61,57 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
  .depot-plan{min-width:780px}
  .tab-panel{overflow-x:auto}
 }
+
+
+/* V7.2.1 — correction du chevauchement des emplacements */
+.parking-spot {
+  min-width: 0;
+  min-height: 0;
+  padding: 6px;
+  overflow: visible;
+}
+
+.parking-spot .spot-head {
+  min-width: 0;
+}
+
+.parking-spot .spot-name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.15;
+  font-size: 10px;
+}
+
+.parking-spot .spot-state {
+  flex: 0 0 auto;
+  font-size: 8px;
+}
+
+.parking-spot .spot-vehicles {
+  gap: 3px;
+  margin-top: 5px;
+}
+
+.parking-spot .vehicle-badge {
+  max-width: 100%;
+  padding: 3px 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+}
+
+.gourvily-plan .parking-spot {
+  padding: 5px;
+}
+
+.gourvily-plan .parking-spot .spot-name {
+  font-size: 9px;
+}
+
+@media (max-width: 850px) {
+  .parking-spot {
+    transform-origin: center;
+  }
+}

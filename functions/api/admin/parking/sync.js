@@ -1,7 +1,6 @@
 import { json, error, requireDb, ensureParkingSchema } from "../../../_parking.js";
 
 const PARKING_DATABASE_ID = "35e6bbfa7ec180a18deff12d69f95ebc";
-const VEHICLES_DATABASE_ID = "2e66bbfa7ec1804f963bc019a4d6de92";
 
 function richText(parts) {
   return Array.isArray(parts)
@@ -73,6 +72,30 @@ function registrationFromPage(page) {
   return match ? match[0].toUpperCase() : title.toUpperCase();
 }
 
+
+async function notionDatabase(token, databaseId) {
+  const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Notion-Version": "2022-06-28"
+    }
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.message || "Impossible de lire la structure Notion.");
+  return payload;
+}
+
+function relationDatabaseId(database, propertyNames) {
+  const properties = database?.properties || {};
+  for (const name of propertyNames) {
+    const property = properties[name];
+    if (property?.type === "relation" && property.relation?.database_id) {
+      return property.relation.database_id;
+    }
+  }
+  return "";
+}
+
 async function notionQuery(token, databaseId) {
   const pages = [];
   let cursor = null;
@@ -106,17 +129,33 @@ export async function onRequestPost(context) {
 
     const parkingDatabaseId =
       context.env.NOTION_PARKING_DATABASE_ID || PARKING_DATABASE_ID;
+
+    // La base liée à « Mon parc » est déterminée directement depuis la structure
+    // de la base Stationnement. Cela évite de dépendre d'un identifiant codé en dur.
+    const parkingDatabase = await notionDatabase(token, parkingDatabaseId);
+    const detectedVehiclesDatabaseId = relationDatabaseId(
+      parkingDatabase,
+      ["Mon parc", "Véhicule", "Véhicules", "Parc"]
+    );
     const vehiclesDatabaseId =
-      context.env.NOTION_VEHICLES_DATABASE_ID || VEHICLES_DATABASE_ID;
+      context.env.NOTION_VEHICLES_DATABASE_ID || detectedVehiclesDatabaseId;
+
+    if (!vehiclesDatabaseId) {
+      throw new Error(
+        "La propriété relation « Mon parc » est introuvable dans la base Stationnement."
+      );
+    }
 
     const [parkingPages, vehiclePages] = await Promise.all([
       notionQuery(token, parkingDatabaseId),
       notionQuery(token, vehiclesDatabaseId)
     ]);
 
-    const vehicles = new Map(
-      vehiclePages.map(page => [page.id, registrationFromPage(page)]).filter(([, value]) => value)
-    );
+    const vehicles = new Map();
+    for (const page of vehiclePages) {
+      const registration = registrationFromPage(page);
+      if (registration) vehicles.set(page.id, registration);
+    }
 
     const seen = [];
     let imported = 0;
@@ -170,7 +209,9 @@ export async function onRequestPost(context) {
       ok: true,
       imported,
       vehicles_loaded: vehiclePages.length,
-      message: `${imported} emplacement(s) synchronisé(s).`
+      vehicles_database_id: vehiclesDatabaseId,
+      relation_property_detected: Boolean(detectedVehiclesDatabaseId),
+      message: `${imported} emplacement(s) synchronisé(s), ${vehiclePages.length} véhicule(s) lus.`
     });
   } catch (exception) {
     return error(exception.message, 500);
