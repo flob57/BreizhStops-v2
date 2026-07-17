@@ -115,7 +115,7 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
 }
 
 
-/* V7.5 — visuels fournis par l’utilisateur */
+/* V7.6 — visuels fournis par l’utilisateur */
 .card-vehicle.london {
   width: 180px;
   height: 96px;
@@ -140,7 +140,7 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
 }
 
 
-/* V7.5 — Prise de poste */
+/* V7.6 — Prise de poste */
 .work-activity { margin: 18px 0; padding: 17px; border: 1px solid var(--line); border-radius: 15px; background: rgba(5,9,6,.56); }
 .activity-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .activity-badge { padding:5px 10px; border-radius:999px; background:#2a302b; color:#c3ccc6; font-size:12px; }
@@ -177,7 +177,7 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
 }
 
 
-/* V7.5 — visuel chronotachygraphe */
+/* V7.6 — visuel chronotachygraphe */
 .activity-hero{
   position:relative;
   min-height:260px;
@@ -227,7 +227,7 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
 }
 
 
-/* V7.5 — tachygraphe uniquement dans la carte Prise de poste et statistiques */
+/* V7.6 — tachygraphe uniquement dans la carte Prise de poste et statistiques */
 .work-activity .activity-hero {
   display: none !important;
 }
@@ -305,7 +305,7 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
 }
 
 
-/* V7.5 — Carte Stationnement */
+/* V7.6 — Carte Stationnement */
 .parking-photo {
   background:
     linear-gradient(0deg, rgba(5,8,6,.32), transparent 55%),
@@ -314,7 +314,7 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
 
 
 /* =================================================================
-   V7.5 — To do du jour
+   V7.6 — To do du jour
    ================================================================= */
 
 .today-todos {
@@ -436,5 +436,171 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
   .todo-kind {
     grid-column: 2;
     justify-self: start;
+  }
+}
+
+
+/* ===============================================================
+   V7.6 — cartes carrées et informations atelier / arrêts
+   =============================================================== */
+
+.home-modules-grid {
+  align-items: stretch;
+}
+
+.activity-module-card {
+  min-height: 100%;
+}
+
+.activity-module-card .tachograph-stats-visual {
+  min-height: 235px;
+}
+
+.activity-module-card .module-content {
+  min-height: 250px;
+}
+
+@media (min-width: 900px) {
+  .activity-module-card {
+    grid-column: auto !important;
+  }
+}
+
+.home-status-grid {
+  width: min(1400px, calc(100% - 32px));
+  margin: 24px auto 34px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.status-panel {
+  border: 1px solid #2f3d34;
+  border-radius: 18px;
+  padding: 20px;
+  background:
+    linear-gradient(180deg, rgba(16,26,19,.96), rgba(8,14,10,.97));
+  box-shadow: 0 16px 38px rgba(0,0,0,.18);
+}
+
+.status-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.status-panel-heading h2 {
+  margin: 4px 0 0;
+  font-size: 24px;
+}
+
+.status-count {
+  min-width: 38px;
+  padding: 6px 11px;
+  border: 1px solid #3b5142;
+  border-radius: 999px;
+  color: var(--green);
+  background: #111b14;
+  text-align: center;
+  font-weight: 900;
+}
+
+.status-message {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status-message[hidden] {
+  display: none;
+}
+
+.mini-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.notion-mini-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #35453a;
+  border-radius: 14px;
+  background: #0c140f;
+}
+
+.notion-mini-card-cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  background: #17211a;
+}
+
+.notion-mini-card-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg,#1a2b20,#0c140f);
+  font-size: 38px;
+}
+
+.notion-mini-card-body {
+  padding: 12px;
+}
+
+.notion-mini-card-title {
+  margin: 0 0 7px;
+  font-size: 17px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.notion-mini-card-meta {
+  display: grid;
+  gap: 4px;
+  color: #b8c4bb;
+  font-size: 13px;
+}
+
+.notion-mini-card-meta strong {
+  color: #fff;
+}
+
+.sickleave-card {
+  border-left: 4px solid #b5302f;
+}
+
+.workshop-card {
+  border-left: 4px solid #ff9d34;
+}
+
+@media (max-width: 860px) {
+  .home-status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .home-status-grid {
+    width: calc(100% - 20px);
+  }
+
+  .mini-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .status-panel {
+    padding: 14px;
+  }
+
+  .status-panel-heading h2 {
+    font-size: 20px;
+  }
+
+  .notion-mini-card-title {
+    font-size: 15px;
   }
 }

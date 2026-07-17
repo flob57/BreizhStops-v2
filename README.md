@@ -147,10 +147,10 @@ Nouvelle page `prises-service.html` :
 - présentation PC et smartphone.
 
 
-## V7.5 — Gestion du dépôt
+## V7.6 — Gestion du dépôt
 
 Cette version corrige les chemins d’import des nouvelles fonctions
-Cloudflare Pages et affiche le numéro `V7.5` à côté du nom BreizhStops.
+Cloudflare Pages et affiche le numéro `V7.6` à côté du nom BreizhStops.
 
 Fonctions incluses :
 
@@ -163,7 +163,7 @@ Fonctions incluses :
 - historique conservé dans D1.
 
 
-## V7.5 — résolution des conducteurs
+## V7.6 — résolution des conducteurs
 
 Le synchroniseur suit désormais les relations Notion imbriquées :
 
@@ -178,7 +178,7 @@ Un cache évite les appels répétés pour les mêmes pages Notion.
 Aucune modification D1 supplémentaire n’est nécessaire.
 
 
-## V7.5 — Conducteur via rollup Notion
+## V7.6 — Conducteur via rollup Notion
 
 Correction du champ Conducteur lorsque Notion le calcule ainsi :
 
@@ -199,7 +199,7 @@ Le synchroniseur sait maintenant résoudre récursivement :
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V7.5 — nom réel du conducteur
+## V7.6 — nom réel du conducteur
 
 Le synchroniseur suit les relations jusqu’à la fiche du conducteur,
 puis lit exclusivement sa propriété `title`.
@@ -210,7 +210,7 @@ comme nom de conducteur.
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V7.5 — Tableau des départs
+## V7.6 — Tableau des départs
 
 Nouvelle page `departs.html` :
 
@@ -225,7 +225,7 @@ Nouvelle page `departs.html` :
 - prise en charge des courses passant minuit.
 
 
-## V7.5 — synchronisation par lots
+## V7.6 — synchronisation par lots
 
 Correction de l’erreur Cloudflare :
 
@@ -237,7 +237,7 @@ puis enchaîne automatiquement les services jusqu’à la fin.
 Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V7.5 — synchronisation complète par lots
+## V7.6 — synchronisation complète par lots
 
 Les prises de service sont désormais synchronisées une par une,
 afin de respecter la limite Cloudflare sur les sous-requêtes.
@@ -251,7 +251,7 @@ de la réponse Cloudflare au lieu du seul message « réponse illisible ».
 Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V7.5 — Accueil et identité visuelle
+## V7.6 — Accueil et identité visuelle
 
 - nouvelle page d’accueil Océlorn ;
 - horloge d’autocar avec indication ARRÊT DEMANDÉ ;
@@ -265,7 +265,7 @@ Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
 
 
-## V7.5 — ajustements visuels ciblés
+## V7.6 — ajustements visuels ciblés
 
 - logo de bus londonien dans la section Aujourd’hui ;
 - carte routière de Bretagne/Finistère en fond de la tuile BreizhStops ;
@@ -277,7 +277,7 @@ Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
 Aucune modification D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V7.5 — visuels et filtrage définitif
+## V7.6 — visuels et filtrage définitif
 
 - utilisation exacte du nouveau bus londonien fourni ;
 - utilisation exacte du nouveau logo de car fourni ;
@@ -293,7 +293,7 @@ dans Prises de service afin de nettoyer les données du jour.
 Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
 
 
-## V7.5 — Prise de poste et statistiques
+## V7.6 — Prise de poste et statistiques
 
 Nouveautés :
 - prise et fin de poste avec compteur réel ;
@@ -319,15 +319,15 @@ Soldes initiaux préconfigurés :
 
 ### Mise à jour D1 obligatoire
 
-Exécuter dans la console D1 tout le bloc V7.5 présent à la fin de `schema.sql`,
+Exécuter dans la console D1 tout le bloc V7.6 présent à la fin de `schema.sql`,
 ou réexécuter l’intégralité du fichier `schema.sql`.
 
 
-## Correctif V7.5
+## Correctif V7.6
 Les tables D1 personnelles sont désormais créées automatiquement au premier appel API. Les boutons Prendre mon poste, Déclarer mes heures et Soldes initiaux fonctionnent sans exécution SQL manuelle.
 
 
-## V7.5 — Activité et progressions
+## V7.6 — Activité et progressions
 
 - Le bouton « Ouvrir les prises de service » est désormais placé avant « Mon activité ».
 - La section « Mon activité » comporte un visuel de chronotachygraphe et le compteur d’heures supplémentaires en surimpression.
@@ -335,14 +335,14 @@ Les tables D1 personnelles sont désormais créées automatiquement au premier a
 - Au-delà de 100 %, la barre reste pleine et le pourcentage réel continue de s’afficher.
 
 
-## V7.5 — correction de l'emplacement du chronotachygraphe
+## V7.6 — correction de l'emplacement du chronotachygraphe
 - Suppression du grand visuel dans le bloc temps réel « Mon activité » de la section Aujourd'hui.
 - Le bloc « Mon activité » reste compact avec les compteurs et les boutons.
 - Ajout du véritable disque de chronotachygraphe dans la carte inférieure « Prise de poste et statistiques ».
 - Le solde d'heures supplémentaires est affiché en surimpression sur cette image.
 
 
-## V7.5 — Stationnement
+## V7.6 — Stationnement
 
 Nouvelle page `stationnement.html` :
 
@@ -362,7 +362,7 @@ La variable facultative `NOTION_PARKING_DATABASE_ID` peut remplacer cet identifi
 Le secret existant `NOTION_TOKEN` est réutilisé.
 
 
-## V7.5 — correction Stationnement
+## V7.6 — correction Stationnement
 
 - La base véhicules liée à la propriété Notion `Mon parc` est maintenant détectée automatiquement.
 - Les immatriculations sont récupérées depuis la véritable base liée, sans identifiant codé en dur.
@@ -371,7 +371,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 - La synchronisation indique aussi le nombre de véhicules réellement lus dans Notion.
 
 
-## V7.5 — schéma final et détection des véhicules
+## V7.6 — schéma final et détection des véhicules
 
 - Lestonan Mini est positionné directement au-dessus de Lestonan 11.
 - L'aire de lavage et la station AdBlue sont placées entre Lestonan 5 et Lestonan 11.
@@ -382,7 +382,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 - Le message de synchronisation indique le nombre de véhicules affectés et d'immatriculations reconnues.
 
 
-## V7.5 — synchronisation Notion par lots
+## V7.6 — synchronisation Notion par lots
 
 - traitement de 10 emplacements par requête ;
 - lecture directe de la propriété relation `Mon parc` ;
@@ -392,7 +392,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 - affichage du nombre d'immatriculations réellement reconnues.
 
 
-## V7.5 — optimisation Stationnement et Départs
+## V7.6 — optimisation Stationnement et Départs
 
 ### Stationnement
 - immatriculations agrandies sur ordinateur ;
@@ -410,7 +410,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 - position horizontale du diagramme conservée lors des mises à jour automatiques.
 
 
-## V7.5 — proportions PC, paysage iPhone et compteurs
+## V7.6 — proportions PC, paysage iPhone et compteurs
 
 - Lestonan 1 à 5 : format vertical avec nom et immatriculation répartis verticalement.
 - Les autres emplacements de Lestonan restent inchangés.
@@ -424,7 +424,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 
 
 
-## V7.5 — Stationnement et tâches du jour
+## V7.6 — Stationnement et tâches du jour
 
 ### Stationnement
 - Lestonan 1 à 5 ont désormais exactement les proportions physiques des places 6 à 10, tournées verticalement.
@@ -438,3 +438,12 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 - validation directement depuis la section Aujourd’hui ;
 - une tâche validée disparaît pour la journée ;
 - la propriété Notion `Last completed` n’est pas modifiée.
+
+
+
+## V7.6 — Accueil enrichi
+
+- La carte Mon activité reprend la taille des autres modules.
+- Ajout des véhicules actuellement à l’atelier avec couverture, immatriculation et durée.
+- Ajout des conducteurs en arrêt avec date de fin et nombre de jours.
+- Actualisation automatique toutes les cinq minutes.

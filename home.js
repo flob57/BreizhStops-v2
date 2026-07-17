@@ -262,6 +262,89 @@ $("todoList").addEventListener("change", event => {
   if (item) completeTodayTodo(item);
 });
 
+
+
+async function loadWorkshopVehicles() {
+  const container = $("workshopCards");
+  const message = $("workshopMessage");
+  const count = $("workshopCount");
+
+  try {
+    const payload = await api("/api/home/workshop");
+    const vehicles = payload.vehicles || [];
+
+    count.textContent = vehicles.length;
+    container.innerHTML = "";
+
+    if (!vehicles.length) {
+      message.hidden = false;
+      message.textContent = "Aucun véhicule actuellement à l’atelier.";
+      return;
+    }
+
+    message.hidden = true;
+    container.innerHTML = vehicles.map(vehicle => `
+      <article class="notion-mini-card workshop-card">
+        ${vehicle.cover_url
+          ? `<img class="notion-mini-card-cover" src="${escapeHtml(vehicle.cover_url)}" alt="">`
+          : `<div class="notion-mini-card-placeholder">🚌</div>`
+        }
+        <div class="notion-mini-card-body">
+          <h3 class="notion-mini-card-title">${escapeHtml(vehicle.registration)}</h3>
+          <div class="notion-mini-card-meta">
+            <span>Immobilisation</span>
+            <strong>${Number(vehicle.duration_days || 0)} jour(s)</strong>
+          </div>
+        </div>
+      </article>
+    `).join("");
+  } catch (error) {
+    count.textContent = "!";
+    container.innerHTML = "";
+    message.hidden = false;
+    message.textContent = `Impossible de charger l’atelier : ${error.message}`;
+  }
+}
+
+async function loadSickLeaves() {
+  const container = $("sickleaveCards");
+  const message = $("sickleaveMessage");
+  const count = $("sickleaveCount");
+
+  try {
+    const payload = await api("/api/home/sickleave");
+    const leaves = payload.leaves || [];
+
+    count.textContent = leaves.length;
+    container.innerHTML = "";
+
+    if (!leaves.length) {
+      message.hidden = false;
+      message.textContent = "Aucun conducteur actuellement en arrêt.";
+      return;
+    }
+
+    message.hidden = true;
+    container.innerHTML = leaves.map(leave => `
+      <article class="notion-mini-card sickleave-card">
+        <div class="notion-mini-card-placeholder">👤</div>
+        <div class="notion-mini-card-body">
+          <h3 class="notion-mini-card-title">${escapeHtml(leave.driver)}</h3>
+          <div class="notion-mini-card-meta">
+            <span>Fin prévue <strong>${escapeHtml(leave.end_date_label || "—")}</strong></span>
+            <span>Durée <strong>${Number(leave.days || 0)} jour(s)</strong></span>
+          </div>
+        </div>
+      </article>
+    `).join("");
+  } catch (error) {
+    count.textContent = "!";
+    container.innerHTML = "";
+    message.hidden = false;
+    message.textContent = `Impossible de charger les arrêts : ${error.message}`;
+  }
+}
+
 $("workToggle").addEventListener("click",toggleWork);
 $("driveToggle").addEventListener("click",toggleDriving);
 $("fuelButton").addEventListener("click",openFuel);
@@ -280,6 +363,8 @@ $("declareDate").addEventListener("change",async()=>{
 updateClock(); setInterval(updateClock,1000);
 loadDashboard(); setInterval(loadDashboard,60000);
 loadTodayTodos(); setInterval(loadTodayTodos,300000);
+loadWorkshopVehicles(); loadSickLeaves();
+setInterval(loadWorkshopVehicles,300000); setInterval(loadSickLeaves,300000);
 loadVehicles(false).catch(()=>{});
 refreshActivity(); setInterval(refreshActivity,15000);
 loadHomeStats();

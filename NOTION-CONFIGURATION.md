@@ -97,7 +97,7 @@ Véhicule
 ```
 
 
-## Stationnement V7.5
+## Stationnement V7.6
 
 Partager avec l'intégration Cloudflare :
 
@@ -119,7 +119,7 @@ Identifiant par défaut de la base Stationnement :
 
 
 
-## Base Tâches récurrentes — V7.5
+## Base Tâches récurrentes — V7.6
 
 Base utilisée :
 
@@ -133,3 +133,29 @@ Propriétés reconnues :
 - `Last completed` peut rester dans Notion, mais BreizhStops ne la modifie pas.
 
 La connexion Cloudflare/Notion doit avoir accès à cette base.
+
+
+
+## V7.6 — Atelier et arrêts de travail
+
+### Véhicules à l’atelier
+Base :
+
+`35f6bbfa7ec180b6a5eee3e10f899ebc`
+
+Propriétés recherchées :
+- immatriculation : `Immatriculation`, `Véhicule`, `Nom` ou propriété titre ;
+- durée : `Durée atelier`, `Durée`, `Nombre de jours` ou `Jours` ;
+- photo : couverture de la page Notion.
+
+### Conducteurs en arrêt
+Base :
+
+`3676bbfa7ec18044a3a4e3c511cc92af`
+
+Propriétés recherchées :
+- conducteur : `Conducteur`, `Conducteurs`, `Mes Conducteurs`, `Nom` ou propriété titre ;
+- fin : `Date de fin`, `Fin` ou `Date fin` ;
+- durée : `Nombre de jours`, `Jours` ou `Durée`.
+
+La connexion Notion `Cloudflare` doit être partagée avec ces deux bases.
