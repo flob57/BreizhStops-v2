@@ -15,3 +15,32 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 9px;border-bottom:1
 dialog{width:min(560px,calc(100% - 24px));border:1px solid #455448;border-radius:17px;background:#0e1410;color:#fff;padding:22px}dialog::backdrop{background:rgba(0,0,0,.75)}dialog form{display:grid;gap:12px}dialog label{display:grid;gap:5px;color:#c4cec7;font-size:13px}dialog input,dialog textarea{padding:10px;border:1px solid #3b493f;border-radius:9px;background:#080d09;color:#fff}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;justify-content:flex-end;gap:8px}.actions button:last-child{background:var(--green);color:#061004}
 @media(max-width:850px){.summary-grid,.period-grid{grid-template-columns:1fr 1fr}.distance-grid{grid-template-columns:1fr 1fr}.list-row{grid-template-columns:1fr}}
 @media(max-width:520px){header{padding:12px;grid-template-columns:auto 1fr}header button{grid-column:1/-1}.summary-grid,.period-grid,.two{grid-template-columns:1fr}}
+
+
+/* V7.1 — barres de progression des heures réelles */
+.period-progress{
+  height:9px;
+  margin:12px 0 10px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#253323;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+}
+.period-progress > span{
+  display:block;
+  height:100%;
+  min-width:0;
+  border-radius:inherit;
+  background:linear-gradient(90deg,var(--green),#b4ff6f);
+  transition:width .35s ease;
+}
+.period-progress.over > span{
+  background:linear-gradient(90deg,#7be12d,#ffe54f);
+}
+.period-card .progress-label{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  color:var(--muted);
+  font-size:12px;
+}

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#050806">
-  <title>Océlorn — Tableau de bord V7.0.1</title>
+  <title>Océlorn — Tableau de bord V7.1</title>
   <link rel="stylesheet" href="./home.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
         <span>Océlorn · BreizhStops</span>
       </div>
     </div>
-    <span class="version-pill">V7.0.1</span>
+    <span class="version-pill">V7.1</span>
   </header>
 
   <main>
@@ -53,10 +53,20 @@
         </div>
         <p id="nextDuty" class="next-info">Chargement des services…</p>
 
+        <a href="./prises-service.html" class="primary-link">Ouvrir les prises de service →</a>
+
         <div class="work-activity" id="workActivity">
           <div class="activity-title">
             <strong>Mon activité</strong>
             <span id="workStateBadge" class="activity-badge">Hors poste</span>
+          </div>
+          <div class="activity-hero">
+            <img src="./assets/tachograph-activity.png" alt="Chronotachygraphe">
+            <div class="activity-overtime-card">
+              <span>HEURES SUPPLÉMENTAIRES</span>
+              <strong id="activityOvertime">+12h00</strong>
+              <small>calculées sur les heures déclarées</small>
+            </div>
           </div>
           <div class="activity-counters">
             <div><span>Temps de travail</span><strong id="workCounter">0h00</strong></div>
@@ -70,8 +80,6 @@
             <button id="declareHoursButton" class="activity-button">📝 Déclarer mes heures</button>
           </div>
         </div>
-
-        <a href="./prises-service.html" class="primary-link">Ouvrir les prises de service →</a>
       </article>
 
       <article class="module-card depot-card">
@@ -178,7 +186,7 @@
     </form>
   </dialog>
 
-  <footer>Océlorn · Outil personnel d’exploitation · BreizhStops V7.0.1</footer>
+  <footer>Océlorn · Outil personnel d’exploitation · BreizhStops V7.1</footer>
   <script src="./home.js"></script>
 </body>
 </html>

@@ -167,7 +167,9 @@ async function loadHomeStats() {
   try {
     const p=await api("/api/timeclock/stats");
     const m=p.overtime_minutes;
-    $("homeOvertime").textContent=`${m>=0?"+":"−"}${fmtMinutes(Math.abs(m))}`;
+    const overtimeText=`${m>=0?"+":"−"}${fmtMinutes(Math.abs(m))}`;
+    $("homeOvertime").textContent=overtimeText;
+    if ($("activityOvertime")) $("activityOvertime").textContent=overtimeText;
   } catch{}
 }
 $("workToggle").addEventListener("click",toggleWork);

@@ -19,7 +19,18 @@ function render(){
  $("weekTitle").textContent=`Semaine du ${d.week_start} au ${d.week_end}`;
  $("declarationsList").innerHTML=d.week_declarations.length?d.week_declarations.map(x=>`<div class="list-row"><div><strong>${x.work_date}</strong> · ${fmt(x.total_minutes)}<br><small>${esc(x.notes||"")}</small></div><button data-edit-declaration="${x.work_date}">✎ Modifier</button><button class="delete" data-delete-declaration="${x.id}">🗑</button></div>`).join(""):"<div class=list-row>Aucune heure déclarée.</div>";
  $("weekDeclaredTotal").textContent=`Total de la semaine : ${fmt(d.week_declarations.reduce((s,x)=>s+Number(x.total_minutes),0))}`;
- $("periodCards").innerHTML=[["Aujourd’hui",p.today],["Cette semaine",p.week],["Ce mois",p.month],["Cette année",p.year]].map(([l,x])=>`<article class=period-card><span>${l}</span><strong>${fmt(x.actual)}</strong><small>${fmt(x.expected)} attendues · conduite ${fmt(x.driving)} · ${x.km} km</small></article>`).join("");
+ $("periodCards").innerHTML=[["Aujourd’hui",p.today],["Cette semaine",p.week],["Ce mois",p.month],["Cette année",p.year]].map(([l,x])=>{
+   const percent=x.expected>0?Math.round((x.actual/x.expected)*100):(x.actual>0?100:0);
+   const width=Math.min(percent,100);
+   const cls=percent>100?"period-progress over":"period-progress";
+   return `<article class=period-card>
+     <span>${l}</span>
+     <strong>${fmt(x.actual)}</strong>
+     <div class="${cls}"><span style="width:${width}%"></span></div>
+     <div class="progress-label"><span>${percent}% réalisé</span><span>${fmt(x.expected)} attendues</span></div>
+     <small>Conduite ${fmt(x.driving)} · ${x.km} km</small>
+   </article>`;
+ }).join("");
  $("consumptionList").innerHTML=table(["Véhicule","Distance","Litres","Consommation"],d.consumption.map(x=>[x.vehicle,`${x.distance} km`,x.litres.toFixed(2),`${x.l_per_100km.toFixed(2)} L/100 km`]));
  $("fuelList").innerHTML=table(["Date","Véhicule","Km","Litres",""],d.fuel_fillups.map(x=>[fmtDate(x.filled_at),x.vehicle_registration,x.odometer_km,Number(x.litres).toFixed(2),actions("fuel",x.id)]));
  renderDaily();

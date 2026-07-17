@@ -147,10 +147,10 @@ Nouvelle page `prises-service.html` :
 - présentation PC et smartphone.
 
 
-## V7.0.1 — Gestion du dépôt
+## V7.1 — Gestion du dépôt
 
 Cette version corrige les chemins d’import des nouvelles fonctions
-Cloudflare Pages et affiche le numéro `V7.0.1` à côté du nom BreizhStops.
+Cloudflare Pages et affiche le numéro `V7.1` à côté du nom BreizhStops.
 
 Fonctions incluses :
 
@@ -163,7 +163,7 @@ Fonctions incluses :
 - historique conservé dans D1.
 
 
-## V7.0.1 — résolution des conducteurs
+## V7.1 — résolution des conducteurs
 
 Le synchroniseur suit désormais les relations Notion imbriquées :
 
@@ -178,7 +178,7 @@ Un cache évite les appels répétés pour les mêmes pages Notion.
 Aucune modification D1 supplémentaire n’est nécessaire.
 
 
-## V7.0.1 — Conducteur via rollup Notion
+## V7.1 — Conducteur via rollup Notion
 
 Correction du champ Conducteur lorsque Notion le calcule ainsi :
 
@@ -199,7 +199,7 @@ Le synchroniseur sait maintenant résoudre récursivement :
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V7.0.1 — nom réel du conducteur
+## V7.1 — nom réel du conducteur
 
 Le synchroniseur suit les relations jusqu’à la fiche du conducteur,
 puis lit exclusivement sa propriété `title`.
@@ -210,7 +210,7 @@ comme nom de conducteur.
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V7.0.1 — Tableau des départs
+## V7.1 — Tableau des départs
 
 Nouvelle page `departs.html` :
 
@@ -225,7 +225,7 @@ Nouvelle page `departs.html` :
 - prise en charge des courses passant minuit.
 
 
-## V7.0.1 — synchronisation par lots
+## V7.1 — synchronisation par lots
 
 Correction de l’erreur Cloudflare :
 
@@ -237,7 +237,7 @@ puis enchaîne automatiquement les services jusqu’à la fin.
 Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V7.0.1 — synchronisation complète par lots
+## V7.1 — synchronisation complète par lots
 
 Les prises de service sont désormais synchronisées une par une,
 afin de respecter la limite Cloudflare sur les sous-requêtes.
@@ -251,7 +251,7 @@ de la réponse Cloudflare au lieu du seul message « réponse illisible ».
 Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V7.0.1 — Accueil et identité visuelle
+## V7.1 — Accueil et identité visuelle
 
 - nouvelle page d’accueil Océlorn ;
 - horloge d’autocar avec indication ARRÊT DEMANDÉ ;
@@ -265,7 +265,7 @@ Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
 
 
-## V7.0.1 — ajustements visuels ciblés
+## V7.1 — ajustements visuels ciblés
 
 - logo de bus londonien dans la section Aujourd’hui ;
 - carte routière de Bretagne/Finistère en fond de la tuile BreizhStops ;
@@ -277,7 +277,7 @@ Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
 Aucune modification D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V7.0.1 — visuels et filtrage définitif
+## V7.1 — visuels et filtrage définitif
 
 - utilisation exacte du nouveau bus londonien fourni ;
 - utilisation exacte du nouveau logo de car fourni ;
@@ -293,7 +293,7 @@ dans Prises de service afin de nettoyer les données du jour.
 Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
 
 
-## V7.0.1 — Prise de poste et statistiques
+## V7.1 — Prise de poste et statistiques
 
 Nouveautés :
 - prise et fin de poste avec compteur réel ;
@@ -319,9 +319,17 @@ Soldes initiaux préconfigurés :
 
 ### Mise à jour D1 obligatoire
 
-Exécuter dans la console D1 tout le bloc V7.0.1 présent à la fin de `schema.sql`,
+Exécuter dans la console D1 tout le bloc V7.1 présent à la fin de `schema.sql`,
 ou réexécuter l’intégralité du fichier `schema.sql`.
 
 
-## Correctif V7.0.1
+## Correctif V7.1
 Les tables D1 personnelles sont désormais créées automatiquement au premier appel API. Les boutons Prendre mon poste, Déclarer mes heures et Soldes initiaux fonctionnent sans exécution SQL manuelle.
+
+
+## V7.1 — Activité et progressions
+
+- Le bouton « Ouvrir les prises de service » est désormais placé avant « Mon activité ».
+- La section « Mon activité » comporte un visuel de chronotachygraphe et le compteur d’heures supplémentaires en surimpression.
+- Les cartes Aujourd’hui, Cette semaine, Ce mois et Cette année affichent une barre de progression des heures réelles par rapport aux heures attendues.
+- Au-delà de 100 %, la barre reste pleine et le pourcentage réel continue de s’afficher.
