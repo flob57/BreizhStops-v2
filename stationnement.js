@@ -229,12 +229,48 @@ async function load() {
 async function sync() {
   $("syncButton").disabled = true;
   showMessage("Synchronisation avec Notion en cours…");
+
+  let cursor = null;
+  let firstBatch = true;
+  let totalImported = 0;
+  let totalOccupied = 0;
+  let totalLinked = 0;
+  let totalResolved = 0;
+  let batchNumber = 0;
+
   try {
-    const payload = await api("/api/admin/parking/sync", { method: "POST" });
-    showMessage(payload.message);
+    do {
+      batchNumber++;
+      const payload = await api("/api/admin/parking/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ start_cursor: cursor, reset: firstBatch })
+      });
+
+      totalImported += Number(payload.imported || 0);
+      totalOccupied += Number(payload.occupied_spots || 0);
+      totalLinked += Number(payload.linked_vehicles || 0);
+      totalResolved += Number(payload.resolved_registrations || 0);
+
+      cursor = payload.has_more ? payload.next_cursor : null;
+      firstBatch = false;
+
+      showMessage(
+        `Synchronisation Notion : lot ${batchNumber} — ` +
+        `${totalImported} emplacement(s), ${totalLinked} véhicule(s) lié(s), ` +
+        `${totalResolved} immatriculation(s) reconnue(s)…`
+      );
+    } while (cursor);
+
+    showMessage(
+      `${totalImported} emplacement(s) synchronisé(s), ` +
+      `${totalOccupied} place(s) occupée(s), ` +
+      `${totalResolved} immatriculation(s) reconnue(s).`
+    );
+
     await load();
   } catch (error) {
-    showMessage(error.message, true);
+    showMessage(`Synchronisation interrompue : ${error.message}`, true);
   } finally {
     $("syncButton").disabled = false;
   }

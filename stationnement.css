@@ -63,7 +63,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V7.2.2 — correction du chevauchement des emplacements */
+/* V7.2.3 — correction du chevauchement des emplacements */
 .parking-spot {
   min-width: 0;
   min-height: 0;
@@ -117,7 +117,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V7.2.2 — schéma validé */
+/* V7.2.3 — schéma validé */
 .lestonan-plan {
   min-height: 760px;
 }
