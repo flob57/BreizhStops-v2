@@ -1,10 +1,9 @@
-
 import {
   json, error, propertyText, propertyDate, firstProperty,
-  pageTitle, queryAllPages
+  pageTitle, queryDatabase, relationTitles, parisDate
 } from "../../_home_status.js";
 
-const DEFAULT_DATABASE_ID = "3676bbfa7ec18044a3a4e3c511cc92af";
+const SICKLEAVE_DATABASE_ID = "34d6bbfa7ec180e89ac2da151f11e266";
 
 function formatDate(date) {
   if (!date) return "";
@@ -17,52 +16,101 @@ function formatDate(date) {
   }).format(new Date(Date.UTC(year, month - 1, day, 12)));
 }
 
+async function driverName(token, properties, page) {
+  const property = firstProperty(properties, [
+    "Mes Conducteurs", "Mes Conducteur", "Conducteurs",
+    "Conducteur", "Nom du conducteur"
+  ]);
+
+  if (property?.type === "relation") {
+    const names = await relationTitles(token, property);
+    if (names.length) return names.join(", ");
+  }
+
+  return propertyText(property) || pageTitle(page);
+}
+
 export async function onRequestGet(context) {
   try {
     const token = context.env.NOTION_TOKEN;
     if (!token) return error("Secret NOTION_TOKEN absent.", 500);
 
     const databaseId =
-      context.env.NOTION_SICKLEAVE_DATABASE_ID || DEFAULT_DATABASE_ID;
+      context.env.NOTION_SICKLEAVE_DATABASE_ID || SICKLEAVE_DATABASE_ID;
+    const today = parisDate();
 
-    const pages = await queryAllPages(token, databaseId);
-
-    const leaves = pages
-      .filter(page => !page.archived)
-      .map(page => {
+    let pages;
+    try {
+      pages = await queryDatabase(token, databaseId, {
+        filter: {
+          and: [
+            {
+              property: "Date de début",
+              date: { on_or_before: today }
+            },
+            {
+              property: "Date de fin",
+              date: { on_or_after: today }
+            }
+          ]
+        }
+      });
+    } catch {
+      // Repli en cas de léger renommage d'une propriété.
+      pages = await queryDatabase(token, databaseId);
+      pages = pages.filter(page => {
         const properties = page.properties || {};
-
-        const driver =
-          propertyText(firstProperty(properties, [
-            "Conducteur", "Conducteurs", "Mes Conducteurs",
-            "Nom", "Name"
-          ])) || pageTitle(page);
-
-        const endDate = propertyDate(firstProperty(properties, [
-          "Date de fin", "Fin", "Date fin"
+        const start = propertyDate(firstProperty(properties, [
+          "Date de début", "Date debut", "Début", "Debut"
         ]));
-
-        const daysRaw = propertyText(firstProperty(properties, [
-          "Nombre de jours", "Jours", "Durée", "Duree"
+        const end = propertyDate(firstProperty(properties, [
+          "Date de fin", "Date fin", "Fin"
         ]));
+        return start && end && start <= today && end >= today;
+      });
+    }
 
-        const days =
-          typeof daysRaw === "number"
-            ? daysRaw
-            : Number(String(daysRaw || "").replace(",", ".")) || 0;
+    const leaves = [];
 
-        return {
-          id: page.id,
-          driver,
-          end_date: endDate,
-          end_date_label: formatDate(endDate),
-          days
-        };
-      })
-      .filter(item => item.driver)
-      .sort((a, b) => (a.end_date || "").localeCompare(b.end_date || ""));
+    for (const page of pages.filter(page => !page.archived)) {
+      const properties = page.properties || {};
 
-    return json({ leaves });
+      const driver = await driverName(token, properties, page);
+      const startDate = propertyDate(firstProperty(properties, [
+        "Date de début", "Date debut", "Début", "Debut"
+      ]));
+      const endDate = propertyDate(firstProperty(properties, [
+        "Date de fin", "Date fin", "Fin"
+      ]));
+
+      const daysRaw = propertyText(firstProperty(properties, [
+        "Nombre de jours", "Jours", "Durée", "Duree"
+      ]));
+
+      const days =
+        typeof daysRaw === "number"
+          ? daysRaw
+          : Number(String(daysRaw || "").replace(",", ".")) || 0;
+
+      if (!driver || !startDate || !endDate) continue;
+      if (!(startDate <= today && endDate >= today)) continue;
+
+      leaves.push({
+        id: page.id,
+        driver,
+        start_date: startDate,
+        end_date: endDate,
+        end_date_label: formatDate(endDate),
+        days
+      });
+    }
+
+    leaves.sort((a, b) => a.end_date.localeCompare(b.end_date));
+
+    return json({
+      date: today,
+      leaves
+    });
   } catch (exception) {
     return error(exception.message, 500);
   }

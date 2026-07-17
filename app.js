@@ -2022,7 +2022,7 @@ if (departuresButton) {
 }
 
 
-// V7.6 — ouverture directe du module SAE depuis la prise de poste.
+// V7.7 — ouverture directe du module SAE depuis la prise de poste.
 window.addEventListener("load", () => {
   const params = new URLSearchParams(location.search);
   if (params.get("open") === "sae") {

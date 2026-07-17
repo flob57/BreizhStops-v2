@@ -113,3 +113,66 @@ export function coverUrl(page) {
   if (cover.type === "file") return cover.file?.url || "";
   return "";
 }
+
+
+export async function queryDatabase(token, databaseId, body = {}) {
+  const pages = [];
+  let cursor = null;
+
+  do {
+    const requestBody = {
+      page_size: 100,
+      ...body
+    };
+    if (cursor) requestBody.start_cursor = cursor;
+
+    const payload = await notionRequest(
+      token,
+      `https://api.notion.com/v1/databases/${databaseId}/query`,
+      { method: "POST", body: JSON.stringify(requestBody) }
+    );
+
+    pages.push(...(payload.results || []));
+    cursor = payload.has_more ? payload.next_cursor : null;
+  } while (cursor);
+
+  return pages;
+}
+
+export async function notionPage(token, pageId) {
+  return notionRequest(
+    token,
+    `https://api.notion.com/v1/pages/${pageId}`,
+    { method: "GET" }
+  );
+}
+
+export async function relationTitles(token, property) {
+  if (!property || property.type !== "relation") return [];
+
+  const titles = [];
+  for (const relation of property.relation || []) {
+    const page = await notionPage(token, relation.id);
+    const title = pageTitle(page);
+    if (title && !titles.includes(title)) titles.push(title);
+  }
+  return titles;
+}
+
+export function parisDate() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+}
+
+export function daysBetweenInclusive(startDate, endDate) {
+  if (!startDate || !endDate) return 0;
+  const [sy, sm, sd] = startDate.slice(0,10).split("-").map(Number);
+  const [ey, em, ed] = endDate.slice(0,10).split("-").map(Number);
+  const start = Date.UTC(sy, sm - 1, sd);
+  const end = Date.UTC(ey, em - 1, ed);
+  return Math.max(0, Math.floor((end - start) / 86400000) + 1);
+}

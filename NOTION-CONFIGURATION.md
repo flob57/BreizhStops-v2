@@ -97,7 +97,7 @@ Véhicule
 ```
 
 
-## Stationnement V7.6
+## Stationnement V7.7
 
 Partager avec l'intégration Cloudflare :
 
@@ -119,7 +119,7 @@ Identifiant par défaut de la base Stationnement :
 
 
 
-## Base Tâches récurrentes — V7.6
+## Base Tâches récurrentes — V7.7
 
 Base utilisée :
 
@@ -136,7 +136,7 @@ La connexion Cloudflare/Notion doit avoir accès à cette base.
 
 
 
-## V7.6 — Atelier et arrêts de travail
+## V7.7 — Atelier et arrêts de travail
 
 ### Véhicules à l’atelier
 Base :
@@ -159,3 +159,16 @@ Propriétés recherchées :
 - durée : `Nombre de jours`, `Jours` ou `Durée`.
 
 La connexion Notion `Cloudflare` doit être partagée avec ces deux bases.
+
+
+
+## Correction V7.7
+
+Bases sources réellement utilisées :
+
+- Parc véhicules : `2e66bbfa7ec1804f963bc019a4d6de92`
+- Stationnement : `35e6bbfa7ec180a18deff12d69f95ebc`
+- Arrêts de travail : `34d6bbfa7ec180e89ac2da151f11e266`
+
+La connexion Cloudflare doit avoir accès à ces trois bases. Les identifiants des
+vues filtrées ne doivent pas être utilisés comme identifiants de bases.
