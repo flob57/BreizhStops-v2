@@ -63,7 +63,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V7.4 — correction du chevauchement des emplacements */
+/* V7.5 — correction du chevauchement des emplacements */
 .parking-spot {
   min-width: 0;
   min-height: 0;
@@ -117,7 +117,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V7.4 — schéma validé */
+/* V7.5 — schéma validé */
 .lestonan-plan {
   min-height: 760px;
 }
@@ -172,7 +172,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 
 
 /* ==================================================================
-   V7.4 — optimisation PC et iPhone des plans de stationnement
+   V7.5 — optimisation PC et iPhone des plans de stationnement
    ================================================================== */
 
 /* Immatriculations plus visibles sur ordinateur */
@@ -368,7 +368,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 
 
 /* =================================================================
-   V7.4 — proportions ciblées et compteurs de flotte
+   V7.5 — proportions ciblées et compteurs de flotte
    ================================================================= */
 
 .header-counters {
@@ -578,5 +578,53 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 
   .gourvily-plan .parking-spot.large-gourvily .vehicle-badge {
     font-size: 14px;
+  }
+}
+
+
+/* =================================================================
+   V7.5 — dimensions physiques équivalentes des places verticales
+   ================================================================= */
+
+/* Les places 1 à 5 sont réellement le même rectangle que 6 à 10,
+   tourné de 90 degrés. Le texte vertical reste inchangé. */
+.parking-spot.vertical-lestonan {
+  min-width: 0;
+  min-height: 0;
+}
+
+.parking-spot.vertical-lestonan .spot-head {
+  width: 42%;
+}
+
+.parking-spot.vertical-lestonan .spot-name {
+  font-size: 9px;
+  line-height: .95;
+}
+
+.parking-spot.vertical-lestonan .spot-vehicles {
+  width: 54%;
+  top: 19px;
+  right: 3px;
+}
+
+.parking-spot.vertical-lestonan .vehicle-badge-vertical {
+  font-size: 11px;
+  line-height: 1.02;
+  padding: 5px 2px;
+}
+
+/* Gourvily Mini + 1 à 8 : la rangée est abaissée et resserrée. */
+.gourvily-plan .parking-spot.large-gourvily {
+  transform-origin: center center;
+}
+
+@media (max-width: 950px) and (orientation: landscape) {
+  .parking-spot.vertical-lestonan .spot-name {
+    font-size: clamp(5px, .76vw, 8px);
+  }
+
+  .parking-spot.vertical-lestonan .vehicle-badge-vertical {
+    font-size: clamp(6px, .9vw, 10px);
   }
 }

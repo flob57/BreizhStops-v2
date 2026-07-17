@@ -2,11 +2,11 @@ const $ = id => document.getElementById(id);
 const state = { spots: [] };
 
 const LESTONAN_LAYOUT = {
-  "lestonan 1": [57.0, 5.0, 8.5, 11.0],
-  "lestonan 2": [57.0, 27.0, 8.5, 11.0],
-  "lestonan 3": [66.5, 5.0, 8.5, 11.0],
-  "lestonan 4": [66.5, 27.0, 8.5, 11.0],
-  "lestonan 5": [76.0, 27.0, 8.5, 11.0],
+  "lestonan 1": [61.0, 5.0, 4.8, 20.0],
+  "lestonan 2": [61.0, 27.0, 4.8, 20.0],
+  "lestonan 3": [68.0, 5.0, 4.8, 20.0],
+  "lestonan 4": [68.0, 27.0, 4.8, 20.0],
+  "lestonan 5": [75.0, 27.0, 4.8, 20.0],
 
   "lestonan 6": [1.5, 72.0, 11.0, 8.5],
   "lestonan 7": [1.5, 58.0, 11.0, 8.5],
@@ -28,15 +28,15 @@ const LESTONAN_LAYOUT = {
 
 const GOURVILY_LAYOUT = {
   /* Ligne supérieure étalée sur presque toute la largeur */
-  "gourvily mini": [1.5, 4.0, 13.5, 8.5, -42],
-  "gourvily 1": [11.7, 4.0, 13.5, 8.5, -42],
-  "gourvily 2": [21.9, 4.0, 13.5, 8.5, -42],
-  "gourvily 3": [32.1, 4.0, 13.5, 8.5, -42],
-  "gourvily 4": [42.3, 4.0, 13.5, 8.5, -42],
-  "gourvily 5": [52.5, 4.0, 13.5, 8.5, -42],
-  "gourvily 6": [62.7, 4.0, 13.5, 8.5, -42],
-  "gourvily 7": [72.9, 4.0, 13.5, 8.5, -42],
-  "gourvily 8": [83.1, 4.0, 13.5, 8.5, -42],
+  "gourvily mini": [0.8, 9.0, 13.5, 8.5, -42],
+  "gourvily 1": [9.8, 9.0, 13.5, 8.5, -42],
+  "gourvily 2": [18.8, 9.0, 13.5, 8.5, -42],
+  "gourvily 3": [27.8, 9.0, 13.5, 8.5, -42],
+  "gourvily 4": [36.8, 9.0, 13.5, 8.5, -42],
+  "gourvily 5": [45.8, 9.0, 13.5, 8.5, -42],
+  "gourvily 6": [54.8, 9.0, 13.5, 8.5, -42],
+  "gourvily 7": [63.8, 9.0, 13.5, 8.5, -42],
+  "gourvily 8": [72.8, 9.0, 13.5, 8.5, -42],
 
   "gourvily 9": [52.0, 22.0, 12.0, 8.0, -10],
   "gourvily 10": [56.0, 34.0, 12.0, 8.0, -10],

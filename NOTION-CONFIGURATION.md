@@ -97,7 +97,7 @@ Véhicule
 ```
 
 
-## Stationnement V7.4
+## Stationnement V7.5
 
 Partager avec l'intégration Cloudflare :
 
@@ -116,3 +116,20 @@ Propriétés reconnues :
 
 Identifiant par défaut de la base Stationnement :
 `35e6bbfa7ec180a18deff12d69f95ebc`
+
+
+
+## Base Tâches récurrentes — V7.5
+
+Base utilisée :
+
+`3846bbfa7ec180928dc0d29a9b7aa8c6`
+
+Propriétés reconnues :
+
+- `To do` : titre de la tâche ;
+- `Jour` : jour récurrent, par exemple `Mardi` ;
+- `Date` : date d’une tâche ponctuelle ;
+- `Last completed` peut rester dans Notion, mais BreizhStops ne la modifie pas.
+
+La connexion Cloudflare/Notion doit avoir accès à cette base.

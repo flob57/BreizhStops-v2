@@ -172,6 +172,96 @@ async function loadHomeStats() {
     if ($("activityOvertime")) $("activityOvertime").textContent=overtimeText;
   } catch{}
 }
+
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function loadTodayTodos() {
+  const list = $("todoList");
+  const message = $("todoMessage");
+  const count = $("todoCount");
+
+  try {
+    const payload = await api(
+      `/api/todos/today?date=${encodeURIComponent(parisDate())}`
+    );
+    const tasks = payload.tasks || [];
+
+    count.textContent = tasks.length;
+    list.innerHTML = "";
+
+    if (!tasks.length) {
+      message.hidden = false;
+      message.textContent = "Aucune tâche restante aujourd’hui.";
+      return;
+    }
+
+    message.hidden = true;
+
+    list.innerHTML = tasks.map(task => `
+      <article class="todo-item" data-todo-id="${escapeHtml(task.id)}">
+        <input
+          class="todo-check"
+          type="checkbox"
+          aria-label="Marquer ${escapeHtml(task.title)} comme accomplie"
+        >
+        <span class="todo-title">${escapeHtml(task.title)}</span>
+        <span class="todo-kind ${task.kind === "unique" ? "unique" : ""}">
+          ${task.kind === "unique" ? "Date du jour" : "Récurrente"}
+        </span>
+      </article>
+    `).join("");
+  } catch (error) {
+    count.textContent = "!";
+    list.innerHTML = "";
+    message.hidden = false;
+    message.textContent = `Impossible de charger les tâches : ${error.message}`;
+  }
+}
+
+async function completeTodayTodo(item) {
+  const id = item.dataset.todoId;
+  const checkbox = item.querySelector(".todo-check");
+  checkbox.disabled = true;
+  item.classList.add("completing");
+
+  try {
+    await api(`/api/todos/${encodeURIComponent(id)}/complete`, {
+      method: "POST",
+      body: JSON.stringify({ date: parisDate() })
+    });
+
+    setTimeout(() => {
+      item.remove();
+      const remaining = $("todoList").children.length;
+      $("todoCount").textContent = remaining;
+      if (!remaining) {
+        $("todoMessage").hidden = false;
+        $("todoMessage").textContent = "Toutes les tâches du jour sont accomplies.";
+      }
+    }, 180);
+  } catch (error) {
+    checkbox.checked = false;
+    checkbox.disabled = false;
+    item.classList.remove("completing");
+    alert(error.message);
+  }
+}
+
+$("todoList").addEventListener("change", event => {
+  const checkbox = event.target.closest(".todo-check");
+  if (!checkbox || !checkbox.checked) return;
+  const item = checkbox.closest(".todo-item");
+  if (item) completeTodayTodo(item);
+});
+
 $("workToggle").addEventListener("click",toggleWork);
 $("driveToggle").addEventListener("click",toggleDriving);
 $("fuelButton").addEventListener("click",openFuel);
@@ -189,6 +279,7 @@ $("declareDate").addEventListener("change",async()=>{
 });
 updateClock(); setInterval(updateClock,1000);
 loadDashboard(); setInterval(loadDashboard,60000);
+loadTodayTodos(); setInterval(loadTodayTodos,300000);
 loadVehicles(false).catch(()=>{});
 refreshActivity(); setInterval(refreshActivity,15000);
 loadHomeStats();
