@@ -2,42 +2,49 @@ const $ = id => document.getElementById(id);
 const state = { spots: [] };
 
 const LESTONAN_LAYOUT = {
-  "lestonan 1": [63.5, 7, 5.2, 18],
-  "lestonan 2": [63.5, 29, 5.2, 18],
-  "lestonan 3": [69.2, 7, 5.2, 18],
-  "lestonan 4": [69.2, 29, 5.2, 18],
-  "lestonan 5": [75.0, 29, 5.2, 18],
-  "lestonan 6": [1.5, 78, 11.2, 8],
-  "lestonan 7": [1.5, 68, 11.2, 8],
-  "lestonan 8": [1.5, 58, 11.2, 8],
-  "lestonan 9": [1.5, 48, 11.2, 8],
-  "lestonan 10": [1.5, 38, 11.2, 8],
-  "lestonan 11": [84.5, 12, 6.8, 22],
-  "lestonan mini": [91.5, 35, 7.2, 10],
-  "lestonan mini 1": [91.5, 35, 7.2, 10],
-  "lestonan mini 2": [21, 78, 11.2, 8],
-  "lestonan vl 1": [82.5, 52, 10.5, 7],
-  "lestonan vl 2": [83.5, 61, 10.5, 7],
-  "lestonan surcharge 1": [77.5, 78, 8.5, 17],
-  "lestonan surcharge 2": [86.5, 78, 8.5, 17]
+  "lestonan 1": [57.0, 5.0, 7.5, 12.5],
+  "lestonan 2": [57.0, 27.0, 7.5, 12.5],
+  "lestonan 3": [65.0, 5.0, 7.5, 12.5],
+  "lestonan 4": [65.0, 27.0, 7.5, 12.5],
+  "lestonan 5": [73.0, 27.0, 7.5, 12.5],
+
+  "lestonan 6": [1.5, 72.0, 11.0, 8.5],
+  "lestonan 7": [1.5, 58.0, 11.0, 8.5],
+  "lestonan 8": [1.5, 44.0, 11.0, 8.5],
+  "lestonan 9": [1.5, 30.0, 11.0, 8.5],
+  "lestonan 10": [1.5, 16.0, 11.0, 8.5],
+
+  /* Mini doit être strictement au-dessus de Lestonan 11 */
+  "lestonan mini": [86.5, 4.0, 10.5, 8.5],
+  "lestonan mini 1": [86.5, 4.0, 10.5, 8.5],
+  "lestonan 11": [86.5, 16.0, 10.5, 8.5],
+
+  "lestonan mini 2": [28.0, 75.0, 11.5, 8.5],
+  "lestonan vl 1": [83.0, 43.0, 11.0, 8.0],
+  "lestonan vl 2": [84.0, 54.0, 11.0, 8.0],
+  "lestonan surcharge 1": [71.0, 75.0, 12.0, 13.0],
+  "lestonan surcharge 2": [84.0, 75.0, 12.0, 13.0]
 };
 
 const GOURVILY_LAYOUT = {
-  "gourvily mini": [1.0, 6.5, 7.0, 9.5, -42],
-  "gourvily 1": [7.6, 6.5, 7.0, 9.5, -42],
-  "gourvily 2": [14.2, 6.5, 7.0, 9.5, -42],
-  "gourvily 3": [20.8, 6.5, 7.0, 9.5, -42],
-  "gourvily 4": [27.4, 6.5, 7.0, 9.5, -42],
-  "gourvily 5": [34.0, 6.5, 7.0, 9.5, -42],
-  "gourvily 6": [40.6, 6.5, 7.0, 9.5, -42],
-  "gourvily 7": [47.2, 6.5, 7.0, 9.5, -42],
-  "gourvily 8": [53.8, 6.5, 7.0, 9.5, -42],
-  "gourvily 9": [49.0, 20.5, 11.5, 7.5, -12],
-  "gourvily 10": [54.0, 30.0, 11.5, 7.5, -12],
-  "gourvily 11": [82.0, 16, 14, 8, 0],
-  "gourvily vl": [65.2, 68.5, 6.8, 22, 0],
-  "gourvily surcharge 1": [73.5, 80.5, 14, 8, 0],
-  "gourvily surcharge 2": [73.5, 69.0, 14, 8, 0]
+  /* Ligne supérieure étalée sur presque toute la largeur */
+  "gourvily mini": [1.0, 5.5, 6.4, 10.0, -42],
+  "gourvily 1": [8.5, 5.5, 6.4, 10.0, -42],
+  "gourvily 2": [16.0, 5.5, 6.4, 10.0, -42],
+  "gourvily 3": [23.5, 5.5, 6.4, 10.0, -42],
+  "gourvily 4": [31.0, 5.5, 6.4, 10.0, -42],
+  "gourvily 5": [38.5, 5.5, 6.4, 10.0, -42],
+  "gourvily 6": [46.0, 5.5, 6.4, 10.0, -42],
+  "gourvily 7": [53.5, 5.5, 6.4, 10.0, -42],
+  "gourvily 8": [61.0, 5.5, 6.4, 10.0, -42],
+
+  "gourvily 9": [52.0, 22.0, 12.0, 8.0, -10],
+  "gourvily 10": [56.0, 34.0, 12.0, 8.0, -10],
+  "gourvily 11": [84.0, 12.0, 13.5, 8.5, 0],
+
+  "gourvily vl": [66.0, 69.0, 7.0, 21.0, 0],
+  "gourvily surcharge 1": [75.0, 79.0, 14.0, 8.0, 0],
+  "gourvily surcharge 2": [75.0, 67.0, 14.0, 8.0, 0]
 };
 
 function normalize(value) {

@@ -73,6 +73,50 @@ function registrationFromPage(page) {
 }
 
 
+function normalizeNotionId(value) {
+  return String(value || "").replace(/-/g, "").toLowerCase();
+}
+
+function extractRegistration(value) {
+  const text = String(value || "").toUpperCase().trim();
+  const match = text.match(/[A-Z]{2}-\d{3}-[A-Z]{2}/);
+  return match ? match[0] : text;
+}
+
+async function notionPage(token, pageId) {
+  const response = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Notion-Version": "2022-06-28"
+    }
+  });
+  const payload = await response.json();
+  if (!response.ok) return null;
+  return payload;
+}
+
+async function resolveMissingRelations(token, relationIdsList, vehicles) {
+  const unique = [...new Set(relationIdsList)]
+    .filter(id => !vehicles.has(normalizeNotionId(id)));
+
+  // Une base Stationnement contient peu de relations occupées.
+  // La limite évite de dépasser le plafond de sous-requêtes Cloudflare.
+  const toFetch = unique.slice(0, 40);
+  for (let index = 0; index < toFetch.length; index += 8) {
+    const group = toFetch.slice(index, index + 8);
+    const pages = await Promise.all(group.map(id => notionPage(token, id)));
+    pages.forEach((page, pageIndex) => {
+      if (!page) return;
+      const registration = extractRegistration(registrationFromPage(page));
+      if (registration) {
+        vehicles.set(normalizeNotionId(group[pageIndex]), registration);
+        vehicles.set(normalizeNotionId(page.id), registration);
+      }
+    });
+  }
+}
+
+
 async function notionDatabase(token, databaseId) {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
     headers: {
@@ -153,12 +197,29 @@ export async function onRequestPost(context) {
 
     const vehicles = new Map();
     for (const page of vehiclePages) {
-      const registration = registrationFromPage(page);
-      if (registration) vehicles.set(page.id, registration);
+      const registration = extractRegistration(registrationFromPage(page));
+      if (registration) {
+        vehicles.set(normalizeNotionId(page.id), registration);
+      }
     }
+
+    // Récupération globale des relations présentes dans les emplacements.
+    const allRelationIds = parkingPages.flatMap(page => {
+      const props = page.properties || {};
+      return relationIds(
+        firstProperty(props, ["Mon parc", "Véhicule", "Véhicules", "Parc"])
+      );
+    });
+
+    // Sécurité supplémentaire : les pages liées non trouvées dans la requête
+    // de base sont lues directement par leur identifiant.
+    await resolveMissingRelations(token, allRelationIds, vehicles);
 
     const seen = [];
     let imported = 0;
+    let occupiedSpots = 0;
+    let linkedVehicles = 0;
+    let resolvedRegistrations = 0;
 
     for (const page of parkingPages) {
       const props = page.properties || {};
@@ -172,8 +233,22 @@ export async function onRequestPost(context) {
       const statusNotion = propertyText(firstProperty(props, ["Statut", "Status"]));
       const x = numberValue(firstProperty(props, ["X", "x"]));
       const y = numberValue(firstProperty(props, ["Y", "y"]));
-      const ids = relationIds(firstProperty(props, ["Mon parc", "Véhicule", "Véhicules", "Parc"]));
-      const registrations = ids.map(id => vehicles.get(id)).filter(Boolean);
+      const ids = relationIds(
+        firstProperty(props, ["Mon parc", "Véhicule", "Véhicules", "Parc"])
+      );
+      const registrations = ids
+        .map(id => vehicles.get(normalizeNotionId(id)))
+        .filter(Boolean);
+
+      if (ids.length) occupiedSpots++;
+      linkedVehicles += ids.length;
+      resolvedRegistrations += registrations.length;
+
+      // Une relation suffit à déclarer la place occupée, même si le titre
+      // du véhicule ne pouvait exceptionnellement pas être résolu.
+      const displayRegistrations = registrations.length
+        ? registrations
+        : ids.map((id, index) => `VÉHICULE LIÉ ${index + 1}`);
 
       seen.push(page.id);
       await db.prepare(
@@ -193,7 +268,7 @@ export async function onRequestPost(context) {
            updated_at = CURRENT_TIMESTAMP`
       ).bind(
         page.id, name, depot, spotType, statusNotion, x, y,
-        JSON.stringify(registrations), registrations.length
+        JSON.stringify(displayRegistrations), ids.length
       ).run();
       imported++;
     }
@@ -211,7 +286,10 @@ export async function onRequestPost(context) {
       vehicles_loaded: vehiclePages.length,
       vehicles_database_id: vehiclesDatabaseId,
       relation_property_detected: Boolean(detectedVehiclesDatabaseId),
-      message: `${imported} emplacement(s) synchronisé(s), ${vehiclePages.length} véhicule(s) lus.`
+      occupied_spots: occupiedSpots,
+      linked_vehicles: linkedVehicles,
+      resolved_registrations: resolvedRegistrations,
+      message: `${imported} emplacement(s) synchronisé(s), ${linkedVehicles} véhicule(s) affecté(s), ${resolvedRegistrations} immatriculation(s) reconnue(s).`
     });
   } catch (exception) {
     return error(exception.message, 500);

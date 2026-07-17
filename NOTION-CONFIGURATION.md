@@ -97,7 +97,7 @@ Véhicule
 ```
 
 
-## Stationnement V7.2.1
+## Stationnement V7.2.2
 
 Partager avec l'intégration Cloudflare :
 
