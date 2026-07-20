@@ -3,7 +3,7 @@ import {
   queryDatabase, relationTitles, parisDate
 } from "../../_home_status.js";
 
-const FALLBACK_DATABASE_ID = "3606bbfa7ec180c9a561c7c40dac1b4c";
+const FALLBACK_DATABASE_ID = "34c6bbfa7ec18064bfcad668439fe31d";
 
 function dateRange(properties) {
   const preferred = firstProperty(properties, [
