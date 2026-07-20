@@ -1107,7 +1107,7 @@ async function saveStopDetails() {
 
   try {
     await apiFetch(
-      `/api/admin/stops/${encodeURIComponent(activeStop.id)}`,
+      `/api/public/stops/${encodeURIComponent(activeStop.id)}`,
       {
         method: "PUT",
         headers: apiHeaders(),
@@ -1150,7 +1150,7 @@ async function deleteActiveStop() {
 
   try {
     await apiFetch(
-      `/api/admin/stops/${encodeURIComponent(activeStop.id)}`,
+      `/api/public/stops/${encodeURIComponent(activeStop.id)}`,
       {
         method: "DELETE",
         headers: apiHeaders()
@@ -1198,7 +1198,7 @@ async function uploadStopPhoto() {
 
   try {
     const data = await apiFetch(
-      `/api/admin/stops/${encodeURIComponent(activeStop.id)}/photos`,
+      `/api/public/stops/${encodeURIComponent(activeStop.id)}/photos`,
       {
         method: "POST",
         headers,
@@ -1249,8 +1249,8 @@ async function confirmSaveRoute() {
 
   try {
     const url = editingRouteId
-      ? `/api/admin/routes/${editingRouteId}`
-      : "/api/admin/routes";
+      ? `/api/public/routes/${editingRouteId}`
+      : "/api/public/routes";
 
     const method = editingRouteId ? "PUT" : "POST";
 
@@ -1278,7 +1278,7 @@ async function openRoutesLibrary() {
   $("routesLibrary").innerHTML = "<p>Chargement…</p>";
 
   try {
-    const routes = await apiFetch("/api/admin/routes", {
+    const routes = await apiFetch("/api/public/routes", {
       headers: apiHeaders(false)
     });
 
@@ -1326,7 +1326,7 @@ function renderRoutesLibrary(routes) {
 
 async function loadSavedRoute(id) {
   try {
-    const route = await apiFetch(`/api/admin/routes/${id}`, {
+    const route = await apiFetch(`/api/public/routes/${id}`, {
       headers: apiHeaders(false)
     });
 
@@ -1393,7 +1393,7 @@ async function deleteSavedRoute(id) {
   }
 
   try {
-    await apiFetch(`/api/admin/routes/${id}`, {
+    await apiFetch(`/api/public/routes/${id}`, {
       method: "DELETE",
       headers: apiHeaders(false)
     });
@@ -1412,7 +1412,7 @@ async function shareCurrentRoute() {
   }
 
   try {
-    const route = await apiFetch(`/api/admin/routes/${editingRouteId}`, {
+    const route = await apiFetch(`/api/public/routes/${editingRouteId}`, {
       headers: apiHeaders(false)
     });
 
@@ -1541,7 +1541,7 @@ async function confirmCreateStop() {
   };
 
   try {
-    const created = await apiFetch("/api/admin/stops/create", {
+    const created = await apiFetch("/api/public/stops/create", {
       method: "POST",
       headers: apiHeaders(),
       body: JSON.stringify(payload)
@@ -1861,7 +1861,7 @@ async function confirmIncrementalImport() {
     ) {
       const batch = analysedImport.slice(index, index + batchSize);
 
-      const response = await apiFetch("/api/admin/stops/import", {
+      const response = await apiFetch("/api/public/stops/import", {
         method: "POST",
         headers: apiHeaders(),
         body: JSON.stringify({
@@ -2022,7 +2022,7 @@ if (departuresButton) {
 }
 
 
-// V8.1 — ouverture directe du module SAE depuis la prise de poste.
+// V8.2 — ouverture directe du module SAE depuis la prise de poste.
 window.addEventListener("load", () => {
   const params = new URLSearchParams(location.search);
   if (params.get("open") === "sae") {

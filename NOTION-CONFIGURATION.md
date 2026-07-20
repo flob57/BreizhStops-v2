@@ -97,7 +97,7 @@ Véhicule
 ```
 
 
-## Stationnement V8.1
+## Stationnement V8.2
 
 Partager avec l'intégration Cloudflare :
 
@@ -119,7 +119,7 @@ Identifiant par défaut de la base Stationnement :
 
 
 
-## Base Tâches récurrentes — V8.1
+## Base Tâches récurrentes — V8.2
 
 Base utilisée :
 
@@ -136,7 +136,7 @@ La connexion Cloudflare/Notion doit avoir accès à cette base.
 
 
 
-## V8.1 — Atelier et arrêts de travail
+## V8.2 — Atelier et arrêts de travail
 
 ### Véhicules à l’atelier
 Base :
@@ -162,7 +162,7 @@ La connexion Notion `Cloudflare` doit être partagée avec ces deux bases.
 
 
 
-## Correction V8.1
+## Correction V8.2
 
 Bases sources réellement utilisées :
 

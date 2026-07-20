@@ -287,7 +287,7 @@ async function openGpsLauncher() {
   await loadAgenciesInto($("gpsAgencySelect"));
 
   try {
-    const saved = await v4ApiFetch("/api/admin/routes", {
+    const saved = await v4ApiFetch("/api/public/routes", {
       headers: apiHeaders(false)
     });
 
@@ -761,7 +761,7 @@ async function confirmStartGps() {
     }
 
     const route = await v4ApiFetch(
-      `/api/admin/routes/${encodeURIComponent(savedId)}`,
+      `/api/public/routes/${encodeURIComponent(savedId)}`,
       { headers: apiHeaders(false) }
     );
 
@@ -954,7 +954,7 @@ async function parseGtfsArchiveV4(file) {
 }
 
 async function sendGtfsV4Import(payload, sourceName) {
-  const result = await v4ApiFetch("/api/admin/gtfs/import", {
+  const result = await v4ApiFetch("/api/public/gtfs/import", {
     method: "POST",
     headers: apiHeaders(),
     body: JSON.stringify({

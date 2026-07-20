@@ -57,7 +57,7 @@ async function loadDashboard() {
 }
 async function loadVehicles(sync=false) {
   if(sync) {
-    try { await api("/api/admin/vehicles/sync",{method:"POST",body:"{}"}); } catch(e) { console.warn(e); }
+    try { await api("/api/public/vehicles/sync",{method:"POST",body:"{}"}); } catch(e) { console.warn(e); }
   }
   const payload=await api("/api/timeclock/vehicles");
   vehicles=payload.vehicles||[];

@@ -58,7 +58,7 @@ async function loadSaeToday() {
 
   try {
     const courses = await saeApi(
-      `/api/admin/sae/today?date=${saeTodayIso()}`
+      `/api/public/sae/today?date=${saeTodayIso()}`
     );
 
     SAE.courses = courses;
@@ -103,7 +103,7 @@ async function syncSaeNotion() {
     '<p class="information-box">Synchronisation Notion en cours…</p>';
 
   try {
-    const result = await saeApi("/api/admin/notion/sync-today", {
+    const result = await saeApi("/api/public/notion/sync-today", {
       method: "POST",
       headers: apiHeaders(),
       body: JSON.stringify({
@@ -772,7 +772,7 @@ function saeAutomaticSummaryHtml() {
 async function prepareSaeCourse(courseId) {
   try {
     const course = await saeApi(
-      `/api/admin/sae/courses/${encodeURIComponent(courseId)}`
+      `/api/public/sae/courses/${encodeURIComponent(courseId)}`
     );
 
     SAE.selectedCourse = course;
@@ -956,7 +956,7 @@ async function confirmSaeMatches() {
 
   try {
     await saeApi(
-      `/api/admin/sae/courses/${encodeURIComponent(SAE.selectedCourse.id)}/matches`,
+      `/api/public/sae/courses/${encodeURIComponent(SAE.selectedCourse.id)}/matches`,
       {
         method: "PUT",
         headers: apiHeaders(),
@@ -1001,7 +1001,7 @@ async function startSaeRun() {
   try {
     const geometry = await buildSaeGeometry();
 
-    const run = await saeApi("/api/admin/sae/runs", {
+    const run = await saeApi("/api/public/sae/runs", {
       method: "POST",
       headers: apiHeaders(),
       body: JSON.stringify({
@@ -1217,7 +1217,7 @@ async function validateSaeStop(auto = false) {
 
   try {
     const result = await saeApi(
-      `/api/admin/sae/runs/${encodeURIComponent(SAE.runId)}/validate-stop`,
+      `/api/public/sae/runs/${encodeURIComponent(SAE.runId)}/validate-stop`,
       {
         method: "POST",
         headers: apiHeaders(),
@@ -1256,7 +1256,7 @@ async function validateSaeStop(auto = false) {
 async function finishSaeRun() {
   try {
     await saeApi(
-      `/api/admin/sae/runs/${encodeURIComponent(SAE.runId)}/finish`,
+      `/api/public/sae/runs/${encodeURIComponent(SAE.runId)}/finish`,
       {
         method: "POST",
         headers: apiHeaders(),

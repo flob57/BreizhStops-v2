@@ -63,7 +63,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V8.1 — correction du chevauchement des emplacements */
+/* V8.2 — correction du chevauchement des emplacements */
 .parking-spot {
   min-width: 0;
   min-height: 0;
@@ -117,7 +117,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 }
 
 
-/* V8.1 — schéma validé */
+/* V8.2 — schéma validé */
 .lestonan-plan {
   min-height: 760px;
 }
@@ -172,7 +172,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 
 
 /* ==================================================================
-   V8.1 — optimisation PC et iPhone des plans de stationnement
+   V8.2 — optimisation PC et iPhone des plans de stationnement
    ================================================================== */
 
 /* Immatriculations plus visibles sur ordinateur */
@@ -368,7 +368,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 
 
 /* =================================================================
-   V8.1 — proportions ciblées et compteurs de flotte
+   V8.2 — proportions ciblées et compteurs de flotte
    ================================================================= */
 
 .header-counters {
@@ -583,7 +583,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
 
 
 /* =================================================================
-   V8.1 — dimensions physiques équivalentes des places verticales
+   V8.2 — dimensions physiques équivalentes des places verticales
    ================================================================= */
 
 /* Les places 1 à 5 sont réellement le même rectangle que 6 à 10,

@@ -397,7 +397,7 @@ async function toggleValidation(dutyId) {
 }
 
 async function loadCalendar() {
-  state.calendarEvents = await api("/api/admin/depot-calendar");
+  state.calendarEvents = await api("/api/public/depot-calendar");
   renderCalendar();
 }
 
@@ -437,7 +437,7 @@ async function addCalendarEvent(event) {
   event.preventDefault();
 
   try {
-    await api("/api/admin/depot-calendar", {
+    await api("/api/public/depot-calendar", {
       method: "POST",
       body: JSON.stringify({
         label: $("calendarLabel").value,
@@ -459,7 +459,7 @@ async function addCalendarEvent(event) {
 
 async function deleteCalendarEvent(id) {
   await api(
-    `/api/admin/depot-calendar/${encodeURIComponent(id)}`,
+    `/api/public/depot-calendar/${encodeURIComponent(id)}`,
     {
       method: "DELETE"
     }

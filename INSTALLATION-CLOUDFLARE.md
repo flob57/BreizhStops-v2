@@ -212,7 +212,7 @@ Notion utilisées par l'interface :
 Après le déploiement, testez ces deux adresses depuis une fenêtre privée. Elles
 ne doivent pas afficher la page de connexion Cloudflare.
 
-## Route publique supplémentaire en V8.1
+## Route publique supplémentaire en V8.2
 
 La synchronisation du stationnement appelle maintenant :
 
@@ -230,3 +230,14 @@ Elle ne doit pas couvrir `/api/public/*`.
 
 Après déploiement, le bouton Stationnement ne doit plus produire de
 redirection HTTP 302 vers `cloudflareaccess.com`.
+
+
+## V8.2 — chemins publics utilisés par l'application
+
+La règle Access doit cibler uniquement :
+
+```text
+breizhstops-v2.pages.dev/api/admin/*
+```
+
+Ne pas ajouter `/api/public/*`. Les actions de l'interface BreizhStops utilisent maintenant ces chemins publics pour éviter les redirections 302 vers `cloudflareaccess.com`.
