@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#050806">
-  <title>Mes statistiques — V7.7.1</title>
+  <title>Mes statistiques — V8.0</title>
   <link rel="stylesheet" href="./statistiques.css">
 </head>
 <body>
 <header>
   <a href="./index.html">‹ Accueil</a>
-  <div><h1>📊 Mes statistiques <span>V7.7.1</span></h1><p id="statsDate"></p></div>
+  <div><h1>📊 Mes statistiques <span>V8.0</span></h1><p id="statsDate"></p></div>
   <button id="settingsButton">⚙ Soldes initiaux</button>
 </header>
 <main>
@@ -84,6 +84,108 @@
   <label>Commentaire<textarea id="declareNotes"></textarea></label>
   <div class="actions"><button value="cancel">Annuler</button><button value="default">Enregistrer</button></div>
 </form></dialog>
+
+<dialog id="recordDialog">
+  <form id="recordForm">
+    <div class="record-dialog-head">
+      <div>
+        <small>MODIFICATION</small>
+        <h2 id="recordDialogTitle">Modifier une session</h2>
+      </div>
+      <button type="button" class="dialog-close" id="closeRecordDialog" aria-label="Fermer">×</button>
+    </div>
+
+    <input id="recordType" type="hidden">
+    <input id="recordId" type="hidden">
+
+    <div id="recordWorkFields" class="record-fields">
+      <label>Date
+        <input id="recordWorkDate" type="date">
+      </label>
+      <div class="two">
+        <label>Heure de début
+          <input id="recordWorkStart" type="time" step="60">
+        </label>
+        <label>Heure de fin
+          <input id="recordWorkEnd" type="time" step="60">
+        </label>
+      </div>
+      <div class="duration-preview">
+        <span>Durée recalculée</span>
+        <strong id="recordWorkDuration">—</strong>
+      </div>
+      <label>Commentaire
+        <textarea id="recordWorkNotes" rows="3"></textarea>
+      </label>
+    </div>
+
+    <div id="recordDrivingFields" class="record-fields" hidden>
+      <label>Date
+        <input id="recordDrivingDate" type="date">
+      </label>
+      <label>Véhicule
+        <input id="recordDrivingVehicle" type="text" autocapitalize="characters">
+      </label>
+      <div class="two">
+        <label>Heure de début
+          <input id="recordDrivingStart" type="time" step="60">
+        </label>
+        <label>Heure de fin
+          <input id="recordDrivingEnd" type="time" step="60">
+        </label>
+      </div>
+      <div class="two">
+        <label>Kilométrage de départ
+          <input id="recordDrivingKmStart" type="number" inputmode="numeric">
+        </label>
+        <label>Kilométrage de fin
+          <input id="recordDrivingKmEnd" type="number" inputmode="numeric">
+        </label>
+      </div>
+      <div class="duration-preview">
+        <span>Durée recalculée</span>
+        <strong id="recordDrivingDuration">—</strong>
+      </div>
+      <label>Commentaire
+        <textarea id="recordDrivingNotes" rows="3"></textarea>
+      </label>
+    </div>
+
+    <div id="recordFuelFields" class="record-fields" hidden>
+      <label>Date
+        <input id="recordFuelDate" type="date">
+      </label>
+      <label>Heure
+        <input id="recordFuelTime" type="time" step="60">
+      </label>
+      <label>Véhicule
+        <input id="recordFuelVehicle" type="text" autocapitalize="characters">
+      </label>
+      <div class="two">
+        <label>Kilométrage
+          <input id="recordFuelKm" type="number" inputmode="numeric">
+        </label>
+        <label>Litres
+          <input id="recordFuelLitres" type="number" step="0.01" inputmode="decimal">
+        </label>
+      </div>
+      <label>Commentaire
+        <textarea id="recordFuelNotes" rows="3"></textarea>
+      </label>
+    </div>
+
+    <p class="local-time-note">
+      Les horaires sont affichés et enregistrés en heure locale française
+      (Europe/Paris).
+    </p>
+
+    <div class="actions record-dialog-actions">
+      <button type="button" id="cancelRecordDialog">Annuler</button>
+      <button type="submit">Enregistrer les modifications</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="./statistiques.js"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@ dialog{width:min(560px,calc(100% - 24px));border:1px solid #455448;border-radius
 @media(max-width:520px){header{padding:12px;grid-template-columns:auto 1fr}header button{grid-column:1/-1}.summary-grid,.period-grid,.two{grid-template-columns:1fr}}
 
 
-/* V7.7.1 — barres de progression des heures réelles */
+/* V8.0 — barres de progression des heures réelles */
 .period-progress{
   height:9px;
   margin:12px 0 10px;
@@ -43,4 +43,115 @@ dialog{width:min(560px,calc(100% - 24px));border:1px solid #455448;border-radius
   gap:10px;
   color:var(--muted);
   font-size:12px;
+}
+
+
+/* V8.0 — édition claire des heures réelles */
+#recordDialog{
+  width:min(620px,calc(100% - 24px));
+  max-height:min(90vh,760px);
+  overflow:auto;
+  padding:0;
+}
+#recordDialog form{
+  padding:22px;
+}
+.record-dialog-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--line);
+}
+.record-dialog-head small{
+  display:block;
+  color:var(--green);
+  font-size:11px;
+  font-weight:850;
+  letter-spacing:.12em;
+}
+.record-dialog-head h2{
+  margin:4px 0 0;
+}
+.dialog-close{
+  width:40px;
+  height:40px;
+  padding:0;
+  border:1px solid #465349;
+  border-radius:50%;
+  background:#111713;
+  color:#fff;
+  font-size:25px;
+  line-height:1;
+}
+.record-fields{
+  display:grid;
+  gap:13px;
+}
+.record-fields[hidden]{
+  display:none;
+}
+.duration-preview{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:13px 15px;
+  border:1px solid #354139;
+  border-radius:12px;
+  background:#09100b;
+}
+.duration-preview span{
+  color:var(--muted);
+  font-size:13px;
+}
+.duration-preview strong{
+  color:var(--green);
+  font-size:22px;
+}
+.local-time-note{
+  margin:0;
+  padding:11px 13px;
+  border-radius:10px;
+  background:#15261a;
+  color:#c8d3cb;
+  font-size:12px;
+}
+.record-dialog-actions{
+  position:sticky;
+  bottom:-22px;
+  margin:4px -22px -22px;
+  padding:14px 22px;
+  border-top:1px solid var(--line);
+  background:rgba(14,20,16,.97);
+}
+.record-dialog-actions button{
+  min-height:44px;
+}
+@media(max-width:520px){
+  #recordDialog{
+    width:calc(100% - 14px);
+    max-height:92vh;
+    border-radius:20px;
+  }
+  #recordDialog form{
+    padding:17px;
+  }
+  #recordDialog .two{
+    grid-template-columns:1fr 1fr;
+  }
+  #recordDialog input,
+  #recordDialog textarea{
+    min-height:48px;
+    font-size:17px;
+  }
+  .record-dialog-actions{
+    bottom:-17px;
+    margin:4px -17px -17px;
+    padding:13px 17px calc(13px + env(safe-area-inset-bottom));
+  }
+  .record-dialog-actions button{
+    flex:1;
+  }
 }

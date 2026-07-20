@@ -185,3 +185,29 @@ la table `daily_departures`.
 Aucun nouveau secret Cloudflare n’est nécessaire.
 Après déploiement, ouvrir `🚉 Départs` puis cliquer sur
 `Synchroniser Notion`.
+
+
+## Réglage Cloudflare Access pour la V8
+
+La règle Access existante peut continuer à protéger :
+
+```text
+breizhstops-v2.pages.dev/api/admin/*
+```
+
+Ne créez aucune règle Access couvrant :
+
+```text
+breizhstops-v2.pages.dev/api/public/*
+```
+
+Les deux routes publiques servent uniquement à déclencher les synchronisations
+Notion utilisées par l'interface :
+
+```text
+/api/public/duties/sync
+/api/public/departures/sync
+```
+
+Après le déploiement, testez ces deux adresses depuis une fenêtre privée. Elles
+ne doivent pas afficher la page de connexion Cloudflare.

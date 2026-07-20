@@ -24,6 +24,15 @@ export async function onRequestPatch(context) {
     const db = requireDb(context);
     const type = context.params.type;
     const body = await context.request.json();
+
+    const validIso = value =>
+      value == null ||
+      value === "" ||
+      (!Number.isNaN(Date.parse(value)) && /T/.test(String(value)));
+
+    if (!validIso(body.started_at) || !validIso(body.ended_at) || !validIso(body.filled_at)) {
+      return error("Date ou heure invalide.", 400);
+    }
     if (type === "work") {
       await db.prepare(
         `UPDATE work_sessions SET started_at = ?, ended_at = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`

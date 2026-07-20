@@ -51,10 +51,16 @@ async function api(url, options = {}) {
       .trim()
       .slice(0, 220);
 
+    const accessBlocked =
+      response.redirected ||
+      /cloudflare|access|login|authentication/i.test(clean);
+
     throw new Error(
-      clean
-        ? `Erreur serveur ${response.status} : ${clean}`
-        : `Réponse du serveur illisible (${response.status}).`
+      accessBlocked
+        ? "La synchronisation est bloquée par Cloudflare Access. Vérifiez que les routes /api/public/* ne sont pas protégées."
+        : clean
+          ? `Erreur serveur ${response.status} : ${clean}`
+          : `Réponse du serveur illisible (${response.status}).`
     );
   }
 
@@ -77,7 +83,7 @@ async function synchronizeDutiesInBatches(onProgress = null) {
       onProgress(offset);
     }
 
-    const result = await api("/api/admin/duties/sync", {
+    const result = await api("/api/public/duties/sync", {
       method: "POST",
       body: JSON.stringify({
         date: state.date,
