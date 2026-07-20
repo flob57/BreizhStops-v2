@@ -1,5 +1,5 @@
-import { onRequestPost as adminOnRequestPost } from "../../admin/stops/create.js";
+import { onRequestPost as adminPost } from "../../admin/stops/create.js";
 
 export async function onRequestPost(context) {
-  return adminOnRequestPost(context);
+  return adminPost(context);
 }

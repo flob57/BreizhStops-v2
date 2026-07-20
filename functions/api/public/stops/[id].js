@@ -1,5 +1,10 @@
-import { onRequestGet as adminGet, onRequestPut as adminPut, onRequestDelete as adminDelete } from "../../admin/stops/[id].js";
+import { onRequestDelete as adminDelete } from "../../admin/stops/[id].js";
+import { onRequestPut as adminPut } from "../../admin/stops/[id].js";
 
-export const onRequestGet=adminGet;
-export const onRequestPut=adminPut;
-export const onRequestDelete=adminDelete;
+export async function onRequestDelete(context) {
+  return adminDelete(context);
+}
+
+export async function onRequestPut(context) {
+  return adminPut(context);
+}
