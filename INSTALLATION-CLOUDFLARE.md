@@ -211,3 +211,22 @@ Notion utilisées par l'interface :
 
 Après le déploiement, testez ces deux adresses depuis une fenêtre privée. Elles
 ne doivent pas afficher la page de connexion Cloudflare.
+
+## Route publique supplémentaire en V8.1
+
+La synchronisation du stationnement appelle maintenant :
+
+```text
+/api/public/parking/sync
+```
+
+La règle Cloudflare Access doit continuer à cibler uniquement :
+
+```text
+breizhstops-v2.pages.dev/api/admin/*
+```
+
+Elle ne doit pas couvrir `/api/public/*`.
+
+Après déploiement, le bouton Stationnement ne doit plus produire de
+redirection HTTP 302 vers `cloudflareaccess.com`.

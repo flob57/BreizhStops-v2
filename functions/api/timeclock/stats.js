@@ -109,11 +109,38 @@ export async function onRequestGet(context) {
     const currentYear = today.slice(0,4);
     const overtimeStart = currentYear === baselineYear ? settings.overtime_baseline_date : `${currentYear}-01-01`;
     const initialOvertime = currentYear === baselineYear ? Number(settings.overtime_balance_minutes) : 0;
-    const declaredSince = declarations.filter(d => d.work_date >= overtimeStart && d.work_date <= today);
+    const declaredSince = declarations.filter(
+      d => d.work_date >= overtimeStart && d.work_date <= today
+    );
+
     const expectedSince = dateRangeDays(overtimeStart, today)
-      .reduce((s,d)=>s+expectedMinutesForDate(d,events),0);
+      .reduce((sum, date) => sum + expectedMinutesForDate(date, events), 0);
+
+    const declaredMinutes = declaredSince.reduce(
+      (sum, declaration) => sum + Number(declaration.total_minutes || 0),
+      0
+    );
+
+    /*
+     * Journée courante provisoire :
+     * tant qu'aucune déclaration n'a été validée aujourd'hui, on considère
+     * que les heures attendues ont été réalisées. Le compteur ne baisse donc
+     * pas artificiellement le matin.
+     *
+     * Au changement de date, cette compensation disparaît automatiquement.
+     * Une journée passée sans déclaration compte alors 0 minute réalisée.
+     */
+    const todayHasDeclaration = declaredSince.some(
+      declaration => declaration.work_date === today
+    );
+    const provisionalTodayMinutes =
+      today >= overtimeStart && !todayHasDeclaration
+        ? expectedMinutesForDate(today, events)
+        : 0;
+
     const overtime = initialOvertime
-      + declaredSince.reduce((s,d)=>s+Number(d.total_minutes||0),0)
+      + declaredMinutes
+      + provisionalTodayMinutes
       - expectedSince;
 
     const leave = paidLeaveBalance(settings, events, today);

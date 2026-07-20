@@ -342,7 +342,7 @@ async function sync() {
   try {
     do {
       batchNumber++;
-      const payload = await api("/api/admin/parking/sync", {
+      const payload = await api("/api/public/parking/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ start_cursor: cursor, reset: firstBatch })
