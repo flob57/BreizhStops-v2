@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#050806">
-  <title>Océlorn — Tableau de bord V8.2</title>
+  <title>Océlorn — Tableau de bord V9</title>
   <link rel="stylesheet" href="./home.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
         <span>Océlorn · BreizhStops</span>
       </div>
     </div>
-    <span class="version-pill">V8.2</span>
+    <span class="version-pill">V9</span>
   </header>
 
   <main>
@@ -108,6 +108,17 @@
           <h2>Plans des dépôts</h2>
           <p>Visualiser les affectations de Lestonan, Gourvily et des emplacements extérieurs.</p>
           <a href="./stationnement.html" class="primary-link">Ouvrir le stationnement →</a>
+        </div>
+      </article>
+
+
+      <article class="module-card fleet-card">
+        <div class="module-photo fleet-photo"><img src="./assets/qub-coach-marker.png" alt="Autocar QUB"></div>
+        <div class="module-content">
+          <span class="section-kicker green">GESTION DU PARC</span>
+          <h2>Mon parc</h2>
+          <p>Retrouver les véhicules classés par état, leurs photos, numéros de parc, société et âge.</p>
+          <a href="./mon-parc.html" class="primary-link">Ouvrir Mon parc →</a>
         </div>
       </article>
 
@@ -230,8 +241,13 @@
         </article>
       </section>
 
+      <section class="roadworks-section" aria-labelledby="roadworksTitle">
+        <div class="roadworks-heading"><div><span class="section-kicker">EXPLOITATION</span><h2 id="roadworksTitle">🚧 Travaux et déviations</h2></div><span id="roadworksCount" class="status-count">—</span></div>
+        <div id="roadworksMessage" class="status-message">Chargement…</div>
+        <div class="roadworks-columns"><div><h3>En cours</h3><div id="roadworksCurrent" class="roadworks-list"></div></div><div><h3>À venir</h3><div id="roadworksUpcoming" class="roadworks-list"></div></div></div>
+      </section>
 
-<footer>Océlorn · Outil personnel d’exploitation · BreizhStops V8.2</footer>
+<footer>Océlorn · Outil personnel d’exploitation · BreizhStops V9</footer>
   <script src="./home.js"></script>
 </body>
 </html>

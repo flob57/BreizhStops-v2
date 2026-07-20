@@ -402,3 +402,7 @@ button:hover, .toolbar-link:hover, .toolbar a:hover { transform: translateY(-1px
     min-width: 102px;
   }
 }
+
+
+/* V9 — carte théorique des véhicules */
+.fleet-map-section{margin-top:30px}.map-title{display:flex;justify-content:space-between;align-items:end;gap:15px}.map-title h2{margin-bottom:4px}.map-title p{margin:0 0 10px;color:var(--muted);font-size:13px}.map-title span{margin-bottom:10px;padding:7px 10px;border:1px solid #405048;border-radius:999px;color:var(--green);font-size:12px;font-weight:900}#fleetMap{height:520px;border:1px solid var(--border);border-radius:14px;background:#0c140f;overflow:hidden}.qub-bus-marker{background:transparent;border:0}.qub-bus-marker img{width:66px;height:38px;object-fit:contain;filter:drop-shadow(0 4px 5px rgba(0,0,0,.65))}.bus-popup{min-width:210px;color:#172019}.bus-popup strong{font-size:16px}.bus-popup-grid{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;margin-top:9px}.bus-popup-grid span:nth-child(odd){color:#667269}.leaflet-popup-content-wrapper{border-radius:12px}@media(max-width:760px){#fleetMap{height:430px}.map-title{align-items:flex-start;flex-direction:column}.map-title span{margin:0 0 8px}}

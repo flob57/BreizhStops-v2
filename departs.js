@@ -3,7 +3,10 @@ const state = {
   departures: [],
   refreshTimer: null,
   openTraceIds: new Set(),
-  traceScrollPositions: new Map()
+  traceScrollPositions: new Map(),
+  map: null,
+  mapLayer: null,
+  stopIndex: null
 };
 
 const $ = id => document.getElementById(id);
@@ -261,6 +264,34 @@ function restoreTraceScrollPositions() {
   });
 }
 
+
+function normalizeStopName(value){return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
+async function ensureStopIndex(){
+  if(state.stopIndex)return state.stopIndex;
+  const response=await fetch("./data/stops.json");const stops=await response.json();const index=new Map();
+  for(const stop of stops){if(!/qub/i.test(String(stop.reseau||"")))continue;const key=normalizeStopName(stop.nom);if(!key||!Number.isFinite(Number(stop.lat))||!Number.isFinite(Number(stop.lon)))continue;if(!index.has(key))index.set(key,[]);index.get(key).push(stop)}
+  state.stopIndex=index;return index;
+}
+function findStopCoordinates(name,index){
+  const key=normalizeStopName(name);const exact=index.get(key);if(exact?.length)return exact[0];
+  let best=null,bestScore=0;for(const [candidate,items] of index){if(key.length<4||candidate.length<4)continue;let score=0;if(candidate.includes(key)||key.includes(candidate))score=Math.min(candidate.length,key.length)/Math.max(candidate.length,key.length);if(score>bestScore){bestScore=score;best=items[0]}}
+  return bestScore>=.62?best:null;
+}
+function theoreticalPosition(departure,status,index){
+  const timeline=status.timeline||[];if(!timeline.length)return null;let next=timeline.findIndex(s=>s.seconds>status.now);if(next<0)next=timeline.length-1;let prev=Math.max(0,next-1);if(next===0)prev=0;
+  const a=timeline[prev],b=timeline[next];const ca=findStopCoordinates(a.name,index),cb=findStopCoordinates(b.name,index);if(!ca&&!cb)return null;if(!ca)return {lat:Number(cb.lat),lon:Number(cb.lon)};if(!cb||a.seconds===b.seconds)return {lat:Number(ca.lat),lon:Number(ca.lon)};
+  const ratio=Math.max(0,Math.min(1,(status.now-a.seconds)/(b.seconds-a.seconds)));return {lat:Number(ca.lat)+(Number(cb.lat)-Number(ca.lat))*ratio,lon:Number(ca.lon)+(Number(cb.lon)-Number(ca.lon))*ratio};
+}
+async function renderFleetMap(classified){
+  const running=classified.filter(item=>item.status.running);const msg=$("mapMessage");$("mapVehicleCount").textContent=`${running.length} véhicule${running.length>1?"s":""}`;
+  try{
+    const index=await ensureStopIndex();if(!state.map){state.map=L.map("fleetMap",{zoomControl:true}).setView([47.995,-4.10],11);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(state.map);state.mapLayer=L.layerGroup().addTo(state.map)}
+    state.mapLayer.clearLayers();const bounds=[];let located=0;
+    for(const {departure,status} of running){const pos=theoreticalPosition(departure,status,index);if(!pos)continue;located++;bounds.push([pos.lat,pos.lon]);const icon=L.divIcon({className:"qub-bus-marker",html:'<img src="./assets/qub-coach-marker.png" alt="">',iconSize:[66,38],iconAnchor:[33,19],popupAnchor:[0,-18]});const marker=L.marker([pos.lat,pos.lon],{icon}).addTo(state.mapLayer);marker.bindPopup(`<div class="bus-popup"><strong>${escapeHtml(departure.course_name||"Course QUB")}</strong><div class="bus-popup-grid"><span>Conducteur</span><b>${escapeHtml(departure.driver_name||"—")}</b><span>Immatriculation</span><b>${escapeHtml(departure.vehicle_registration||"—")}</b><span>N° QUB</span><b>${escapeHtml(departure.qub_reference||"—")}</b><span>Prochain arrêt</span><b>${escapeHtml(status.nextStop?.name||"—")}</b></div></div>`)}
+    msg.style.display=located?"none":"block";msg.textContent=running.length?"Aucun arrêt QUB correspondant n’a été trouvé pour les courses en circulation.":"Aucun véhicule actuellement en circulation.";if(bounds.length&&(!state.map._v9Fitted||bounds.length>1)){state.map.fitBounds(bounds,{padding:[45,45],maxZoom:14});state.map._v9Fitted=true}setTimeout(()=>state.map.invalidateSize(),50)
+  }catch(e){msg.style.display="block";msg.textContent=`Impossible de charger la carte : ${e.message}`}
+}
+
 function render() {
   saveTraceScrollPositions();
 
@@ -299,6 +330,7 @@ function render() {
 
   $("upcomingEmpty").style.display = upcoming.length ? "none" : "block";
   restoreTraceScrollPositions();
+  renderFleetMap(classified);
 }
 
 function enableTimelineDragging() {

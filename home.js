@@ -345,6 +345,21 @@ async function loadSickLeaves() {
   }
 }
 
+
+function formatRoadDate(start,end){
+  const fmt=value=>{if(!value)return "—";const [y,m,d]=value.split("-").map(Number);return new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short",year:"numeric",timeZone:"Europe/Paris"}).format(new Date(Date.UTC(y,m-1,d,12)))};
+  return start===end?fmt(start):`${fmt(start)} → ${fmt(end)}`;
+}
+async function loadRoadworks(){
+  const current=$("roadworksCurrent"),upcoming=$("roadworksUpcoming"),message=$("roadworksMessage"),count=$("roadworksCount");
+  try{
+    const payload=await api("/api/home/roadworks");
+    const all=[...(payload.current||[]),...(payload.upcoming||[])];count.textContent=all.length;message.hidden=true;
+    const cards=(items,status)=>items.length?items.map(item=>`<a class="roadwork-card ${status}" href="${escapeHtml(item.notion_url||"#")}" target="_blank" rel="noopener"><strong>${escapeHtml(item.name||"Travaux")}</strong><span>📍 ${escapeHtml(item.commune||"Commune non renseignée")}</span><span>📅 ${escapeHtml(formatRoadDate(item.start_date,item.end_date))}</span></a>`).join(""):`<div class="roadwork-empty">Aucune déviation ${status==="current"?"en cours":"à venir"}.</div>`;
+    current.innerHTML=cards(payload.current||[],"current");upcoming.innerHTML=cards(payload.upcoming||[],"upcoming");
+  }catch(e){count.textContent="!";message.hidden=false;message.textContent=`Impossible de charger les travaux : ${e.message}`;current.innerHTML="";upcoming.innerHTML=""}
+}
+
 $("workToggle").addEventListener("click",toggleWork);
 $("driveToggle").addEventListener("click",toggleDriving);
 $("fuelButton").addEventListener("click",openFuel);
@@ -363,8 +378,8 @@ $("declareDate").addEventListener("change",async()=>{
 updateClock(); setInterval(updateClock,1000);
 loadDashboard(); setInterval(loadDashboard,60000);
 loadTodayTodos(); setInterval(loadTodayTodos,300000);
-loadWorkshopVehicles(); loadSickLeaves();
-setInterval(loadWorkshopVehicles,300000); setInterval(loadSickLeaves,300000);
+loadWorkshopVehicles(); loadSickLeaves(); loadRoadworks();
+setInterval(loadWorkshopVehicles,300000); setInterval(loadSickLeaves,300000); setInterval(loadRoadworks,300000);
 loadVehicles(false).catch(()=>{});
 refreshActivity(); setInterval(refreshActivity,15000);
 loadHomeStats();

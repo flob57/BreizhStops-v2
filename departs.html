@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#040806">
-  <title>BreizhStops V6.7 — Départs</title>
-  <link rel="stylesheet" href="./departs.css">
+  <title>BreizhStops V9 — Départs</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="./departs.css">
 </head>
 <body>
   <header class="departures-header">
     <div>
       <a href="./index.html" class="back-link">‹ Accueil</a>
-      <h1>🚉 Départs <span class="version">V6.7</span></h1>
+      <h1>🚉 Départs <span class="version">V9</span></h1>
       <p id="dateLabel">Chargement…</p>
     </div>
     <div class="header-actions">
@@ -61,8 +61,15 @@
       </div>
       <div id="upcomingEmpty" class="empty">Aucun départ prévu dans les 60 prochaines minutes.</div>
     </section>
+
+    <section class="fleet-map-section">
+      <div class="map-title"><div><h2>Position théorique des véhicules</h2><p>Position interpolée entre les arrêts QUB selon l’horaire de la course.</p></div><span id="mapVehicleCount">0 véhicule</span></div>
+      <div id="fleetMap" aria-label="Carte des véhicules en circulation"></div>
+      <div id="mapMessage" class="empty">Chargement de la cartographie…</div>
+    </section>
   </main>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="./departs.js"></script>
 </body>
 </html>

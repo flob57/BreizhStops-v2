@@ -604,3 +604,7 @@ footer { padding: 24px; border-top: 1px solid var(--line); color: #7f8c83; text-
     font-size: 15px;
   }
 }
+
+
+/* V9 — Mon parc et travaux */
+.fleet-photo{display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#10251b,#06100b)}.fleet-photo img{width:94%;height:100%;object-fit:contain}.roadworks-section{width:min(1400px,calc(100% - 32px));margin:0 auto 38px;padding:22px;border:1px solid #38483d;border-radius:20px;background:linear-gradient(180deg,rgba(23,31,25,.97),rgba(8,14,10,.98))}.roadworks-heading{display:flex;justify-content:space-between;align-items:flex-start}.roadworks-heading h2{margin:4px 0 17px;font-size:25px}.roadworks-columns{display:grid;grid-template-columns:1fr 1fr;gap:18px}.roadworks-columns h3{margin:0 0 10px;color:#dfe8e1}.roadworks-list{display:grid;gap:10px}.roadwork-card{display:block;padding:14px;border:1px solid #3b493f;border-left:5px solid #f0a52f;border-radius:12px;background:#0c140f;color:white;text-decoration:none}.roadwork-card.current{border-left-color:#e05745}.roadwork-card strong{display:block;font-size:16px}.roadwork-card span{display:block;margin-top:5px;color:#b5c0b8;font-size:13px}.roadwork-empty{padding:13px;border:1px dashed #334139;border-radius:11px;color:#8f9b93}.roadworks-section .status-message{margin-bottom:12px}@media(max-width:860px){.roadworks-columns{grid-template-columns:1fr}}@media(max-width:600px){.roadworks-section{width:calc(100% - 20px);padding:15px}.roadworks-heading h2{font-size:21px}}
