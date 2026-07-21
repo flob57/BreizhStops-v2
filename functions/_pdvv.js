@@ -54,13 +54,66 @@ function uniqueValue(property) {
   return propertyText(property);
 }
 
+function booleanValue(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value == null) return false;
+
+  const normalized = String(value).trim().toLowerCase();
+  return ["true", "1", "yes", "oui", "checked", "check", "✅", "ok"].includes(normalized);
+}
+
 function checkboxValue(property) {
   if (!property) return false;
-  if (property.type === "checkbox") return property.checkbox === true;
-  if (property.type === "formula" && property.formula?.type === "boolean") {
-    return property.formula.boolean === true;
+
+  if (property.type === "checkbox") {
+    return property.checkbox === true;
   }
-  return String(propertyText(property)).toLowerCase() === "true";
+
+  if (property.type === "formula") {
+    const formula = property.formula || {};
+    if (formula.type === "boolean") return formula.boolean === true;
+    if (formula.type === "number") return booleanValue(formula.number);
+    if (formula.type === "string") return booleanValue(formula.string);
+  }
+
+  if (property.type === "rollup") {
+    const rollup = property.rollup || {};
+
+    if (rollup.type === "number") return booleanValue(rollup.number);
+
+    if (rollup.type === "array") {
+      return (rollup.array || []).some(item => {
+        if (item?.type === "checkbox") return item.checkbox === true;
+        if (item?.type === "formula") {
+          if (item.formula?.type === "boolean") return item.formula.boolean === true;
+          if (item.formula?.type === "number") return booleanValue(item.formula.number);
+          if (item.formula?.type === "string") return booleanValue(item.formula.string);
+        }
+        return booleanValue(propertyText(item));
+      });
+    }
+  }
+
+  return booleanValue(propertyText(property));
+}
+
+function registrationsMatch(theoreticalValues, assignmentValues) {
+  const theoretical = new Set(
+    (theoreticalValues || []).map(normalizeRegistration).filter(Boolean)
+  );
+  const assigned = new Set(
+    (assignmentValues || []).map(normalizeRegistration).filter(Boolean)
+  );
+
+  if (!theoretical.size || !assigned.size) return false;
+
+  // Un PDVV est conforme dès qu'au moins un véhicule affecté correspond
+  // à l'un des véhicules théoriques liés dans Notion.
+  for (const registration of theoretical) {
+    if (assigned.has(registration)) return true;
+  }
+
+  return false;
 }
 
 export function normalizeRegistration(value) {
@@ -164,8 +217,16 @@ export async function loadPdvv(token, databaseId = PDVV_FALLBACK_DATABASE_ID) {
     const theoreticalValues = await relatedVehicles(token, page, theoreticalProperty, pageCache);
     const assignmentValues = await relatedVehicles(token, page, assignmentProperty, pageCache);
 
-    const matchProperty = propertyByMeaning(properties, ["Match", "Correspondance"]);
-    const match = checkboxValue(matchProperty);
+    const matchProperty = propertyByMeaning(properties, [
+      "Match", "Correspondance", "Conforme", "Conformité", "Conformite"
+    ]);
+
+    const notionMatch = checkboxValue(matchProperty);
+    const computedMatch = registrationsMatch(theoreticalValues, assignmentValues);
+
+    // La comparaison des relations sert de sécurité lorsque la formule,
+    // le rollup ou la case Notion n'est pas interprété correctement.
+    const match = notionMatch || computedMatch;
 
     devices.push({
       id: page.id,
@@ -179,7 +240,10 @@ export async function loadPdvv(token, databaseId = PDVV_FALLBACK_DATABASE_ID) {
       match,
       relation_debug: {
         theoretical_property_found: Boolean(theoreticalProperty),
-        assignment_property_found: Boolean(assignmentProperty)
+        assignment_property_found: Boolean(assignmentProperty),
+        match_property_found: Boolean(matchProperty),
+        notion_match: notionMatch,
+        computed_match: computedMatch
       }
     });
   }
