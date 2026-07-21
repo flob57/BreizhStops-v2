@@ -1,9 +1,9 @@
-# BreizhStops V9.4 — Relations Notion PDVV
+# BreizhStops V9.5 — Relations Notion PDVV
 
 ## Correction principale
 
 Les propriétés **Théorique** et **Affectation** de la base PDVV sont des relations Notion.
-La V9.4 ouvre désormais les pages véhicules liées et lit leur propriété
+La V9.5 ouvre désormais les pages véhicules liées et lit leur propriété
 **Immatriculation**, au lieu de chercher du texte directement dans la relation.
 
 ## Utilisation des deux relations
