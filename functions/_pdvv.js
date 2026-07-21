@@ -1,23 +1,48 @@
 import {
   propertyText,
-  firstProperty,
   pageTitle,
   queryDatabase,
-  notionPage
+  notionPage,
+  notionRequest
 } from "./_home_status.js";
 
 export const PDVV_FALLBACK_DATABASE_ID = "3a46bbfa7ec1801f8675d4a8b498aaf4";
 
 const VEHICLE_REGISTRATION_PROPERTIES = [
-  "Immatriculation",
-  "Véhicule",
-  "Vehicule",
-  "Véhicule immatriculation",
-  "Vehicule immatriculation",
-  "Registration",
-  "Nom",
-  "Name"
+  "Immatriculation", "Véhicule", "Vehicule", "Registration", "Nom", "Name"
 ];
+
+function normalizedName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .toLowerCase()
+    .trim();
+}
+
+function propertyByMeaning(properties, candidates, expectedType = "") {
+  const entries = Object.entries(properties || {});
+  const wanted = candidates.map(normalizedName);
+
+  // 1. Correspondance exacte, sans tenir compte des accents/emojis/espaces.
+  for (const [name, property] of entries) {
+    if (expectedType && property?.type !== expectedType) continue;
+    const normalized = normalizedName(name);
+    if (wanted.includes(normalized)) return property;
+  }
+
+  // 2. Correspondance souple : « Affectation actuelle », « Bus théorique », etc.
+  for (const [name, property] of entries) {
+    if (expectedType && property?.type !== expectedType) continue;
+    const normalized = normalizedName(name);
+    if (wanted.some(value => normalized.includes(value) || value.includes(normalized))) {
+      return property;
+    }
+  }
+
+  return null;
+}
 
 function uniqueValue(property) {
   if (!property) return "";
@@ -48,12 +73,10 @@ export function normalizeRegistration(value) {
 
 function vehicleRegistrationFromPage(page) {
   const properties = page?.properties || {};
-  const preferred = propertyText(firstProperty(properties, VEHICLE_REGISTRATION_PROPERTIES));
-  if (preferred) return String(preferred).trim();
+  const preferred = propertyByMeaning(properties, VEHICLE_REGISTRATION_PROPERTIES);
+  const preferredValue = propertyText(preferred);
+  if (preferredValue) return String(preferredValue).trim();
 
-  // Certaines bases utilisent une formule ou un rollup pour afficher
-  // l'immatriculation dans une relation. On cherche alors une valeur
-  // ressemblant réellement à une immatriculation française.
   for (const property of Object.values(properties)) {
     const value = String(propertyText(property) || "").trim();
     if (/^[A-Z]{2}[-\s]?\d{3}[-\s]?[A-Z]{2}$/i.test(value)) return value;
@@ -62,7 +85,32 @@ function vehicleRegistrationFromPage(page) {
   return pageTitle(page);
 }
 
-async function relatedVehicles(token, property, pageCache) {
+async function fullRelationIds(token, pageId, property) {
+  if (!property || property.type !== "relation") return [];
+
+  const ids = (property.relation || []).map(item => item.id).filter(Boolean);
+  if (!property.has_more || !property.id) return [...new Set(ids)];
+
+  let cursor = null;
+  do {
+    const url = new URL(
+      `https://api.notion.com/v1/pages/${pageId}/properties/${encodeURIComponent(property.id)}`
+    );
+    url.searchParams.set("page_size", "100");
+    if (cursor) url.searchParams.set("start_cursor", cursor);
+
+    const payload = await notionRequest(token, url.toString(), { method: "GET" });
+    for (const item of payload.results || []) {
+      const relationId = item?.relation?.id;
+      if (relationId) ids.push(relationId);
+    }
+    cursor = payload.has_more ? payload.next_cursor : null;
+  } while (cursor);
+
+  return [...new Set(ids)];
+}
+
+async function relatedVehicles(token, page, property, pageCache) {
   if (!property) return [];
 
   if (property.type !== "relation") {
@@ -71,11 +119,13 @@ async function relatedVehicles(token, property, pageCache) {
   }
 
   const labels = [];
-  for (const relation of property.relation || []) {
-    if (!pageCache.has(relation.id)) {
-      pageCache.set(relation.id, await notionPage(token, relation.id));
+  const relationIds = await fullRelationIds(token, page.id, property);
+
+  for (const relationId of relationIds) {
+    if (!pageCache.has(relationId)) {
+      pageCache.set(relationId, await notionPage(token, relationId));
     }
-    const registration = vehicleRegistrationFromPage(pageCache.get(relation.id));
+    const registration = vehicleRegistrationFromPage(pageCache.get(relationId));
     if (registration && !labels.includes(registration)) labels.push(registration);
   }
   return labels;
@@ -90,35 +140,32 @@ export async function loadPdvv(token, databaseId = PDVV_FALLBACK_DATABASE_ID) {
     if (page.archived) continue;
 
     const properties = page.properties || {};
-    const serial = propertyText(firstProperty(properties, [
-      "Numéro de série", "Numero de serie", "N° de série", "N° série",
-      "Serial", "Nom", "Name"
-    ])) || pageTitle(page);
+    const serialProperty = propertyByMeaning(properties, [
+      "Numéro de série", "Numero de serie", "N° de série", "N° série", "Serial", "Nom", "Name"
+    ]);
+    const serial = propertyText(serialProperty) || pageTitle(page);
 
-    const pdvvNumber = uniqueValue(firstProperty(properties, [
+    const pdvvProperty = propertyByMeaning(properties, [
       "Numéro PDVV", "Numero PDVV", "N° PDVV", "PDVV"
-    ]));
+    ]);
+    const pdvvNumber = uniqueValue(pdvvProperty);
 
-    const theoreticalValues = await relatedVehicles(
-      token,
-      firstProperty(properties, [
-        "Théorique", "Theorique", "Véhicule théorique", "Vehicule theorique"
-      ]),
-      pageCache
+    const theoreticalProperty = propertyByMeaning(
+      properties,
+      ["Théorique", "Theorique", "Véhicule théorique", "Vehicule theorique", "Bus théorique"],
+      "relation"
+    );
+    const assignmentProperty = propertyByMeaning(
+      properties,
+      ["Affectation", "Affectation actuelle", "Véhicule affecté", "Vehicule affecte"],
+      "relation"
     );
 
-    const assignmentValues = await relatedVehicles(
-      token,
-      firstProperty(properties, [
-        "Affectation", "Véhicule affecté", "Vehicule affecte",
-        "Véhicule", "Vehicule"
-      ]),
-      pageCache
-    );
+    const theoreticalValues = await relatedVehicles(token, page, theoreticalProperty, pageCache);
+    const assignmentValues = await relatedVehicles(token, page, assignmentProperty, pageCache);
 
-    const match = checkboxValue(firstProperty(properties, [
-      "Match", "Correspondance"
-    ]));
+    const matchProperty = propertyByMeaning(properties, ["Match", "Correspondance"]);
+    const match = checkboxValue(matchProperty);
 
     devices.push({
       id: page.id,
@@ -129,7 +176,11 @@ export async function loadPdvv(token, databaseId = PDVV_FALLBACK_DATABASE_ID) {
       assignment_registration: assignmentValues.join(", "),
       theoretical_registrations: theoreticalValues,
       assignment_registrations: assignmentValues,
-      match
+      match,
+      relation_debug: {
+        theoretical_property_found: Boolean(theoreticalProperty),
+        assignment_property_found: Boolean(assignmentProperty)
+      }
     });
   }
 
@@ -142,35 +193,22 @@ export async function loadPdvv(token, databaseId = PDVV_FALLBACK_DATABASE_ID) {
 
 function devicesByRegistration(devices, field, arrayField) {
   const map = new Map();
-
   for (const device of devices || []) {
     const source = Array.isArray(device[arrayField])
       ? device[arrayField]
       : String(device[field] || "").split(",");
-
     for (const value of source) {
       const registration = normalizeRegistration(value);
       if (registration) map.set(registration, device);
     }
   }
-
   return map;
 }
 
-// Pour les prises de service : équipement réellement présent dans le véhicule.
 export function pdvvByAssignment(devices) {
-  return devicesByRegistration(
-    devices,
-    "assignment_registration",
-    "assignment_registrations"
-  );
+  return devicesByRegistration(devices, "assignment_registration", "assignment_registrations");
 }
 
-// Pour Mon parc : équipement théoriquement attribué au véhicule.
 export function pdvvByTheoretical(devices) {
-  return devicesByRegistration(
-    devices,
-    "theoretical_registration",
-    "theoretical_registrations"
-  );
+  return devicesByRegistration(devices, "theoretical_registration", "theoretical_registrations");
 }
