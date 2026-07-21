@@ -268,6 +268,11 @@ function render() {
       <td>${escaped(service.driver_name || "—")}</td>
       <td>${escaped(service.first_course || "—")}</td>
       <td>${escaped(service.vehicle_registration || "—")}</td>
+      <td>
+        ${service.pdvv_number
+          ? `<a class="pdvv-value ${service.pdvv_match ? "match" : "mismatch"}" href="${escaped(service.pdvv_notion_url || "./pdvv.html")}" target="_blank" rel="noopener">${escaped(service.pdvv_number)}</a>`
+          : `<span class="pdvv-value missing">—</span>`}
+      </td>
     `;
 
     tableBody.appendChild(row);
@@ -298,6 +303,9 @@ function render() {
 
         <div class="mobile-duty-meta">
           ${escaped(service.vehicle_registration || "Véhicule non affecté")}
+          <span class="mobile-pdvv">PDVV : ${service.pdvv_number
+            ? `<strong class="pdvv-value ${service.pdvv_match ? "match" : "mismatch"}">${escaped(service.pdvv_number)}</strong>`
+            : `<strong class="pdvv-value missing">—</strong>`}</span>
         </div>
       </div>
 
