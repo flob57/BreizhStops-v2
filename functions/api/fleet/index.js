@@ -2,7 +2,7 @@ import {
   json, error, propertyText, propertyDate, firstProperty, pageTitle,
   queryDatabase, coverUrl, notionPage
 } from "../../_home_status.js";
-import { loadPdvv, pdvvByAssignment, PDVV_FALLBACK_DATABASE_ID, normalizeRegistration } from "../../_pdvv.js";
+import { loadPdvv, pdvvByTheoretical, PDVV_FALLBACK_DATABASE_ID, normalizeRegistration } from "../../_pdvv.js";
 
 const FALLBACK_DATABASE_ID = "2e66bbfa7ec1804f963bc019a4d6de92";
 
@@ -92,9 +92,9 @@ export async function onRequestGet(context) {
         token,
         context.env.NOTION_PDVV_DATABASE_ID || PDVV_FALLBACK_DATABASE_ID
       );
-      const assignments = pdvvByAssignment(devices);
+      const theoreticalAssignments = pdvvByTheoretical(devices);
       for (const vehicle of vehicles) {
-        const device = assignments.get(normalizeRegistration(vehicle.registration));
+        const device = theoreticalAssignments.get(normalizeRegistration(vehicle.registration));
         vehicle.pdvv_number = device?.pdvv_number || "";
         vehicle.pdvv_match = device ? device.match : null;
       }
