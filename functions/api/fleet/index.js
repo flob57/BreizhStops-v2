@@ -2,6 +2,7 @@ import {
   json, error, propertyText, propertyDate, firstProperty, pageTitle,
   queryDatabase, coverUrl, notionPage
 } from "../../_home_status.js";
+import { loadPdvv, pdvvByAssignment, PDVV_FALLBACK_DATABASE_ID, normalizeRegistration } from "../../_pdvv.js";
 
 const FALLBACK_DATABASE_ID = "2e66bbfa7ec1804f963bc019a4d6de92";
 
@@ -84,6 +85,22 @@ export async function onRequestGet(context) {
         circulation_date: circulationDate,
         age: Number.isFinite(explicitAge) && explicitAge > 0 ? explicitAge : yearsOld(circulationDate)
       });
+    }
+
+    try {
+      const devices = await loadPdvv(
+        token,
+        context.env.NOTION_PDVV_DATABASE_ID || PDVV_FALLBACK_DATABASE_ID
+      );
+      const assignments = pdvvByAssignment(devices);
+      for (const vehicle of vehicles) {
+        const device = assignments.get(normalizeRegistration(vehicle.registration));
+        vehicle.pdvv_number = device?.pdvv_number || "";
+        vehicle.pdvv_match = device ? device.match : null;
+      }
+    } catch (pdvvError) {
+      // Le parc reste disponible même si la base PDVV est temporairement indisponible.
+      console.warn("Synchronisation PDVV du parc :", pdvvError.message);
     }
 
     vehicles.sort((a,b) => a.registration.localeCompare(b.registration, "fr", {numeric:true}));

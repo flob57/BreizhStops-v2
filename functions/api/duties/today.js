@@ -3,6 +3,7 @@ import {
   error,
   requireDb
 } from "../../_lib.js";
+import { loadPdvv, pdvvByAssignment, PDVV_FALLBACK_DATABASE_ID, normalizeRegistration } from "../../_pdvv.js";
 
 function parisDate(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -64,10 +65,33 @@ export async function onRequestGet(context) {
        LIMIT 1`
     ).bind(date, date).first();
 
+    const services = result.results || [];
+    let pdvv_warning = null;
+
+    try {
+      const token = context.env.NOTION_TOKEN;
+      if (token) {
+        const devices = await loadPdvv(
+          token,
+          context.env.NOTION_PDVV_DATABASE_ID || PDVV_FALLBACK_DATABASE_ID
+        );
+        const assignments = pdvvByAssignment(devices);
+        for (const service of services) {
+          const device = assignments.get(normalizeRegistration(service.vehicle_registration));
+          service.pdvv_number = device?.pdvv_number || "";
+          service.pdvv_match = device ? (device.match ? 1 : 0) : null;
+          service.pdvv_notion_url = device?.notion_url || "";
+        }
+      }
+    } catch (pdvvError) {
+      pdvv_warning = pdvvError.message;
+    }
+
     return json({
       date,
       calendar_event: calendarEvent || null,
-      services: result.results || []
+      services,
+      pdvv_warning
     });
   } catch (exception) {
     return error(exception.message, 500);
