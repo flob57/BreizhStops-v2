@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const state = { spots: [] };
+const state = { spots: [], activeRegistrations: new Set(), activeVehicles: [] };
 
 const LESTONAN_LAYOUT = {
   "lestonan 1": [61.0, 5.0, 4.8, 20.0],
@@ -166,6 +166,13 @@ function makeSpot(spot, layout) {
   const largeGourvily = /^gourvily (?:mini|[1-8])$/.test(normalizedName);
 
   template.classList.add(spot.occupied ? "occupied" : "free");
+  const runningRegistrations = spot.registrations.filter(registration =>
+    state.activeRegistrations.has(String(registration || "").toUpperCase().replace(/\s+/g, ""))
+  );
+  if (spot.occupied && runningRegistrations.length) {
+    template.classList.add("running-today");
+    template.title = `Prévu en circulation : ${runningRegistrations.join(", ")}`;
+  }
   template.classList.add(overload ? "overload" : neutral ? "neutral" : "standard");
   if (verticalLestonan) template.classList.add("vertical-lestonan");
   if (largeGourvily) template.classList.add("large-gourvily");
@@ -251,7 +258,7 @@ function renderDepot(depot, targetId, layout, statsId, legendId) {
   $(legendId).innerHTML = `
     <span class="legend-item"><i class="legend-color" style="background:#27883c"></i>Place standard libre</span>
     <span class="legend-item"><i class="legend-color" style="background:#626b65"></i>Mini / VL libre</span>
-    <span class="legend-item"><i class="legend-color" style="background:#a52b27"></i>Place occupée</span>
+    <span class="legend-item"><i class="legend-color" style="background:#a52b27"></i>Ne circule pas aujourd’hui</span><span class="legend-item"><i class="legend-color" style="background:#d97706"></i>Prévu en circulation aujourd’hui</span>
     <span class="legend-item"><i class="legend-color" style="background:#ff2117"></i>Surcharge occupée — alerte</span>`;
 }
 
@@ -285,7 +292,10 @@ function renderExternal() {
 
     groupSpots.sort((a,b) => a.name.localeCompare(b.name, "fr")).forEach(spot => {
       const card = document.createElement("article");
-      card.className = `external-card ${spot.occupied ? "occupied" : "free"}`;
+      const runningHere = spot.registrations.some(registration =>
+        state.activeRegistrations.has(String(registration || "").toUpperCase().replace(/\s+/g, ""))
+      );
+      card.className = `external-card ${spot.occupied ? "occupied" : "free"} ${runningHere ? "running-today" : ""}`;
       card.innerHTML = `<h4>${spot.name}</h4><div class="spot-vehicles"></div>`;
       const vehicles = card.querySelector(".spot-vehicles");
       if (spot.registrations.length) {
@@ -316,11 +326,25 @@ function render() {
 
 async function load() {
   try {
-    const payload = await api("/api/parking");
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit"
+    }).format(new Date());
+    const [payload, activity] = await Promise.all([
+      api("/api/parking"),
+      api(`/api/planning/active-vehicles?date=${encodeURIComponent(today)}`)
+        .catch(() => ({ vehicles: [] }))
+    ]);
     state.spots = payload.spots || [];
+    state.activeVehicles = activity.vehicles || [];
+    state.activeRegistrations = new Set(
+      state.activeVehicles.map(vehicle =>
+        String(vehicle.registration || "").toUpperCase().replace(/\s+/g, "")
+      )
+    );
     render();
     $("lastUpdate").textContent =
-      `Dernière mise à jour : ${payload.updated_at ? new Date(payload.updated_at + "Z").toLocaleString("fr-FR") : "jamais"}`;
+      `Dernière mise à jour : ${payload.updated_at ? new Date(payload.updated_at + "Z").toLocaleString("fr-FR") : "jamais"} · ` +
+      `${state.activeRegistrations.size} véhicule(s) prévu(s) en circulation`;
     if (!state.spots.length) showMessage("Aucune donnée locale. Lance la synchronisation depuis Notion.");
   } catch (error) {
     showMessage(error.message, true);

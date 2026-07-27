@@ -447,3 +447,42 @@ ON todo_completions(completion_date);
 
 CREATE INDEX IF NOT EXISTS idx_todo_completions_page
 ON todo_completions(notion_page_id);
+
+
+-- ============================================================
+-- V10.0 — Imports de plannings
+-- ============================================================
+CREATE TABLE IF NOT EXISTS planning_imports (
+  id TEXT PRIMARY KEY,
+  planning_type TEXT NOT NULL,
+  planning_date TEXT NOT NULL,
+  source_name TEXT NOT NULL DEFAULT '',
+  source_payload TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS planning_items (
+  id TEXT PRIMARY KEY,
+  import_id TEXT NOT NULL,
+  planning_type TEXT NOT NULL,
+  planning_date TEXT NOT NULL,
+  entity_name TEXT NOT NULL DEFAULT '',
+  registration TEXT NOT NULL DEFAULT '',
+  ocelorn_number TEXT NOT NULL DEFAULT '',
+  start_time TEXT NOT NULL DEFAULT '',
+  end_time TEXT NOT NULL DEFAULT '',
+  activity_type TEXT NOT NULL DEFAULT '',
+  activity_label TEXT NOT NULL DEFAULT '',
+  location TEXT NOT NULL DEFAULT '',
+  details TEXT NOT NULL DEFAULT '',
+  confidence REAL NOT NULL DEFAULT 0,
+  source_payload TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_planning_items_date_type
+ON planning_items(planning_date, planning_type);
+
+CREATE INDEX IF NOT EXISTS idx_planning_items_registration
+ON planning_items(registration, planning_date);

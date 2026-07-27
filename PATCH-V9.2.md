@@ -1,4 +1,4 @@
-# BreizhStops V9.5 — PDVV
+# BreizhStops V10.0 — PDVV
 
 - Base Notion PDVV : `3a46bbfa7ec1801f8675d4a8b498aaf4`
 - Colonne PDVV dans les prises de service.

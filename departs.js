@@ -6,7 +6,9 @@ const state = {
   traceScrollPositions: new Map(),
   map: null,
   mapLayer: null,
-  stopIndex: null
+  stopIndex: null,
+  openMapPopupId: null,
+  mapMarkers: new Map()
 };
 
 const $ = id => document.getElementById(id);
@@ -286,9 +288,30 @@ async function renderFleetMap(classified){
   const running=classified.filter(item=>item.status.running);const msg=$("mapMessage");$("mapVehicleCount").textContent=`${running.length} véhicule${running.length>1?"s":""}`;
   try{
     const index=await ensureStopIndex();if(!state.map){state.map=L.map("fleetMap",{zoomControl:true}).setView([47.995,-4.10],11);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(state.map);state.mapLayer=L.layerGroup().addTo(state.map)}
-    state.mapLayer.clearLayers();const bounds=[];let located=0;
-    for(const {departure,status} of running){const pos=theoreticalPosition(departure,status,index);if(!pos)continue;located++;bounds.push([pos.lat,pos.lon]);const icon=L.divIcon({className:"qub-bus-marker",html:'<img src="./assets/qub-coach-marker.png" alt="">',iconSize:[66,38],iconAnchor:[33,19],popupAnchor:[0,-18]});const marker=L.marker([pos.lat,pos.lon],{icon}).addTo(state.mapLayer);marker.bindPopup(`<div class="bus-popup"><strong>${escapeHtml(departure.course_name||"Course QUB")}</strong><div class="bus-popup-grid"><span>Conducteur</span><b>${escapeHtml(departure.driver_name||"—")}</b><span>Immatriculation</span><b>${escapeHtml(departure.vehicle_registration||"—")}</b><span>N° QUB</span><b>${escapeHtml(departure.qub_reference||"—")}</b><span>Prochain arrêt</span><b>${escapeHtml(status.nextStop?.name||"—")}</b></div></div>`)}
-    msg.style.display=located?"none":"block";msg.textContent=running.length?"Aucun arrêt QUB correspondant n’a été trouvé pour les courses en circulation.":"Aucun véhicule actuellement en circulation.";if(bounds.length&&(!state.map._v9Fitted||bounds.length>1)){state.map.fitBounds(bounds,{padding:[45,45],maxZoom:14});state.map._v9Fitted=true}setTimeout(()=>state.map.invalidateSize(),50)
+    state.mapLayer.clearLayers();state.mapMarkers.clear();const bounds=[];let located=0;
+    for(const {departure,status} of running){
+      const pos=theoreticalPosition(departure,status,index);if(!pos)continue;
+      located++;bounds.push([pos.lat,pos.lon]);
+      const icon=L.divIcon({className:"qub-bus-marker",html:'<img src="./assets/qub-coach-marker.png" alt="">',iconSize:[66,38],iconAnchor:[33,19],popupAnchor:[0,-18]});
+      const marker=L.marker([pos.lat,pos.lon],{icon}).addTo(state.mapLayer);
+      marker.bindPopup(`<div class="bus-popup"><strong>${escapeHtml(departure.course_name||"Course QUB")}</strong><div class="bus-popup-grid"><span>Conducteur</span><b>${escapeHtml(departure.driver_name||"—")}</b><span>Immatriculation</span><b>${escapeHtml(departure.vehicle_registration||"—")}</b><span>N° QUB</span><b>${escapeHtml(departure.qub_reference||"—")}</b><span>Prochain arrêt</span><b>${escapeHtml(status.nextStop?.name||"—")}</b></div></div>`,{autoClose:false,closeOnClick:false,closeButton:false});
+      marker.on("click",event=>{
+        L.DomEvent.stopPropagation(event);
+        if(state.openMapPopupId===departure.id){
+          marker.closePopup();
+          state.openMapPopupId=null;
+        }else{
+          for(const [id,other] of state.mapMarkers){
+            if(id!==departure.id)other.closePopup();
+          }
+          marker.openPopup();
+          state.openMapPopupId=departure.id;
+        }
+      });
+      state.mapMarkers.set(departure.id,marker);
+      if(state.openMapPopupId===departure.id)marker.openPopup();
+    }
+    msg.style.display=located?"none":"block";msg.textContent=running.length?"Aucun arrêt QUB correspondant n’a été trouvé pour les courses en circulation.":"Aucun véhicule actuellement en circulation.";if(bounds.length&&(!state.map._v10Fitted||bounds.length>1)){state.map.fitBounds(bounds,{padding:[45,45],maxZoom:14});state.map._v10Fitted=true}setTimeout(()=>state.map.invalidateSize(),50)
   }catch(e){msg.style.display="block";msg.textContent=`Impossible de charger la carte : ${e.message}`}
 }
 

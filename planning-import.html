@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#050806">
+  <title>Importer un planning — BreizhStops V10.0</title>
+  <link rel="stylesheet" href="./planning-import.css">
+</head>
+<body>
+<header>
+  <a href="./index.html">‹ Accueil</a>
+  <div><span>IMPORT INTELLIGENT</span><h1>📷 Importer un planning <small>V10.0</small></h1></div>
+</header>
+<main>
+  <section class="upload-card">
+    <label>Type de planning
+      <select id="planningType">
+        <option value="vehicle">Planning véhicules</option>
+        <option value="workshop">Planning atelier</option>
+        <option value="driver">Planning conducteurs</option>
+      </select>
+    </label>
+    <label>Date attendue
+      <input id="planningDate" type="date">
+    </label>
+    <label class="file-zone">
+      <input id="planningImage" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+      <strong>Déposer ou choisir une capture d’écran</strong>
+      <span>PNG, JPEG ou WEBP — 12 Mo maximum</span>
+    </label>
+    <img id="preview" alt="Aperçu" hidden>
+    <button id="analyzeButton">✨ Analyser la capture</button>
+    <p id="message"></p>
+  </section>
+
+  <section id="resultSection" class="result-card" hidden>
+    <div class="result-heading">
+      <div><span>CONTRÔLE AVANT ENREGISTREMENT</span><h2>Données détectées</h2></div>
+      <strong id="detectedCount">0</strong>
+    </div>
+    <div id="resultTable" class="result-table"></div>
+    <div class="actions">
+      <button id="saveButton">✓ Valider et enregistrer</button>
+      <button id="cancelButton" class="secondary">Annuler</button>
+    </div>
+  </section>
+
+  <section class="help-card">
+    <h2>Fonctionnement</h2>
+    <p>Le site analyse la structure du planning, estime les horaires et te laisse corriger chaque donnée avant son enregistrement.</p>
+    <p>Pour les véhicules, le numéro de parc Océlorn est automatiquement rapproché de l’immatriculation enregistrée dans la base Notion « Mon parc ».</p>
+  </section>
+</main>
+<script src="./planning-import.js"></script>
+</body>
+</html>

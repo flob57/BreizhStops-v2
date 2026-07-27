@@ -628,3 +628,14 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
     font-size: clamp(6px, .9vw, 10px);
   }
 }
+
+/* V10.0 — véhicule prévu en circulation */
+.parking-spot.occupied.running-today:not(.overload){
+  background:#d97706;
+  border-color:#ffd28a;
+  box-shadow:0 0 0 4px rgba(217,119,6,.22),0 8px 20px rgba(0,0,0,.35);
+}
+.external-card.occupied.running-today{
+  background:linear-gradient(145deg,#d97706,#98510a);
+  border-color:#ffd28a;
+}
