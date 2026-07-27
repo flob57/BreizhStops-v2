@@ -1,4 +1,4 @@
-# BreizhStops V10.4 — Relations PDVV robustes
+# BreizhStops V10.5 — Relations PDVV robustes
 
 - Détection souple des propriétés Notion, même avec accents, emojis ou noms légèrement différents.
 - Lecture complète des relations via l’endpoint `pages/{page_id}/properties/{property_id}`.

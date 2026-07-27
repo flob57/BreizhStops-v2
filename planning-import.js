@@ -579,11 +579,11 @@ async function runOcr(image) {
     worker = await withTimeout(
       Tesseract.createWorker("eng", 1, {
         workerPath:
-          "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
+          "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
         corePath:
-          "https://cdn.jsdelivr.net/npm/tesseract.js-core@5",
+          "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.0",
         langPath:
-          "https://tessdata.projectnaptha.com/4.0.0",
+          "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int",
         logger: progress => {
           const percent = Math.round((progress.progress || 0) * 100);
           const labels = {
@@ -698,7 +698,7 @@ $("analyzeButton").addEventListener("click", async () => {
     message("Analyse de la grille et des couleurs…");
     analysis = type === "workshop"
       ? parseWorkshop(words, text)
-      : await analyzeGrid(type, loadedImage, words, text);
+      : await analyzeGrid(type, ocrImage, words, text);
 
     if (analysis.date) $("planningDate").value = analysis.date;
     render();

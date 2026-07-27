@@ -1,4 +1,4 @@
-# BreizhStops V10.4 — Lecteur Océlorn sans licence Meta
+# BreizhStops V10.5 — Lecteur Océlorn sans licence Meta
 
 ## Changement principal
 
