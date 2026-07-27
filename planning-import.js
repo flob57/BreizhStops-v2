@@ -205,6 +205,25 @@ function runsForRow(data, x0, x1, y0, y1) {
   }
   return merged;
 }
+function vehicleRunHasRealSegment(data, run, y0, y1) {
+  const [x0, x1] = run;
+  const counts = { colored: 0, dark: 0, total: 0 };
+  for (let y = y0; y < y1; y += 2) {
+    for (let x = x0; x < x1; x += 2) {
+      const offset = (y * data.width + x) * 4;
+      const cls = pixelClass(data.data[offset], data.data[offset + 1], data.data[offset + 2]);
+      if (["green", "purple", "yellow", "pink", "blue", "orange"].includes(cls)) counts.colored++;
+      if (cls === "black") counts.dark++;
+      counts.total++;
+    }
+  }
+  if (!counts.total) return false;
+  const coloredRatio = counts.colored / counts.total;
+  const darkRatio = counts.dark / counts.total;
+  // A genuine Gescar assignment contains a coloured bar. Grid lines and OCR text are mostly gray/black.
+  return coloredRatio >= 0.035 || (coloredRatio >= 0.018 && darkRatio >= 0.08);
+}
+
 function wordsInBox(words, x0, y0, x1, y1) {
   return words
     .filter(word => {
@@ -408,17 +427,34 @@ async function loadDriverIndex() {
 function bestDriverMatch(rawLabel) {
   const label = normalize(rawLabel);
   if (!label || !driverList.length) return null;
-  let best = null;
+  const ranked = [];
   for (const driver of driverList) {
-    const full = similarityScore(label, driver.name);
+    const fullName = normalize(driver.name);
+    const full = similarityScore(label, fullName);
     const labelTokens = label.split(/\s+/).filter(v => v.length >= 3);
-    const nameTokens = normalize(driver.name).split(/\s+/).filter(v => v.length >= 3);
+    const nameTokens = fullName.split(/\s+/).filter(v => v.length >= 3);
     let tokenScore = 0;
-    for (const a of labelTokens) for (const b of nameTokens) tokenScore = Math.max(tokenScore, similarityScore(a, b));
-    const score = Math.max(full, tokenScore * 0.94);
-    if (!best || score > best.score) best = { driver, score };
+    let exactToken = false;
+    for (const a of labelTokens) {
+      for (const b of nameTokens) {
+        const score = similarityScore(a, b);
+        tokenScore = Math.max(tokenScore, score);
+        if (a === b && a.length >= 4) exactToken = true;
+      }
+    }
+    let score = Math.max(full, tokenScore * 0.96);
+    if (exactToken) score = Math.max(score, 0.88);
+    ranked.push({ driver, score });
   }
-  return best && best.score >= 0.52 ? best : null;
+  ranked.sort((a, b) => b.score - a.score);
+  const best = ranked[0];
+  const second = ranked[1];
+  if (!best) return null;
+  const margin = second ? best.score - second.score : 1;
+  // Never invent a driver: only return an unambiguous Notion name.
+  if (best.score < 0.68) return null;
+  if (best.score < 0.86 && margin < 0.08) return null;
+  return best;
 }
 
 function fallbackVehicleItems(fullText) {
@@ -521,8 +557,11 @@ async function analyzeGrid(type, image, words, fullText) {
     const nextY = labels[i + 1]?.y ?? (label.y + 12);
     const rowTop = Math.max(grid.y0, Math.round((previousY + label.y) / 2));
     const rowBottom = Math.min(grid.y1, Math.round((label.y + nextY) / 2));
-    const runs = runsForRow(data, grid.x0, grid.x1, rowTop, rowBottom);
+    let runs = runsForRow(data, grid.x0, grid.x1, rowTop, rowBottom);
 
+    if (type === "vehicle") {
+      runs = runs.filter(run => vehicleRunHasRealSegment(data, run, rowTop, rowBottom));
+    }
     if (!runs.length) continue;
 
     if (type === "vehicle") {
@@ -548,6 +587,10 @@ async function analyzeGrid(type, image, words, fullText) {
       continue;
     }
 
+    const driverMatch = bestDriverMatch(label.text);
+    if (!driverMatch) continue;
+    const driverName = driverMatch.driver.name;
+
     // Full-row absence detected first.
     const lineText = normalize(wordsInBox(words, grid.x0, rowTop - 2, grid.x1, rowBottom + 2));
     const fullColor = dominantClass(data, grid.x0, rowTop, grid.x1, rowBottom, 5);
@@ -558,7 +601,7 @@ async function analyzeGrid(type, image, words, fullText) {
     else if (/MALAD/.test(lineText)) absence = "maladie";
     if (absence || ["yellow", "pink"].includes(fullColor) && runs.length === 1 && runs[0][1] - runs[0][0] > (grid.x1-grid.x0)*0.8) {
       items.push({
-        entity_name: bestDriverMatch(label.text)?.driver?.name || normalize(label.text),
+        entity_name: driverName,
         start_time: "00:00", end_time: "23:55",
         activity_type: absence || (fullColor === "pink" ? "repos" : "conge"),
         activity_label: lineText || absence || "Absence",
@@ -585,7 +628,7 @@ async function analyzeGrid(type, image, words, fullText) {
         labelText ||= activityType === "prise_service" ? "Prise de service" : "Fin de service";
       }
       items.push({
-        entity_name: bestDriverMatch(label.text)?.driver?.name || normalize(label.text),
+        entity_name: driverName,
         start_time: hhmm(timeFromX(segment.run[0], grid)),
         end_time: hhmm(timeFromX(segment.run[1], grid)),
         activity_type: activityType,
@@ -599,7 +642,7 @@ async function analyzeGrid(type, image, words, fullText) {
       const gapStart = segments[s].run[1], gapEnd = segments[s+1].run[0];
       if (gapEnd - gapStart > (grid.x1 - grid.x0) * (20 / (24 * 60))) {
         items.push({
-          entity_name: bestDriverMatch(label.text)?.driver?.name || normalize(label.text),
+          entity_name: driverName,
           start_time: hhmm(timeFromX(gapStart, grid)),
           end_time: hhmm(timeFromX(gapEnd, grid)),
           activity_type: "coupure",
@@ -710,125 +753,111 @@ function workshopLineCandidates(words) {
   return candidates;
 }
 
+function frenchMonthNumber(value) {
+  const key = normalize(value).replace(/[^A-Z]/g, "");
+  const months = { JANVIER:1, JANV:1, FEVRIER:2, FEVR:2, MARS:3, AVRIL:4, AVR:4, MAI:5, JUIN:6, JUILLET:7, JUIL:7, AOUT:8, SEPTEMBRE:9, SEPT:9, OCTOBRE:10, OCT:10, NOVEMBRE:11, NOV:11, DECEMBRE:12, DEC:12 };
+  return months[key] || 0;
+}
+
+function workshopRows(words) {
+  const sorted = (words || []).slice().sort((a,b) => {
+    const ay=((a.bbox?.y0||0)+(a.bbox?.y1||0))/2;
+    const by=((b.bbox?.y0||0)+(b.bbox?.y1||0))/2;
+    return ay-by || (a.bbox?.x0||0)-(b.bbox?.x0||0);
+  });
+  const rows=[];
+  for (const word of sorted) {
+    const b=word.bbox||{};
+    const y=((b.y0||0)+(b.y1||0))/2;
+    let row=rows.find(r=>Math.abs(r.y-y)<10);
+    if(!row){ row={y,words:[]}; rows.push(row); }
+    row.words.push(word);
+    row.y=(row.y*(row.words.length-1)+y)/row.words.length;
+  }
+  for(const row of rows) row.words.sort((a,b)=>(a.bbox?.x0||0)-(b.bbox?.x0||0));
+  return rows.sort((a,b)=>a.y-b.y);
+}
+
 async function parseWorkshop(words, fullText) {
   await loadVehicleIndex();
-  const dateDefault = parseDate(fullText) || $("planningDate").value;
-  const dateAnchors = [];
-  const registrations = [];
+  const fallbackDate = parseDate(fullText) || $("planningDate").value;
+  const titleYear = Number((String(fullText).match(/20\d{2}/)||[])[0]) || Number(String(fallbackDate).slice(0,4)) || new Date().getFullYear();
+  const maxX = Math.max(1, ...words.map(w => w.bbox?.x1 || 0));
+  const rows = workshopRows(words);
+  const dateAnchors=[];
 
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const text = String(word.text || "").trim();
-    const box = word.bbox || {};
-    const cx = ((box.x0 || 0) + (box.x1 || 0)) / 2;
-    const cy = ((box.y0 || 0) + (box.y1 || 0)) / 2;
-
-    let dateMatch = text.match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?$/);
-    if (!dateMatch && /^\d{1,2}$/.test(text)) {
-      const nearby = words.find(other => {
-        const b = other.bbox || {};
-        const oy = ((b.y0 || 0) + (b.y1 || 0)) / 2;
-        const ox = ((b.x0 || 0) + (b.x1 || 0)) / 2;
-        return Math.abs(oy - cy) < 18 && ox > cx && ox < cx + 80 && /^[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?$/.test(String(other.text || ""));
-      });
-      if (nearby) dateMatch = `${text}${nearby.text}`.match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?$/);
+  for (const row of rows) {
+    const leftWords = row.words.filter(w => (w.bbox?.x0||0) < maxX * 0.19);
+    const leftText = leftWords.map(w=>w.text).join(" ");
+    let date="";
+    let m = leftText.match(/(\d{1,2})\s*[-/.]\s*(\d{1,2})(?:\s*[-/.]\s*(20\d{2}))?/);
+    if (m) date = parseDateParts(m[1],m[2],m[3]||titleYear,fallbackDate);
+    if (!date) {
+      m = normalize(leftText).match(/(\d{1,2})\s*[- ]\s*([A-ZÀ-Ü]+)/);
+      if (m) {
+        const month=frenchMonthNumber(m[2]);
+        if(month) date=parseDateParts(m[1],month,titleYear,fallbackDate);
+      }
     }
-    if (dateMatch) {
-      let year = dateMatch[3] || "";
-      if (year && year.length === 2) year = `20${year}`;
-      const date = parseDateParts(dateMatch[1], dateMatch[2], year, dateDefault);
-      if (date) dateAnchors.push({ date, x: cx, y: cy });
-    }
-
-    const registration = text.match(/\b[A-Z]{2}[-\s]?\d{3}[-\s]?[A-Z]{2}\b/i)?.[0];
-    if (registration) {
-      registrations.push({
-        registration: registration.toUpperCase().replace(/\s/g, "-").replace(/^([A-Z]{2})(\d{3})([A-Z]{2})$/, "$1-$2-$3"),
-        x: cx, y: cy, box
-      });
-    }
+    if(date) dateAnchors.push({date,y:row.y});
   }
 
-  // Deuxième lecture : rapproche les fragments OCR avec toutes les immatriculations connues de Mon Parc.
-  const fuzzyCandidates = workshopLineCandidates(words);
-  for (const vehicle of vehicleList) {
-    const expected = compact(vehicle.registration);
-    if (!expected || expected.length !== 7) continue;
-    let best = null;
-    for (const candidate of fuzzyCandidates) {
-      let score = similarityScore(candidate.token, expected);
-      const expectedDigits = expected.slice(2, 5);
-      const candidateDigits = candidate.token.slice(2, 5);
-      if (expectedDigits === candidateDigits) score = Math.max(score, 0.88);
-      if (!best || score > best.score) best = { ...candidate, score };
+  // Keep only registrations found in the third column (Référence), and only when they exist in Mon Parc.
+  const items=[];
+  for (const row of rows) {
+    const referenceWords = row.words.filter(w => {
+      const x=((w.bbox?.x0||0)+(w.bbox?.x1||0))/2;
+      return x >= maxX*0.185 && x <= maxX*0.39;
+    });
+    if(!referenceWords.length) continue;
+    const referenceText=referenceWords.map(w=>w.text).join(" ");
+    let best=null;
+    for(const vehicle of vehicleList){
+      const reg=vehicle.registration;
+      if(!reg) continue;
+      const expected=compact(reg);
+      const tokens=[];
+      const joined=compact(referenceText);
+      if(joined) tokens.push(joined);
+      for(const match of referenceText.matchAll(/[A-Z0-9-]{5,12}/gi)) tokens.push(match[0]);
+      let score=0;
+      for(const token of tokens){
+        const normalized=ocrComparable(token);
+        if(normalized.includes(ocrComparable(expected))) score=Math.max(score,1);
+        score=Math.max(score,similarityScore(token,expected));
+        const td=compact(token).match(/\d{3}/)?.[0];
+        const ed=expected.match(/\d{3}/)?.[0];
+        if(td && ed && td===ed) score=Math.max(score,0.88);
+      }
+      if(!best || score>best.score) best={vehicle,score};
     }
-    if (!best || best.score < 0.69) continue;
-    const already = registrations.some(item => item.registration === vehicle.registration && Math.abs(item.y - best.y) < 25);
-    if (!already) registrations.push({ registration: vehicle.registration, x: best.x, y: best.y, box: best.box, fuzzy: true });
+    if(!best || best.score<0.72) continue;
+    const nearestDates=dateAnchors.slice().sort((a,b)=>Math.abs(a.y-row.y)-Math.abs(b.y-row.y));
+    const chosenDate=nearestDates[0]?.date || fallbackDate;
+    const duplicate=items.some(item=>item.registration===best.vehicle.registration && item.planning_date===chosenDate);
+    if(duplicate) continue;
+    items.push({
+      entity_name: best.vehicle.registration,
+      registration: best.vehicle.registration,
+      start_time:"",
+      end_time:"",
+      activity_type:"atelier",
+      activity_label:"Rendez-vous atelier",
+      location:"",
+      details:"",
+      confidence:best.score,
+      planning_date:chosenDate
+    });
   }
-
-  // De-duplicate OCR repetitions at nearly the same position.
-  const uniqueRegistrations = [];
-  for (const item of registrations.sort((a,b) => a.y-b.y || a.x-b.x)) {
-    const duplicate = uniqueRegistrations.some(existing =>
-      existing.registration === item.registration && Math.abs(existing.x-item.x) < 35 && Math.abs(existing.y-item.y) < 18
-    );
-    if (!duplicate) uniqueRegistrations.push(item);
-  }
-
-  const sortedDates = dateAnchors
-    .filter((value, index, array) => array.findIndex(other => other.date === value.date && Math.abs(other.x-value.x)<25) === index)
-    .sort((a,b) => a.x-b.x || a.y-b.y);
-
-  const items = uniqueRegistrations.map(vehicle => {
-    let chosenDate = dateDefault;
-    if (sortedDates.length) {
-      // Weekly sheets generally place dates as column headers. Prefer the nearest header horizontally,
-      // with a mild preference for headers above the appointment cell.
-      const candidates = sortedDates.map(anchor => ({
-        anchor,
-        distance: Math.abs(anchor.x - vehicle.x) + (anchor.y > vehicle.y ? 300 : 0)
-      })).sort((a,b) => a.distance-b.distance);
-      chosenDate = candidates[0].anchor.date;
-    }
-
-    const nearbyText = words
-      .filter(word => {
-        const b = word.bbox || {};
-        const x = ((b.x0 || 0) + (b.x1 || 0)) / 2;
-        const y = ((b.y0 || 0) + (b.y1 || 0)) / 2;
-        return Math.abs(y - vehicle.y) < 24 && Math.abs(x - vehicle.x) < 260;
-      })
-      .sort((a,b)=>(a.bbox?.x0||0)-(b.bbox?.x0||0))
-      .map(word=>word.text).join(" ").trim();
-
-    const normalizedDetail = normalize(nearbyText);
-    let detail = "Rendez-vous atelier";
-    if (/PREPA[ -]?MINES|MINES/.test(normalizedDetail)) detail = "Prépa-mines";
-    else if (/\bCT\b|CONTROLE TECHNIQUE/.test(normalizedDetail)) detail = "Contrôle technique";
-    else if (/TODD/.test(normalizedDetail)) detail = "Rendez-vous chez TODD";
-
-    return {
-      entity_name: vehicle.registration,
-      registration: vehicle.registration,
-      start_time: "",
-      end_time: "",
-      activity_type: "atelier",
-      activity_label: detail,
-      location: /TODD/.test(normalizedDetail) ? "TODD" : "",
-      details: nearbyText || detail,
-      confidence: sortedDates.length ? 0.9 : 0.75,
-      planning_date: chosenDate
-    };
-  });
 
   return {
-    planning_type: "workshop",
-    date: dateDefault,
+    planning_type:"workshop",
+    date:fallbackDate,
     items,
-    diagnostics: { mode: "atelier_semaine", dates: sortedDates.length, registrations: items.length, ...lastOcrDiagnostics }
+    diagnostics:{mode:"atelier_colonne_reference",dates:dateAnchors.length,registrations:items.length,...lastOcrDiagnostics}
   };
 }
+
 function withTimeout(promise, milliseconds, messageText) {
   let timeoutId;
   const timeout = new Promise((_, reject) => {
