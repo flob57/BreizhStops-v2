@@ -4,6 +4,7 @@ let analysis = null;
 let loadedImage = null;
 let vehicleIndex = null;
 let vehicleList = [];
+let driverList = [];
 let lastOcrDiagnostics = null;
 
 function parisDate() {
@@ -337,6 +338,71 @@ function levenshtein(a, b) {
   return matrix[first.length][second.length];
 }
 
+
+function ocrComparable(value) {
+  return compact(value)
+    .replace(/O/g, "0")
+    .replace(/[IL]/g, "1")
+    .replace(/S/g, "5")
+    .replace(/B/g, "8")
+    .replace(/Z/g, "2");
+}
+
+function similarityScore(first, second) {
+  const a = ocrComparable(first);
+  const b = ocrComparable(second);
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  if (a.includes(b) || b.includes(a)) return Math.min(a.length, b.length) / Math.max(a.length, b.length);
+  const distance = levenshtein(a, b);
+  return 1 - distance / Math.max(a.length, b.length);
+}
+
+function bestVehicleMatch(rawLabel) {
+  const label = normalize(rawLabel);
+  const chunks = [label, ...label.split(/\s+/)].filter(Boolean);
+  let best = null;
+
+  for (const vehicle of vehicleList) {
+    const candidates = [vehicle.park_number, ...(vehicle.keys || [])].filter(Boolean);
+    for (const chunk of chunks) {
+      for (const candidate of candidates) {
+        const score = similarityScore(chunk, candidate);
+        if (!best || score > best.score) best = { vehicle, score };
+      }
+    }
+  }
+  return best && best.score >= 0.64 ? best : null;
+}
+
+async function loadDriverIndex() {
+  if (driverList.length) return driverList;
+  const response = await fetch("/api/planning/driver-index");
+  const text = await response.text();
+  let payload;
+  try { payload = JSON.parse(text); }
+  catch { throw new Error("La liste des conducteurs n’a pas pu être chargée."); }
+  if (!response.ok) throw new Error(payload.error || "Liste des conducteurs indisponible.");
+  driverList = payload.drivers || [];
+  return driverList;
+}
+
+function bestDriverMatch(rawLabel) {
+  const label = normalize(rawLabel);
+  if (!label || !driverList.length) return null;
+  let best = null;
+  for (const driver of driverList) {
+    const full = similarityScore(label, driver.name);
+    const labelTokens = label.split(/\s+/).filter(v => v.length >= 3);
+    const nameTokens = normalize(driver.name).split(/\s+/).filter(v => v.length >= 3);
+    let tokenScore = 0;
+    for (const a of labelTokens) for (const b of nameTokens) tokenScore = Math.max(tokenScore, similarityScore(a, b));
+    const score = Math.max(full, tokenScore * 0.94);
+    if (!best || score > best.score) best = { driver, score };
+  }
+  return best && best.score >= 0.58 ? best : null;
+}
+
 function fallbackVehicleItems(fullText) {
   const normalizedText = compact(fullText);
   const detected = [];
@@ -404,6 +470,7 @@ async function analyzeGrid(type, image, words, fullText) {
   const labels = rowLabels(words, grid, type);
   const items = [];
   const index = type === "vehicle" ? await loadVehicleIndex() : null;
+  if (type === "driver") await loadDriverIndex();
 
   if (!labels.length) {
     if (type === "vehicle") {
@@ -446,8 +513,10 @@ async function analyzeGrid(type, image, words, fullText) {
       if (/ATELIER/.test(lineText)) activity = "atelier";
       else if (/TRANSFERT/.test(lineText)) activity = "transfert";
 
-      const park = normalize(label.text).replace(/\s+/g, " ").trim();
-      const registration = index.get(compact(park)) || "";
+      const rawPark = normalize(label.text).replace(/\s+/g, " ").trim();
+      const match = bestVehicleMatch(rawPark);
+      const park = match?.vehicle?.park_number || rawPark;
+      const registration = match?.vehicle?.registration || index.get(compact(rawPark)) || "";
       items.push({
         entity_name: park,
         ocelorn_number: park,
@@ -456,7 +525,7 @@ async function analyzeGrid(type, image, words, fullText) {
         end_time: hhmm(timeFromX(runs.at(-1)[1], grid)),
         activity_type: activity,
         activity_label: lineText || activity,
-        confidence: registration ? 0.94 : 0.72
+        confidence: registration ? Math.max(0.82, match?.score || 0.94) : 0.45
       });
       continue;
     }
@@ -471,7 +540,7 @@ async function analyzeGrid(type, image, words, fullText) {
     else if (/MALAD/.test(lineText)) absence = "maladie";
     if (absence || ["yellow", "pink"].includes(fullColor) && runs.length === 1 && runs[0][1] - runs[0][0] > (grid.x1-grid.x0)*0.8) {
       items.push({
-        entity_name: normalize(label.text),
+        entity_name: bestDriverMatch(label.text)?.driver?.name || normalize(label.text),
         start_time: "00:00", end_time: "23:55",
         activity_type: absence || (fullColor === "pink" ? "repos" : "conge"),
         activity_label: lineText || absence || "Absence",
@@ -498,7 +567,7 @@ async function analyzeGrid(type, image, words, fullText) {
         labelText ||= activityType === "prise_service" ? "Prise de service" : "Fin de service";
       }
       items.push({
-        entity_name: normalize(label.text),
+        entity_name: bestDriverMatch(label.text)?.driver?.name || normalize(label.text),
         start_time: hhmm(timeFromX(segment.run[0], grid)),
         end_time: hhmm(timeFromX(segment.run[1], grid)),
         activity_type: activityType,
@@ -512,7 +581,7 @@ async function analyzeGrid(type, image, words, fullText) {
       const gapStart = segments[s].run[1], gapEnd = segments[s+1].run[0];
       if (gapEnd - gapStart > (grid.x1 - grid.x0) * (20 / (24 * 60))) {
         items.push({
-          entity_name: normalize(label.text),
+          entity_name: bestDriverMatch(label.text)?.driver?.name || normalize(label.text),
           start_time: hhmm(timeFromX(gapStart, grid)),
           end_time: hhmm(timeFromX(gapEnd, grid)),
           activity_type: "coupure",
@@ -523,10 +592,40 @@ async function analyzeGrid(type, image, words, fullText) {
     }
   }
 
+  let finalItems = items;
+  if (type === "driver") {
+    const grouped = new Map();
+    for (const item of items) {
+      const key = normalize(item.entity_name);
+      if (!key) continue;
+      if (!grouped.has(key)) grouped.set(key, { name: item.entity_name, rows: [] });
+      grouped.get(key).rows.push(item);
+    }
+    finalItems = [];
+    for (const group of grouped.values()) {
+      const absence = group.rows.find(row => ["repos", "conge", "at", "maladie"].includes(row.activity_type));
+      if (absence) {
+        finalItems.push({ ...absence, entity_name: group.name, start_time: "00:00", end_time: "23:55", activity_label: ({repos:"Repos",conge:"Congé",at:"Accident du travail",maladie:"Maladie"})[absence.activity_type] });
+        continue;
+      }
+      const timed = group.rows.filter(row => row.start_time && row.end_time && !["coupure", "prise_service", "fin_service"].includes(row.activity_type));
+      if (!timed.length) continue;
+      timed.sort((a,b) => a.start_time.localeCompare(b.start_time));
+      finalItems.push({
+        entity_name: group.name,
+        start_time: timed[0].start_time,
+        end_time: timed.reduce((max,row) => row.end_time > max ? row.end_time : max, timed[0].end_time),
+        activity_type: "service",
+        activity_label: "En service",
+        confidence: Math.min(...timed.map(row => Number(row.confidence || 0.7)))
+      });
+    }
+  }
+
   return {
     planning_type: type,
     date: parseDate(fullText) || $("planningDate").value,
-    items,
+    items: finalItems,
     diagnostics: {
       mode: "grid",
       labels: labels.length,
@@ -534,47 +633,113 @@ async function analyzeGrid(type, image, words, fullText) {
     }
   };
 }
+function parseDateParts(day, month, year, fallbackDate) {
+  const fallbackYear = Number(String(fallbackDate || "").slice(0, 4)) || new Date().getFullYear();
+  const numericYear = year ? Number(year) : fallbackYear;
+  const d = Number(day), m = Number(month);
+  if (!d || !m || d > 31 || m > 12) return "";
+  return `${numericYear}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+}
+
 function parseWorkshop(words, fullText) {
   const dateDefault = parseDate(fullText) || $("planningDate").value;
-  const lines = [];
-  const groups = new Map();
+  const dateAnchors = [];
+  const registrations = [];
 
-  for (const word of words) {
-    const y = Math.round((((word.bbox?.y0 || 0) + (word.bbox?.y1 || 0)) / 2) / 10) * 10;
-    if (!groups.has(y)) groups.set(y, []);
-    groups.get(y).push(word);
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const text = String(word.text || "").trim();
+    const box = word.bbox || {};
+    const cx = ((box.x0 || 0) + (box.x1 || 0)) / 2;
+    const cy = ((box.y0 || 0) + (box.y1 || 0)) / 2;
+
+    let dateMatch = text.match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?$/);
+    if (!dateMatch && /^\d{1,2}$/.test(text)) {
+      const nearby = words.find(other => {
+        const b = other.bbox || {};
+        const oy = ((b.y0 || 0) + (b.y1 || 0)) / 2;
+        const ox = ((b.x0 || 0) + (b.x1 || 0)) / 2;
+        return Math.abs(oy - cy) < 18 && ox > cx && ox < cx + 80 && /^[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?$/.test(String(other.text || ""));
+      });
+      if (nearby) dateMatch = `${text}${nearby.text}`.match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?$/);
+    }
+    if (dateMatch) {
+      let year = dateMatch[3] || "";
+      if (year && year.length === 2) year = `20${year}`;
+      const date = parseDateParts(dateMatch[1], dateMatch[2], year, dateDefault);
+      if (date) dateAnchors.push({ date, x: cx, y: cy });
+    }
+
+    const registration = text.match(/\b[A-Z]{2}[-\s]?\d{3}[-\s]?[A-Z]{2}\b/i)?.[0];
+    if (registration) {
+      registrations.push({
+        registration: registration.toUpperCase().replace(/\s/g, "-").replace(/^([A-Z]{2})(\d{3})([A-Z]{2})$/, "$1-$2-$3"),
+        x: cx, y: cy, box
+      });
+    }
   }
 
-  for (const group of groups.values()) {
-    const text = group
+  // De-duplicate OCR repetitions at nearly the same position.
+  const uniqueRegistrations = [];
+  for (const item of registrations.sort((a,b) => a.y-b.y || a.x-b.x)) {
+    const duplicate = uniqueRegistrations.some(existing =>
+      existing.registration === item.registration && Math.abs(existing.x-item.x) < 35 && Math.abs(existing.y-item.y) < 18
+    );
+    if (!duplicate) uniqueRegistrations.push(item);
+  }
+
+  const sortedDates = dateAnchors
+    .filter((value, index, array) => array.findIndex(other => other.date === value.date && Math.abs(other.x-value.x)<25) === index)
+    .sort((a,b) => a.x-b.x || a.y-b.y);
+
+  const items = uniqueRegistrations.map(vehicle => {
+    let chosenDate = dateDefault;
+    if (sortedDates.length) {
+      // Weekly sheets generally place dates as column headers. Prefer the nearest header horizontally,
+      // with a mild preference for headers above the appointment cell.
+      const candidates = sortedDates.map(anchor => ({
+        anchor,
+        distance: Math.abs(anchor.x - vehicle.x) + (anchor.y > vehicle.y ? 300 : 0)
+      })).sort((a,b) => a.distance-b.distance);
+      chosenDate = candidates[0].anchor.date;
+    }
+
+    const nearbyText = words
+      .filter(word => {
+        const b = word.bbox || {};
+        const x = ((b.x0 || 0) + (b.x1 || 0)) / 2;
+        const y = ((b.y0 || 0) + (b.y1 || 0)) / 2;
+        return Math.abs(y - vehicle.y) < 24 && Math.abs(x - vehicle.x) < 260;
+      })
       .sort((a,b)=>(a.bbox?.x0||0)-(b.bbox?.x0||0))
       .map(word=>word.text).join(" ").trim();
-    if (text) lines.push(text);
-  }
 
-  const items = [];
-  let currentDate = dateDefault;
-  for (const line of lines) {
-    const detectedDate = parseDate(line);
-    if (detectedDate) currentDate = detectedDate;
-    const registration = line.match(/\b[A-Z]{2}[-\s]\d{3}[-\s][A-Z]{2}\b/i)?.[0]?.replace(/\s/g, "-") || "";
-    if (!registration) continue;
-    const times = [...line.matchAll(/\b(\d{1,2})[:h](\d{2})\b/g)]
-      .map(match => `${String(match[1]).padStart(2,"0")}:${match[2]}`);
-    items.push({
-      entity_name: registration.toUpperCase(),
-      registration: registration.toUpperCase(),
-      start_time: times[0] || "",
-      end_time: times[1] || "",
+    const normalizedDetail = normalize(nearbyText);
+    let detail = "Rendez-vous atelier";
+    if (/PREPA[ -]?MINES|MINES/.test(normalizedDetail)) detail = "Prépa-mines";
+    else if (/\bCT\b|CONTROLE TECHNIQUE/.test(normalizedDetail)) detail = "Contrôle technique";
+    else if (/TODD/.test(normalizedDetail)) detail = "Rendez-vous chez TODD";
+
+    return {
+      entity_name: vehicle.registration,
+      registration: vehicle.registration,
+      start_time: "",
+      end_time: "",
       activity_type: "atelier",
-      activity_label: line,
-      location: "",
-      details: line,
-      confidence: 0.82,
-      planning_date: currentDate
-    });
-  }
-  return { planning_type:"workshop", date:dateDefault, items };
+      activity_label: detail,
+      location: /TODD/.test(normalizedDetail) ? "TODD" : "",
+      details: nearbyText || detail,
+      confidence: sortedDates.length ? 0.9 : 0.75,
+      planning_date: chosenDate
+    };
+  });
+
+  return {
+    planning_type: "workshop",
+    date: dateDefault,
+    items,
+    diagnostics: { mode: "atelier_semaine", dates: sortedDates.length, registrations: items.length, ...lastOcrDiagnostics }
+  };
 }
 function withTimeout(promise, milliseconds, messageText) {
   let timeoutId;
@@ -721,7 +886,7 @@ async function runOcr(ocrSource) {
 }
 function activityOptions(current) {
   const options = [
-    "circulation","atelier","transfert","prise_service","conduite_qub",
+    "circulation","service","atelier","transfert","prise_service","conduite_qub",
     "conduite_breizhgo","conduite_lecoeur","hlp","occasionnel","coupure",
     "repos","conge","at","maladie","fin_service"
   ];
