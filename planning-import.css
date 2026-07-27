@@ -33,3 +33,21 @@ button{border:0;border-radius:11px;padding:13px 18px;background:var(--green);col
   opacity:.65;
   cursor:wait;
 }
+
+.empty-analysis{
+  grid-column:1/-1;
+  padding:20px;
+  border:1px solid #8b3441;
+  border-radius:12px;
+  background:#241116;
+}
+.empty-analysis strong{
+  display:block;
+  margin-bottom:8px;
+  color:#ff8795;
+}
+.empty-analysis p{
+  margin-top:6px;
+  color:#d7b6bc;
+  overflow-wrap:anywhere;
+}

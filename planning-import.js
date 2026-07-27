@@ -3,6 +3,8 @@ const $ = id => document.getElementById(id);
 let analysis = null;
 let loadedImage = null;
 let vehicleIndex = null;
+let vehicleList = [];
+let lastOcrDiagnostics = null;
 
 function parisDate() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -180,8 +182,12 @@ function rowLabels(words, grid, type) {
     }))
     .filter(row => {
       const value = normalize(row.text);
-      if (type === "driver") return /^[A-ZÀ-Ü.'-]{3,}(?:\.[A-Z])?$/.test(value);
-      return /^[A-Z]{1,4}\s?[A-Z0-9]{2,10}$/.test(value.replace(/\s+/g, " "));
+      if (type === "driver") {
+        return /^[A-ZÀ-Ü0-9.' -]{3,20}$/.test(value) &&
+          !/^(PLANNING|RAFRAICHIR|SUIVANT|PRECEDENT|DATE|ZOOM)$/.test(value);
+      }
+      return /^[A-Z0-9 -]{3,18}$/.test(value) &&
+        /[A-Z]/.test(value) && /[0-9]/.test(value);
     })
     .sort((a, b) => a.y - b.y);
 
@@ -200,9 +206,14 @@ async function loadVehicleIndex() {
   const response = await fetch("/api/planning/vehicle-index");
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "Index véhicules indisponible.");
+
   vehicleIndex = new Map();
-  for (const vehicle of payload.vehicles || []) {
-    for (const key of vehicle.keys || []) vehicleIndex.set(compact(key), vehicle.registration);
+  vehicleList = payload.vehicles || [];
+
+  for (const vehicle of vehicleList) {
+    for (const key of vehicle.keys || []) {
+      vehicleIndex.set(compact(key), vehicle.registration);
+    }
     vehicleIndex.set(compact(vehicle.park_number), vehicle.registration);
   }
   return vehicleIndex;
@@ -227,6 +238,89 @@ function classifyDriverSegment(data, words, run, rowTop, rowBottom, grid) {
 function timeFromX(x, grid) {
   return ((x - grid.x0) / Math.max(1, grid.x1 - grid.x0)) * 24 * 60;
 }
+
+function levenshtein(a, b) {
+  const first = compact(a);
+  const second = compact(b);
+  const matrix = Array.from(
+    { length: first.length + 1 },
+    (_, row) => Array(second.length + 1).fill(0)
+  );
+  for (let row = 0; row <= first.length; row++) matrix[row][0] = row;
+  for (let column = 0; column <= second.length; column++) matrix[0][column] = column;
+
+  for (let row = 1; row <= first.length; row++) {
+    for (let column = 1; column <= second.length; column++) {
+      const cost = first[row - 1] === second[column - 1] ? 0 : 1;
+      matrix[row][column] = Math.min(
+        matrix[row - 1][column] + 1,
+        matrix[row][column - 1] + 1,
+        matrix[row - 1][column - 1] + cost
+      );
+    }
+  }
+  return matrix[first.length][second.length];
+}
+
+function fallbackVehicleItems(fullText) {
+  const normalizedText = compact(fullText);
+  const detected = [];
+
+  for (const vehicle of vehicleList) {
+    const candidates = [
+      vehicle.park_number,
+      ...(vehicle.keys || [])
+    ].map(compact).filter(value => value.length >= 4);
+
+    const exact = candidates.some(value => normalizedText.includes(value));
+    if (!exact) continue;
+
+    detected.push({
+      entity_name: vehicle.park_number || vehicle.registration,
+      ocelorn_number: vehicle.park_number || "",
+      registration: vehicle.registration || "",
+      start_time: "",
+      end_time: "",
+      activity_type: "circulation",
+      activity_label: "Véhicule détecté par lecture OCR (horaires à vérifier)",
+      confidence: 0.68
+    });
+  }
+
+  return detected;
+}
+
+function fallbackDriverItems(fullText) {
+  const lines = String(fullText || "")
+    .split(/\r?\n/)
+    .map(line => normalize(line))
+    .filter(Boolean);
+  const items = [];
+
+  for (const line of lines) {
+    const name = line.match(/^([A-ZÀ-Ü.'-]{3,}(?:\.[A-Z])?)/)?.[1];
+    if (!name) continue;
+
+    let activity = "";
+    if (/\b(RH|RHO|REPOS)\b/.test(line)) activity = "repos";
+    else if (/CONGE/.test(line)) activity = "conge";
+    else if (/\bAT\b/.test(line)) activity = "at";
+    else if (/MALAD/.test(line)) activity = "maladie";
+    else continue;
+
+    items.push({
+      entity_name: name,
+      start_time: "00:00",
+      end_time: "23:55",
+      activity_type: activity,
+      activity_label: line,
+      confidence: 0.75
+    });
+  }
+
+  return items;
+}
+
 async function analyzeGrid(type, image, words, fullText) {
   const canvas = canvasFor(image);
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -235,6 +329,31 @@ async function analyzeGrid(type, image, words, fullText) {
   const labels = rowLabels(words, grid, type);
   const items = [];
   const index = type === "vehicle" ? await loadVehicleIndex() : null;
+
+  if (!labels.length) {
+    if (type === "vehicle") {
+      return {
+        planning_type: type,
+        date: parseDate(fullText) || $("planningDate").value,
+        items: fallbackVehicleItems(fullText),
+        diagnostics: {
+          mode: "fallback_text",
+          labels: 0,
+          ...lastOcrDiagnostics
+        }
+      };
+    }
+    return {
+      planning_type: type,
+      date: parseDate(fullText) || $("planningDate").value,
+      items: fallbackDriverItems(fullText),
+      diagnostics: {
+        mode: "fallback_text",
+        labels: 0,
+        ...lastOcrDiagnostics
+      }
+    };
+  }
 
   for (let i = 0; i < labels.length; i++) {
     const label = labels[i];
@@ -332,7 +451,12 @@ async function analyzeGrid(type, image, words, fullText) {
   return {
     planning_type: type,
     date: parseDate(fullText) || $("planningDate").value,
-    items
+    items,
+    diagnostics: {
+      mode: "grid",
+      labels: labels.length,
+      ...lastOcrDiagnostics
+    }
   };
 }
 function parseWorkshop(words, fullText) {
@@ -388,20 +512,56 @@ function withTimeout(promise, milliseconds, messageText) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
+function wordsFromTsv(tsv) {
+  const rows = String(tsv || "").split(/\r?\n/);
+  if (rows.length < 2) return [];
+
+  const header = rows[0].split("\t");
+  const index = Object.fromEntries(header.map((name, position) => [name, position]));
+  const words = [];
+
+  for (const row of rows.slice(1)) {
+    const columns = row.split("\t");
+    const value = String(columns[index.text] || "").trim();
+    const confidence = Number(columns[index.conf] || -1);
+    if (!value || confidence < 0) continue;
+
+    const left = Number(columns[index.left] || 0);
+    const top = Number(columns[index.top] || 0);
+    const width = Number(columns[index.width] || 0);
+    const height = Number(columns[index.height] || 0);
+
+    words.push({
+      text: value,
+      confidence,
+      bbox: {
+        x0: left,
+        y0: top,
+        x1: left + width,
+        y1: top + height
+      }
+    });
+  }
+
+  return words;
+}
+
 function extractWords(data) {
   if (Array.isArray(data?.words) && data.words.length) return data.words;
 
-  const words = [];
+  const blockWords = [];
   for (const block of data?.blocks || []) {
     for (const paragraph of block.paragraphs || []) {
       for (const line of paragraph.lines || []) {
         for (const word of line.words || []) {
-          words.push(word);
+          if (word?.text) blockWords.push(word);
         }
       }
     }
   }
-  return words;
+  if (blockWords.length) return blockWords;
+
+  return wordsFromTsv(data?.tsv);
 }
 
 async function runOcr(image) {
@@ -448,7 +608,7 @@ async function runOcr(image) {
     });
 
     const result = await withTimeout(
-      worker.recognize(image, {}, { blocks: true, text: true }),
+      worker.recognize(image, {}, { blocks: true, text: true, tsv: true }),
       120000,
       "La lecture de la capture a dépassé deux minutes. " +
       "Essaie avec une capture JPEG ou PNG moins lourde."
@@ -462,8 +622,16 @@ async function runOcr(image) {
       );
     }
 
+    const ocrText = result.data?.text || "";
+    lastOcrDiagnostics = {
+      characters: ocrText.length,
+      words: words.length,
+      has_tsv: Boolean(result.data?.tsv),
+      has_blocks: Array.isArray(result.data?.blocks) && result.data.blocks.length > 0
+    };
+
     return {
-      text: result.data?.text || "",
+      text: ocrText,
       words
     };
   } finally {
@@ -499,6 +667,15 @@ function render() {
       <input class="label wide" value="${esc(item.activity_label||item.details||"")}" placeholder="Détail">
       <button class="remove" type="button">×</button>
     </div>`).join("");
+  if (!rows.length) {
+    $("resultTable").innerHTML = `
+      <div class="empty-analysis">
+        <strong>Aucune ligne exploitable détectée</strong>
+        <p>Le texte a bien été lu, mais la structure du planning n’a pas été reconnue.</p>
+        <p>Diagnostic : ${esc(JSON.stringify(analysis?.diagnostics || lastOcrDiagnostics || {}))}</p>
+      </div>`;
+  }
+  $("saveButton").disabled = rows.length === 0;
   $("resultSection").hidden = false;
 }
 $("resultTable").addEventListener("click", event => {
@@ -525,7 +702,20 @@ $("analyzeButton").addEventListener("click", async () => {
 
     if (analysis.date) $("planningDate").value = analysis.date;
     render();
-    message(`${analysis.items.length} élément(s) détecté(s). Vérifie et corrige avant validation.`);
+    const diagnostics = analysis.diagnostics || lastOcrDiagnostics || {};
+    if (!analysis.items.length) {
+      message(
+        `Aucun résultat exploitable. Texte OCR : ${diagnostics.characters || 0} caractère(s), ` +
+        `${diagnostics.words || 0} mot(s), ${diagnostics.labels || 0} ligne(s) reconnue(s).`,
+        true
+      );
+    } else {
+      message(
+        `${analysis.items.length} élément(s) détecté(s) · ` +
+        `${diagnostics.words || 0} mot(s) OCR · mode ${diagnostics.mode || "atelier"}. ` +
+        `Vérifie et corrige avant validation.`
+      );
+    }
   } catch (exception) {
     message(exception.message, true);
   } finally {
@@ -549,12 +739,16 @@ function collect() {
   });
 }
 $("saveButton").addEventListener("click", async () => {
+  const rows = collect();
+  if (!rows.length) {
+    return message("Aucune donnée ne peut être enregistrée.", true);
+  }
   const file = $("planningImage").files[0];
   const body = {
     type: $("planningType").value,
     date: $("planningDate").value,
     source_name: file?.name || "",
-    items: collect()
+    items: rows
   };
   $("saveButton").disabled = true;
   try {

@@ -629,7 +629,7 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
   }
 }
 
-/* V10.2 — véhicule prévu en circulation */
+/* V10.3 — véhicule prévu en circulation */
 .parking-spot.occupied.running-today:not(.overload){
   background:#d97706;
   border-color:#ffd28a;
