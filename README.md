@@ -147,10 +147,10 @@ Nouvelle page `prises-service.html` :
 - présentation PC et smartphone.
 
 
-## V10.3 — Gestion du dépôt
+## V10.4 — Gestion du dépôt
 
 Cette version corrige les chemins d’import des nouvelles fonctions
-Cloudflare Pages et affiche le numéro `V10.3` à côté du nom BreizhStops.
+Cloudflare Pages et affiche le numéro `V10.4` à côté du nom BreizhStops.
 
 Fonctions incluses :
 
@@ -163,7 +163,7 @@ Fonctions incluses :
 - historique conservé dans D1.
 
 
-## V10.3 — résolution des conducteurs
+## V10.4 — résolution des conducteurs
 
 Le synchroniseur suit désormais les relations Notion imbriquées :
 
@@ -178,7 +178,7 @@ Un cache évite les appels répétés pour les mêmes pages Notion.
 Aucune modification D1 supplémentaire n’est nécessaire.
 
 
-## V10.3 — Conducteur via rollup Notion
+## V10.4 — Conducteur via rollup Notion
 
 Correction du champ Conducteur lorsque Notion le calcule ainsi :
 
@@ -199,7 +199,7 @@ Le synchroniseur sait maintenant résoudre récursivement :
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V10.3 — nom réel du conducteur
+## V10.4 — nom réel du conducteur
 
 Le synchroniseur suit les relations jusqu’à la fiche du conducteur,
 puis lit exclusivement sa propriété `title`.
@@ -210,7 +210,7 @@ comme nom de conducteur.
 Aucune modification D1 ni nouveau secret Cloudflare n’est nécessaire.
 
 
-## V10.3 — Tableau des départs
+## V10.4 — Tableau des départs
 
 Nouvelle page `departs.html` :
 
@@ -225,7 +225,7 @@ Nouvelle page `departs.html` :
 - prise en charge des courses passant minuit.
 
 
-## V10.3 — synchronisation par lots
+## V10.4 — synchronisation par lots
 
 Correction de l’erreur Cloudflare :
 
@@ -237,7 +237,7 @@ puis enchaîne automatiquement les services jusqu’à la fin.
 Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V10.3 — synchronisation complète par lots
+## V10.4 — synchronisation complète par lots
 
 Les prises de service sont désormais synchronisées une par une,
 afin de respecter la limite Cloudflare sur les sous-requêtes.
@@ -251,7 +251,7 @@ de la réponse Cloudflare au lieu du seul message « réponse illisible ».
 Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V10.3 — Accueil et identité visuelle
+## V10.4 — Accueil et identité visuelle
 
 - nouvelle page d’accueil Océlorn ;
 - horloge d’autocar avec indication ARRÊT DEMANDÉ ;
@@ -265,7 +265,7 @@ Aucune nouvelle table D1 ni nouvelle variable Cloudflare n’est nécessaire.
 Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
 
 
-## V10.3 — ajustements visuels ciblés
+## V10.4 — ajustements visuels ciblés
 
 - logo de bus londonien dans la section Aujourd’hui ;
 - carte routière de Bretagne/Finistère en fond de la tuile BreizhStops ;
@@ -277,7 +277,7 @@ Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
 Aucune modification D1 ni nouvelle variable Cloudflare n’est nécessaire.
 
 
-## V10.3 — visuels et filtrage définitif
+## V10.4 — visuels et filtrage définitif
 
 - utilisation exacte du nouveau bus londonien fourni ;
 - utilisation exacte du nouveau logo de car fourni ;
@@ -293,7 +293,7 @@ dans Prises de service afin de nettoyer les données du jour.
 Aucune nouvelle table D1 ni variable Cloudflare n’est nécessaire.
 
 
-## V10.3 — Prise de poste et statistiques
+## V10.4 — Prise de poste et statistiques
 
 Nouveautés :
 - prise et fin de poste avec compteur réel ;
@@ -319,15 +319,15 @@ Soldes initiaux préconfigurés :
 
 ### Mise à jour D1 obligatoire
 
-Exécuter dans la console D1 tout le bloc V10.3 présent à la fin de `schema.sql`,
+Exécuter dans la console D1 tout le bloc V10.4 présent à la fin de `schema.sql`,
 ou réexécuter l’intégralité du fichier `schema.sql`.
 
 
-## Correctif V10.3
+## Correctif V10.4
 Les tables D1 personnelles sont désormais créées automatiquement au premier appel API. Les boutons Prendre mon poste, Déclarer mes heures et Soldes initiaux fonctionnent sans exécution SQL manuelle.
 
 
-## V10.3 — Activité et progressions
+## V10.4 — Activité et progressions
 
 - Le bouton « Ouvrir les prises de service » est désormais placé avant « Mon activité ».
 - La section « Mon activité » comporte un visuel de chronotachygraphe et le compteur d’heures supplémentaires en surimpression.
@@ -335,14 +335,14 @@ Les tables D1 personnelles sont désormais créées automatiquement au premier a
 - Au-delà de 100 %, la barre reste pleine et le pourcentage réel continue de s’afficher.
 
 
-## V10.3 — correction de l'emplacement du chronotachygraphe
+## V10.4 — correction de l'emplacement du chronotachygraphe
 - Suppression du grand visuel dans le bloc temps réel « Mon activité » de la section Aujourd'hui.
 - Le bloc « Mon activité » reste compact avec les compteurs et les boutons.
 - Ajout du véritable disque de chronotachygraphe dans la carte inférieure « Prise de poste et statistiques ».
 - Le solde d'heures supplémentaires est affiché en surimpression sur cette image.
 
 
-## V10.3 — Stationnement
+## V10.4 — Stationnement
 
 Nouvelle page `stationnement.html` :
 
@@ -362,7 +362,7 @@ La variable facultative `NOTION_PARKING_DATABASE_ID` peut remplacer cet identifi
 Le secret existant `NOTION_TOKEN` est réutilisé.
 
 
-## V10.3 — correction Stationnement
+## V10.4 — correction Stationnement
 
 - La base véhicules liée à la propriété Notion `Mon parc` est maintenant détectée automatiquement.
 - Les immatriculations sont récupérées depuis la véritable base liée, sans identifiant codé en dur.
@@ -371,7 +371,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 - La synchronisation indique aussi le nombre de véhicules réellement lus dans Notion.
 
 
-## V10.3 — schéma final et détection des véhicules
+## V10.4 — schéma final et détection des véhicules
 
 - Lestonan Mini est positionné directement au-dessus de Lestonan 11.
 - L'aire de lavage et la station AdBlue sont placées entre Lestonan 5 et Lestonan 11.
@@ -382,7 +382,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 - Le message de synchronisation indique le nombre de véhicules affectés et d'immatriculations reconnues.
 
 
-## V10.3 — synchronisation Notion par lots
+## V10.4 — synchronisation Notion par lots
 
 - traitement de 10 emplacements par requête ;
 - lecture directe de la propriété relation `Mon parc` ;
@@ -392,7 +392,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 - affichage du nombre d'immatriculations réellement reconnues.
 
 
-## V10.3 — optimisation Stationnement et Départs
+## V10.4 — optimisation Stationnement et Départs
 
 ### Stationnement
 - immatriculations agrandies sur ordinateur ;
@@ -410,7 +410,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 - position horizontale du diagramme conservée lors des mises à jour automatiques.
 
 
-## V10.3 — proportions PC, paysage iPhone et compteurs
+## V10.4 — proportions PC, paysage iPhone et compteurs
 
 - Lestonan 1 à 5 : format vertical avec nom et immatriculation répartis verticalement.
 - Les autres emplacements de Lestonan restent inchangés.
@@ -424,7 +424,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 
 
 
-## V10.3 — Stationnement et tâches du jour
+## V10.4 — Stationnement et tâches du jour
 
 ### Stationnement
 - Lestonan 1 à 5 ont désormais exactement les proportions physiques des places 6 à 10, tournées verticalement.
@@ -441,7 +441,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 
 
 
-## V10.3 — Accueil enrichi
+## V10.4 — Accueil enrichi
 
 - La carte Mon activité reprend la taille des autres modules.
 - Ajout des véhicules actuellement à l’atelier avec couverture, immatriculation et durée.
@@ -450,7 +450,7 @@ Le secret existant `NOTION_TOKEN` est réutilisé.
 
 
 
-## V10.3 — correction des vues Notion
+## V10.4 — correction des vues Notion
 
 Les deux liens précédemment fournis étaient des vues, et non des bases autonomes.
 
@@ -463,14 +463,14 @@ Les deux liens précédemment fournis étaient des vues, et non des bases autono
 - Nom du conducteur : résolution de la relation `Mes Conducteurs`.
 
 
-## V10.3 — nom des conducteurs corrigé
+## V10.4 — nom des conducteurs corrigé
 
 - La section « Conducteurs en arrêt » lit désormais systématiquement la relation Notion vers la base des conducteurs.
 - Les noms des conducteurs remplacent les titres techniques des fiches d'arrêt tels que `2026.04`.
 - La détection reste fonctionnelle même si la propriété Relation est renommée ou précédée d'un emoji.
 
 
-## V10.3 — synchronisation publique et heures locales
+## V10.4 — synchronisation publique et heures locales
 
 ### Synchronisation sans reconnexion Cloudflare
 
@@ -496,7 +496,7 @@ maintenant avec :
 L'affichage et la saisie utilisent le fuseau `Europe/Paris`. Les dates UTC ne
 sont conservées qu'en interne dans la base D1.
 
-## V10.3 — stationnement public et compteur d'heures fidèle
+## V10.4 — stationnement public et compteur d'heures fidèle
 
 ### Stationnement
 
@@ -527,7 +527,7 @@ dimanches, jours fériés, récupérations et congés payés restent à
 0 heure attendue.
 
 
-## V10.3 — opérations BreizhStops sans reconnexion Cloudflare
+## V10.4 — opérations BreizhStops sans reconnexion Cloudflare
 
 Les fonctions déclenchées depuis l'interface utilisent désormais `/api/public/*` :
 
@@ -541,7 +541,7 @@ Les fonctions déclenchées depuis l'interface utilisent désormais `/api/public
 La route `/api/admin/session` reste administrative. La règle Cloudflare Access peut continuer à protéger uniquement `/api/admin/*`.
 
 
-## V10.3
+## V10.4
 - Nouvelle page Mon parc synchronisée avec la base véhicules Notion.
 - Travaux et déviations sur la page d’accueil.
 - Carte OpenStreetMap des positions théoriques des véhicules QUB sur la page Départs.

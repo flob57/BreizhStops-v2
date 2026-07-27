@@ -1,4 +1,4 @@
-# BreizhStops V10.3 — Import intelligent des plannings
+# BreizhStops V10.4 — Import intelligent des plannings
 
 ## Fonctions ajoutées
 

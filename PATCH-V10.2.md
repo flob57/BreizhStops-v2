@@ -1,4 +1,4 @@
-# BreizhStops V10.3 — Déblocage du lecteur OCR
+# BreizhStops V10.4 — Déblocage du lecteur OCR
 
 ## Corrections
 

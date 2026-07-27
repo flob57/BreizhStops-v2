@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#050806">
-  <title>Importer un planning — BreizhStops V10.3</title>
+  <title>Importer un planning — BreizhStops V10.4</title>
   <link rel="stylesheet" href="./planning-import.css">
 </head>
 <body>
 <header>
   <a href="./index.html">‹ Accueil</a>
-  <div><span>IMPORT INTELLIGENT</span><h1>📷 Importer un planning <small>V10.3</small></h1></div>
+  <div><span>IMPORT INTELLIGENT</span><h1>📷 Importer un planning <small>V10.4</small></h1></div>
 </header>
 <main>
   <section class="upload-card">
@@ -30,8 +30,8 @@
       <span>PNG, JPEG ou WEBP — 12 Mo maximum</span>
     </label>
     <img id="preview" alt="Aperçu" hidden>
-    <button id="analyzeButton">✨ Analyser la capture</button>
-    <p id="message"></p>
+    <button id="analyzeButton" type="button">✨ Analyser la capture</button>
+    <p id="message"></p><pre id="diagnosticLog" class="diagnostic-log"></pre>
   </section>
 
   <section id="resultSection" class="result-card" hidden>
@@ -41,8 +41,8 @@
     </div>
     <div id="resultTable" class="result-table"></div>
     <div class="actions">
-      <button id="saveButton">✓ Valider et enregistrer</button>
-      <button id="cancelButton" class="secondary">Annuler</button>
+      <button id="saveButton" type="button">✓ Valider et enregistrer</button>
+      <button id="cancelButton" type="button" class="secondary">Annuler</button>
     </div>
   </section>
 
