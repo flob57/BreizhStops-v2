@@ -360,19 +360,37 @@ function similarityScore(first, second) {
 
 function bestVehicleMatch(rawLabel) {
   const label = normalize(rawLabel);
-  const chunks = [label, ...label.split(/\s+/)].filter(Boolean);
-  let best = null;
+  const words = label.split(/\s+/).filter(Boolean);
+  const chunks = [label, ...words];
+  for (let size = 2; size <= Math.min(3, words.length); size++) {
+    for (let i = 0; i <= words.length - size; i++) chunks.push(words.slice(i, i + size).join(""));
+  }
 
+  let best = null;
+  let second = null;
   for (const vehicle of vehicleList) {
     const candidates = [vehicle.park_number, ...(vehicle.keys || [])].filter(Boolean);
+    let vehicleScore = 0;
     for (const chunk of chunks) {
       for (const candidate of candidates) {
-        const score = similarityScore(chunk, candidate);
-        if (!best || score > best.score) best = { vehicle, score };
+        let score = similarityScore(chunk, candidate);
+        const chunkDigits = compact(chunk).match(/\d{3,}/)?.[0] || "";
+        const candidateDigits = compact(candidate).match(/\d{3,}/)?.[0] || "";
+        if (chunkDigits && candidateDigits && chunkDigits === candidateDigits) score = Math.max(score, 0.9);
+        if (compact(label).includes(compact(candidate))) score = Math.max(score, 0.98);
+        vehicleScore = Math.max(vehicleScore, score);
       }
     }
+    const entry = { vehicle, score: vehicleScore };
+    if (!best || entry.score > best.score) {
+      second = best;
+      best = entry;
+    } else if (!second || entry.score > second.score) second = entry;
   }
-  return best && best.score >= 0.64 ? best : null;
+
+  if (!best) return null;
+  const clearWinner = !second || best.score - second.score >= 0.05;
+  return best.score >= 0.60 && (clearWinner || best.score >= 0.86) ? best : null;
 }
 
 async function loadDriverIndex() {
@@ -400,7 +418,7 @@ function bestDriverMatch(rawLabel) {
     const score = Math.max(full, tokenScore * 0.94);
     if (!best || score > best.score) best = { driver, score };
   }
-  return best && best.score >= 0.58 ? best : null;
+  return best && best.score >= 0.52 ? best : null;
 }
 
 function fallbackVehicleItems(fullText) {
@@ -641,7 +659,59 @@ function parseDateParts(day, month, year, fallbackDate) {
   return `${numericYear}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 }
 
-function parseWorkshop(words, fullText) {
+
+function normalizeRegistrationCandidate(value) {
+  const raw = compact(value)
+    .replace(/O/g, "0")
+    .replace(/[IL]/g, "1")
+    .replace(/S/g, "5")
+    .replace(/B/g, "8");
+  if (raw.length !== 7) return "";
+  return raw;
+}
+
+function workshopLineCandidates(words) {
+  const sorted = (words || []).slice().sort((a, b) => {
+    const ay = ((a.bbox?.y0 || 0) + (a.bbox?.y1 || 0)) / 2;
+    const by = ((b.bbox?.y0 || 0) + (b.bbox?.y1 || 0)) / 2;
+    return ay - by || (a.bbox?.x0 || 0) - (b.bbox?.x0 || 0);
+  });
+  const lines = [];
+  for (const word of sorted) {
+    const box = word.bbox || {};
+    const cy = ((box.y0 || 0) + (box.y1 || 0)) / 2;
+    let line = lines.find(item => Math.abs(item.y - cy) < 13);
+    if (!line) {
+      line = { y: cy, words: [] };
+      lines.push(line);
+    }
+    line.words.push(word);
+    line.y = (line.y * (line.words.length - 1) + cy) / line.words.length;
+  }
+
+  const candidates = [];
+  for (const line of lines) {
+    line.words.sort((a, b) => (a.bbox?.x0 || 0) - (b.bbox?.x0 || 0));
+    for (let start = 0; start < line.words.length; start++) {
+      for (let size = 1; size <= 4 && start + size <= line.words.length; size++) {
+        const group = line.words.slice(start, start + size);
+        const text = group.map(word => word.text).join("");
+        const box = {
+          x0: Math.min(...group.map(word => word.bbox?.x0 || 0)),
+          x1: Math.max(...group.map(word => word.bbox?.x1 || 0)),
+          y0: Math.min(...group.map(word => word.bbox?.y0 || 0)),
+          y1: Math.max(...group.map(word => word.bbox?.y1 || 0))
+        };
+        const token = normalizeRegistrationCandidate(text);
+        if (token && /\d{3}/.test(token)) candidates.push({ token, text, box, x: (box.x0 + box.x1) / 2, y: (box.y0 + box.y1) / 2 });
+      }
+    }
+  }
+  return candidates;
+}
+
+async function parseWorkshop(words, fullText) {
+  await loadVehicleIndex();
   const dateDefault = parseDate(fullText) || $("planningDate").value;
   const dateAnchors = [];
   const registrations = [];
@@ -677,6 +747,24 @@ function parseWorkshop(words, fullText) {
         x: cx, y: cy, box
       });
     }
+  }
+
+  // Deuxième lecture : rapproche les fragments OCR avec toutes les immatriculations connues de Mon Parc.
+  const fuzzyCandidates = workshopLineCandidates(words);
+  for (const vehicle of vehicleList) {
+    const expected = compact(vehicle.registration);
+    if (!expected || expected.length !== 7) continue;
+    let best = null;
+    for (const candidate of fuzzyCandidates) {
+      let score = similarityScore(candidate.token, expected);
+      const expectedDigits = expected.slice(2, 5);
+      const candidateDigits = candidate.token.slice(2, 5);
+      if (expectedDigits === candidateDigits) score = Math.max(score, 0.88);
+      if (!best || score > best.score) best = { ...candidate, score };
+    }
+    if (!best || best.score < 0.69) continue;
+    const already = registrations.some(item => item.registration === vehicle.registration && Math.abs(item.y - best.y) < 25);
+    if (!already) registrations.push({ registration: vehicle.registration, x: best.x, y: best.y, box: best.box, fuzzy: true });
   }
 
   // De-duplicate OCR repetitions at nearly the same position.
@@ -804,7 +892,97 @@ function extractWords(data) {
   return wordsFromTsv(data?.tsv);
 }
 
-async function runOcr(ocrSource) {
+
+function createOcrCrop(sourceCanvas, { x = 0, y = 0, width, height, scale = 2.5, threshold = false } = {}) {
+  const cropWidth = Math.max(1, Math.round(width ?? sourceCanvas.width));
+  const cropHeight = Math.max(1, Math.round(height ?? sourceCanvas.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(cropWidth * scale));
+  canvas.height = Math.max(1, Math.round(cropHeight * scale));
+  const context = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(sourceCanvas, x, y, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+
+  if (threshold) {
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+      const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+      const saturation = Math.max(r, g, b) - Math.min(r, g, b);
+      const dark = brightness < 205 || (saturation > 35 && brightness < 238);
+      const value = dark ? 0 : 255;
+      pixels[i] = pixels[i + 1] = pixels[i + 2] = value;
+      pixels[i + 3] = 255;
+    }
+    context.putImageData(imageData, 0, 0);
+  }
+
+  return {
+    canvas,
+    source: canvas.toDataURL("image/png"),
+    transform: { x, y, scale }
+  };
+}
+
+function mapOcrWords(words, transform, source) {
+  const { x = 0, y = 0, scale = 1 } = transform || {};
+  return (words || []).map(word => {
+    const box = word.bbox || {};
+    return {
+      ...word,
+      source,
+      bbox: {
+        x0: x + (box.x0 || 0) / scale,
+        y0: y + (box.y0 || 0) / scale,
+        x1: x + (box.x1 || 0) / scale,
+        y1: y + (box.y1 || 0) / scale
+      }
+    };
+  });
+}
+
+function mergeOcrWords(...groups) {
+  const merged = [];
+  for (const words of groups) {
+    for (const word of words || []) {
+      const text = normalize(word.text);
+      const box = word.bbox || {};
+      const cx = ((box.x0 || 0) + (box.x1 || 0)) / 2;
+      const cy = ((box.y0 || 0) + (box.y1 || 0)) / 2;
+      const duplicate = merged.some(existing => {
+        const e = existing.bbox || {};
+        const ex = ((e.x0 || 0) + (e.x1 || 0)) / 2;
+        const ey = ((e.y0 || 0) + (e.y1 || 0)) / 2;
+        return normalize(existing.text) === text && Math.abs(ex - cx) < 8 && Math.abs(ey - cy) < 6;
+      });
+      if (!duplicate) merged.push(word);
+    }
+  }
+  return merged;
+}
+
+async function recognizeWithWorker(worker, source, parameters = {}) {
+  await worker.setParameters({
+    preserve_interword_spaces: "1",
+    user_defined_dpi: "180",
+    ...parameters
+  });
+  const result = await withTimeout(
+    worker.recognize(source, {}, { blocks: true, text: true, tsv: true }),
+    120000,
+    "La lecture de la capture a dépassé deux minutes. Essaie avec une capture moins lourde."
+  );
+  return {
+    text: result.data?.text || "",
+    words: extractWords(result.data)
+  };
+}
+
+async function runOcr(ocrSource, type, sourceCanvas) {
   if (!window.Tesseract?.createWorker) {
     throw new Error(
       "Le moteur OCR n’a pas pu être chargé. Vérifie la connexion Internet, " +
@@ -815,15 +993,11 @@ async function runOcr(ocrSource) {
   let worker = null;
   try {
     message("Chargement du moteur OCR…");
-
     worker = await withTimeout(
       Tesseract.createWorker("eng", 1, {
-        workerPath:
-          "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
-        corePath:
-          "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.0",
-        langPath:
-          "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int",
+        workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+        corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.0",
+        langPath: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int",
         logger: progress => {
           const percent = Math.round((progress.progress || 0) * 100);
           const labels = {
@@ -833,54 +1007,71 @@ async function runOcr(ocrSource) {
             "initializing api": "Préparation de la lecture",
             "recognizing text": "Lecture du texte"
           };
-          const label = labels[progress.status] || progress.status || "OCR";
-          message(`${label}… ${percent} %`);
+          message(`${labels[progress.status] || progress.status || "OCR"}… ${percent} %`);
         }
       }),
       120000,
-      "Le chargement du moteur OCR a dépassé deux minutes. " +
-      "Recharge la page et réessaie avec une connexion stable."
+      "Le chargement du moteur OCR a dépassé deux minutes. Recharge la page et réessaie."
     );
 
-    await worker.setParameters({
-      preserve_interword_spaces: "1",
-      user_defined_dpi: "150"
+    const main = await recognizeWithWorker(worker, ocrSource, {
+      tessedit_pageseg_mode: "11"
     });
+    let targetedWords = [];
+    let targetedText = "";
 
-    const result = await withTimeout(
-      worker.recognize(ocrSource, {}, { blocks: true, text: true, tsv: true }),
-      120000,
-      "La lecture de la capture a dépassé deux minutes. " +
-      "Essaie avec une capture JPEG ou PNG moins lourde."
-    );
-
-    const words = extractWords(result.data);
-    if (!result.data?.text && !words.length) {
-      throw new Error(
-        "Aucun texte n’a été détecté. Utilise une capture originale, " +
-        "non recadrée et suffisamment nette."
-      );
+    if (sourceCanvas && (type === "vehicle" || type === "driver")) {
+      message("Lecture renforcée de la colonne des noms…");
+      const crop = createOcrCrop(sourceCanvas, {
+        x: 0,
+        y: Math.round(sourceCanvas.height * 0.075),
+        width: Math.round(sourceCanvas.width * 0.235),
+        height: Math.round(sourceCanvas.height * 0.77),
+        scale: 3.2,
+        threshold: true
+      });
+      const target = await recognizeWithWorker(worker, crop.source, {
+        tessedit_pageseg_mode: "6",
+        tessedit_char_whitelist: type === "vehicle"
+          ? "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -"
+          : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸ.'- "
+      });
+      targetedWords = mapOcrWords(target.words, crop.transform, "labels");
+      targetedText = target.text;
+    } else if (sourceCanvas && type === "workshop") {
+      message("Lecture renforcée des dates et immatriculations…");
+      const crop = createOcrCrop(sourceCanvas, {
+        x: 0,
+        y: Math.round(sourceCanvas.height * 0.03),
+        width: sourceCanvas.width,
+        height: Math.round(sourceCanvas.height * 0.94),
+        scale: 2.25,
+        threshold: true
+      });
+      const target = await recognizeWithWorker(worker, crop.source, {
+        tessedit_pageseg_mode: "11",
+        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/. "
+      });
+      targetedWords = mapOcrWords(target.words, crop.transform, "workshop");
+      targetedText = target.text;
     }
 
-    const ocrText = result.data?.text || "";
-    lastOcrDiagnostics = {
-      characters: ocrText.length,
-      words: words.length,
-      has_tsv: Boolean(result.data?.tsv),
-      has_blocks: Array.isArray(result.data?.blocks) && result.data.blocks.length > 0
-    };
+    const words = mergeOcrWords(main.words, targetedWords);
+    const text = [main.text, targetedText].filter(Boolean).join("\n");
+    if (!text && !words.length) {
+      throw new Error("Aucun texte n’a été détecté. Utilise une capture originale et suffisamment nette.");
+    }
 
-    return {
-      text: ocrText,
-      words
+    lastOcrDiagnostics = {
+      characters: text.length,
+      words: words.length,
+      targeted_words: targetedWords.length,
+      has_secondary_pass: targetedWords.length > 0
     };
+    return { text, words };
   } finally {
     if (worker) {
-      try {
-        await worker.terminate();
-      } catch {
-        // La terminaison du worker ne doit pas masquer le résultat.
-      }
+      try { await worker.terminate(); } catch {}
     }
   }
 }
@@ -933,11 +1124,11 @@ $("analyzeButton").addEventListener("click", async () => {
   analysis = null;
   message("Préparation de l’image…");
   try {
-    const { text, words } = await runOcr(loadedImage.ocrSource);
     const type = $("planningType").value;
+    const { text, words } = await runOcr(loadedImage.ocrSource, type, loadedImage.canvas);
     message("Analyse de la grille et des couleurs…");
     analysis = type === "workshop"
-      ? parseWorkshop(words, text)
+      ? await parseWorkshop(words, text)
       : await analyzeGrid(type, loadedImage.canvas, words, text);
 
     if (analysis.date) $("planningDate").value = analysis.date;

@@ -48,12 +48,12 @@
 
   <section class="help-card">
     <h2>Fonctionnement</h2>
-    <p>Le site lit une seule fois le texte de la capture, puis analyse localement la grille, les lignes et les couleurs. Les résultats restent modifiables avant enregistrement.</p>
+    <p>Le site effectue une lecture générale puis une seconde lecture ciblée sur les noms, numéros de parc, dates et immatriculations. Les rapprochements avec « Mon Parc » et la liste des conducteurs sont automatiques.</p>
     <p>Pour les véhicules, le numéro de parc Océlorn est automatiquement rapproché de l’immatriculation enregistrée dans la base Notion « Mon parc ».</p>
     <p>Au premier usage, le navigateur télécharge le moteur OCR. Une connexion Internet est donc nécessaire. La progression détaillée apparaît sous le bouton d’analyse.</p>
   </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-<script src="./planning-import.js"></script>
+<script src="./planning-import.js?v=10.8"></script>
 </body>
 </html>
