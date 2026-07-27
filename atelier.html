@@ -1,4 +1,18 @@
 <!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#050806"><title>Planning atelier — BreizhStops V10.5</title><link rel="stylesheet" href="./atelier.css"></head>
-<body><header><a href="./index.html">‹ Accueil</a><div><span>MAINTENANCE</span><h1>🔧 Planning atelier <small>V10.5</small></h1></div><a class="import" href="./planning-import.html">📷 Importer</a></header>
-<main><section class="toolbar"><label>Du <input id="from" type="date"></label><label>Au <input id="to" type="date"></label><button id="refresh">Actualiser</button></section><p id="message"></p><div id="days"></div></main><script src="./atelier.js"></script></body></html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#050806"><title>Rendez-vous atelier — BreizhStops V11.0</title><link rel="stylesheet" href="./atelier.css"></head>
+<body><header><a href="./index.html">‹ Accueil</a><div><span>MAINTENANCE</span><h1>🔧 Rendez-vous atelier <small>V11.0</small></h1></div></header>
+<main>
+  <section class="appointment-form-card">
+    <div><span class="kicker">NOUVEAU RENDEZ-VOUS</span><h2>Ajouter un rendez-vous atelier</h2><p>Choisis simplement le véhicule, la date et le type de rendez-vous.</p></div>
+    <form id="appointmentForm" class="appointment-form">
+      <label>Immatriculation<select id="registration" required><option value="">Chargement des véhicules…</option></select></label>
+      <label>Date<input id="appointmentDate" type="date" required></label>
+      <label>Type de rendez-vous<select id="appointmentType" required><option>ATELIER</option><option>RDV TODD</option><option>PREPA-MINES</option><option>CT</option><option>VIDANGE</option></select></label>
+      <button id="saveAppointment" type="submit">＋ Ajouter le rendez-vous</button>
+    </form>
+    <p id="formMessage" class="form-message" hidden></p>
+  </section>
+
+  <section class="toolbar"><label>Afficher du <input id="from" type="date"></label><label>au <input id="to" type="date"></label><button id="refresh">Actualiser</button></section>
+  <p id="message"></p><div id="days"></div>
+</main><script src="./atelier.js?v=11.0"></script></body></html>

@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const state = { spots: [], activeRegistrations: new Set(), activeVehicles: [] };
+const state = { spots: [], activeRegistrations: new Set(), activeVehicles: [], workshopRegistrations: new Set(), workshopAppointments: [] };
 
 const LESTONAN_LAYOUT = {
   "lestonan 1": [61.0, 5.0, 4.8, 20.0],
@@ -169,7 +169,14 @@ function makeSpot(spot, layout) {
   const runningRegistrations = spot.registrations.filter(registration =>
     state.activeRegistrations.has(String(registration || "").toUpperCase().replace(/\s+/g, ""))
   );
-  if (spot.occupied && runningRegistrations.length) {
+  const workshopRegistrations = spot.registrations.filter(registration =>
+    state.workshopRegistrations.has(String(registration || "").toUpperCase().replace(/\s+/g, ""))
+  );
+  if (spot.occupied && workshopRegistrations.length) {
+    template.classList.add("workshop-today");
+    const labels = state.workshopAppointments.filter(a => workshopRegistrations.includes(a.registration)).map(a => a.activity_label).filter(Boolean);
+    template.title = `Rendez-vous atelier aujourd’hui : ${workshopRegistrations.join(", ")}${labels.length ? " · " + labels.join(", ") : ""}`;
+  } else if (spot.occupied && runningRegistrations.length) {
     template.classList.add("running-today");
     template.title = `Prévu en circulation : ${runningRegistrations.join(", ")}`;
   }
@@ -258,7 +265,7 @@ function renderDepot(depot, targetId, layout, statsId, legendId) {
   $(legendId).innerHTML = `
     <span class="legend-item"><i class="legend-color" style="background:#27883c"></i>Place standard libre</span>
     <span class="legend-item"><i class="legend-color" style="background:#626b65"></i>Mini / VL libre</span>
-    <span class="legend-item"><i class="legend-color" style="background:#a52b27"></i>Ne circule pas aujourd’hui</span><span class="legend-item"><i class="legend-color" style="background:#d97706"></i>Prévu en circulation aujourd’hui</span>
+    <span class="legend-item"><i class="legend-color" style="background:#a52b27"></i>Ne circule pas aujourd’hui</span><span class="legend-item"><i class="legend-color" style="background:#d97706"></i>Prévu en circulation aujourd’hui</span><span class="legend-item"><i class="legend-color" style="background:#7c3aed"></i>Rendez-vous atelier aujourd’hui</span>
     <span class="legend-item"><i class="legend-color" style="background:#ff2117"></i>Surcharge occupée — alerte</span>`;
 }
 
@@ -292,10 +299,13 @@ function renderExternal() {
 
     groupSpots.sort((a,b) => a.name.localeCompare(b.name, "fr")).forEach(spot => {
       const card = document.createElement("article");
+      const workshopHere = spot.registrations.some(registration =>
+        state.workshopRegistrations.has(String(registration || "").toUpperCase().replace(/\s+/g, ""))
+      );
       const runningHere = spot.registrations.some(registration =>
         state.activeRegistrations.has(String(registration || "").toUpperCase().replace(/\s+/g, ""))
       );
-      card.className = `external-card ${spot.occupied ? "occupied" : "free"} ${runningHere ? "running-today" : ""}`;
+      card.className = `external-card ${spot.occupied ? "occupied" : "free"} ${workshopHere ? "workshop-today" : runningHere ? "running-today" : ""}`;
       card.innerHTML = `<h4>${spot.name}</h4><div class="spot-vehicles"></div>`;
       const vehicles = card.querySelector(".spot-vehicles");
       if (spot.registrations.length) {
@@ -329,10 +339,12 @@ async function load() {
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit"
     }).format(new Date());
-    const [payload, activity] = await Promise.all([
+    const [payload, activity, workshop] = await Promise.all([
       api("/api/parking"),
       api(`/api/planning/active-vehicles?date=${encodeURIComponent(today)}`)
-        .catch(() => ({ vehicles: [] }))
+        .catch(() => ({ vehicles: [] })),
+      api(`/api/planning/workshop?from=${encodeURIComponent(today)}&to=${encodeURIComponent(today)}`)
+        .catch(() => ({ items: [] }))
     ]);
     state.spots = payload.spots || [];
     state.activeVehicles = activity.vehicles || [];
@@ -340,6 +352,10 @@ async function load() {
       state.activeVehicles.map(vehicle =>
         String(vehicle.registration || "").toUpperCase().replace(/\s+/g, "")
       )
+    );
+    state.workshopAppointments = workshop.items || [];
+    state.workshopRegistrations = new Set(
+      state.workshopAppointments.map(item => String(item.registration || "").toUpperCase().replace(/\s+/g, ""))
     );
     render();
     $("lastUpdate").textContent =

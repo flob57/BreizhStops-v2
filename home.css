@@ -629,3 +629,6 @@ a[href*="mon-parc"] {
     linear-gradient(180deg,rgba(4,14,10,.08),rgba(4,14,10,.82)),
     url("./assets/ocelorn-detail.jpg") center/cover no-repeat;
 }
+
+/* V11.0 — rendez-vous atelier */
+.appointment-panel{border-top:3px solid #8b5cf6}.appointment-card{border-left:4px solid #8b5cf6}.appointment-date{display:inline-flex;margin-top:6px;padding:4px 8px;border-radius:999px;background:rgba(139,92,246,.16);color:#d8ccff;font-size:12px;font-weight:800}.panel-link{display:inline-block;margin-top:14px;color:#bda8ff;text-decoration:none;font-weight:800}.panel-link:hover{text-decoration:underline}

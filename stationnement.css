@@ -639,3 +639,13 @@ main{width:min(1320px,calc(100% - 28px));margin:22px auto 60px}
   background:linear-gradient(145deg,#d97706,#98510a);
   border-color:#ffd28a;
 }
+
+
+/* V11.0 — rendez-vous atelier du jour */
+.parking-spot.occupied.workshop-today:not(.overload),
+.external-card.occupied.workshop-today{
+  background:linear-gradient(145deg,#7c3aed,#4c1d95)!important;
+  border-color:#c4b5fd!important;
+  box-shadow:0 0 0 2px rgba(196,181,253,.28),0 10px 24px rgba(0,0,0,.35)!important;
+}
+.parking-spot.workshop-today .spot-state::after{content:" · Atelier";}

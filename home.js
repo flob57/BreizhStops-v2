@@ -383,3 +383,29 @@ setInterval(loadWorkshopVehicles,300000); setInterval(loadSickLeaves,300000); se
 loadVehicles(false).catch(()=>{});
 refreshActivity(); setInterval(refreshActivity,15000);
 loadHomeStats();
+
+async function loadWorkshopAppointments() {
+  const container = $("appointmentCards");
+  const message = $("appointmentMessage");
+  const count = $("appointmentCount");
+  if (!container || !message || !count) return;
+  try {
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    const end = new Date(today + "T12:00:00"); end.setDate(end.getDate() + 14);
+    const to = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(end);
+    const payload = await api(`/api/planning/workshop?from=${encodeURIComponent(today)}&to=${encodeURIComponent(to)}`);
+    const items = payload.items || [];
+    count.textContent = items.length;
+    container.innerHTML = "";
+    if (!items.length) { message.hidden = false; message.textContent = "Aucun rendez-vous atelier dans les 14 prochains jours."; return; }
+    message.hidden = true;
+    container.innerHTML = items.slice(0, 6).map(item => {
+      const date = new Date(item.planning_date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+      return `<article class="notion-mini-card appointment-card"><div class="notion-mini-card-placeholder">🔧</div><div class="notion-mini-card-body"><h3 class="notion-mini-card-title">${escapeHtml(item.registration || "Véhicule")}</h3><div class="notion-mini-card-meta"><strong>${escapeHtml(item.activity_label || "ATELIER")}</strong></div><span class="appointment-date">${escapeHtml(date)}</span></div></article>`;
+    }).join("");
+  } catch (error) {
+    count.textContent = "!"; container.innerHTML = ""; message.hidden = false; message.textContent = `Impossible de charger les rendez-vous : ${error.message}`;
+  }
+}
+
+loadWorkshopAppointments();
