@@ -1,4 +1,4 @@
-# BreizhStops V10.0 — Import intelligent des plannings
+# BreizhStops V10.1 — Import intelligent des plannings
 
 ## Fonctions ajoutées
 
@@ -6,7 +6,7 @@
   - planning véhicules ;
   - planning atelier ;
   - planning conducteurs.
-- Analyse par Cloudflare Workers AI.
+- Analyse locale spécialisée de la grille et des couleurs, complétée par une lecture OCR unique.
 - Contrôle et correction des résultats avant enregistrement.
 - Correspondance numéro de parc Océlorn → immatriculation via la base Notion Mon parc.
 - Véhicules prévus en circulation affichés en orange dans Stationnement.

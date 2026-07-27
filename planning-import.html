@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#050806">
-  <title>Importer un planning — BreizhStops V10.0</title>
+  <title>Importer un planning — BreizhStops V10.1</title>
   <link rel="stylesheet" href="./planning-import.css">
 </head>
 <body>
 <header>
   <a href="./index.html">‹ Accueil</a>
-  <div><span>IMPORT INTELLIGENT</span><h1>📷 Importer un planning <small>V10.0</small></h1></div>
+  <div><span>IMPORT INTELLIGENT</span><h1>📷 Importer un planning <small>V10.1</small></h1></div>
 </header>
 <main>
   <section class="upload-card">
@@ -48,10 +48,11 @@
 
   <section class="help-card">
     <h2>Fonctionnement</h2>
-    <p>Le site analyse la structure du planning, estime les horaires et te laisse corriger chaque donnée avant son enregistrement.</p>
+    <p>Le site lit une seule fois le texte de la capture, puis analyse localement la grille, les lignes et les couleurs. Les résultats restent modifiables avant enregistrement.</p>
     <p>Pour les véhicules, le numéro de parc Océlorn est automatiquement rapproché de l’immatriculation enregistrée dans la base Notion « Mon parc ».</p>
   </section>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="./planning-import.js"></script>
 </body>
 </html>
