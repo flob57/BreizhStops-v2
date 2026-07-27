@@ -55,12 +55,18 @@ export async function onRequestPost(context) {
       JSON.stringify(body)
     ).run();
 
-    await db.prepare(`
-      DELETE FROM planning_items
-      WHERE planning_type = ? AND planning_date = ?
-    `).bind(type, date).run();
+    const affectedDates = [...new Set(items.map(item =>
+      type === "workshop" ? String(item.planning_date || date) : date
+    ))];
+    for (const affectedDate of affectedDates) {
+      await db.prepare(`
+        DELETE FROM planning_items
+        WHERE planning_type = ? AND planning_date = ?
+      `).bind(type, affectedDate).run();
+    }
 
     for (const item of items) {
+      const itemDate = type === "workshop" ? String(item.planning_date || date) : date;
       await db.prepare(`
         INSERT INTO planning_items (
           id, import_id, planning_type, planning_date,
@@ -69,7 +75,7 @@ export async function onRequestPost(context) {
           location, details, confidence, source_payload
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        uuid(), importId, type, date,
+        uuid(), importId, type, itemDate,
         String(item.entity_name || ""),
         String(item.registration || ""),
         String(item.ocelorn_number || ""),
