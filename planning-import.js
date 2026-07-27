@@ -14,12 +14,87 @@ function parisDate() {
 }
 $("planningDate").value = parisDate();
 
+const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
+const MAX_OCR_DIMENSION = 3200;
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("La capture n’a pas pu être lue."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadHtmlImage(source) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(
+      "Le navigateur n’arrive pas à ouvrir cette image. Essaie de l’enregistrer en JPEG ou PNG."
+    ));
+    image.src = source;
+  });
+}
+
+async function prepareImage(file) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Le fichier choisi n’est pas une image.");
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error("La capture dépasse 12 Mo. Réduis sa taille ou enregistre-la en JPEG.");
+  }
+
+  const source = await readFileAsDataUrl(file);
+  const image = await loadHtmlImage(source);
+  const naturalWidth = image.naturalWidth || image.width;
+  const naturalHeight = image.naturalHeight || image.height;
+  if (!naturalWidth || !naturalHeight) {
+    throw new Error("Les dimensions de la capture sont invalides.");
+  }
+
+  const scale = Math.min(1, MAX_OCR_DIMENSION / Math.max(naturalWidth, naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(naturalHeight * scale));
+  const context = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  // Tesseract reçoit un PNG complet et lisible, pas un ImageBitmap.
+  const ocrSource = canvas.toDataURL("image/png");
+  return { canvas, ocrSource, previewSource: source, naturalWidth, naturalHeight };
+}
+
 $("planningImage").addEventListener("change", async () => {
   const file = $("planningImage").files[0];
+  loadedImage = null;
+  analysis = null;
+  $("resultSection").hidden = true;
+  $("saveButton").disabled = true;
   if (!file) return;
-  $("preview").src = URL.createObjectURL(file);
-  $("preview").hidden = false;
-  loadedImage = await createImageBitmap(file);
+
+  message("Préparation de la capture…");
+  $("analyzeButton").disabled = true;
+  try {
+    loadedImage = await prepareImage(file);
+    $("preview").src = loadedImage.previewSource;
+    $("preview").hidden = false;
+    const reduced = loadedImage.canvas.width !== loadedImage.naturalWidth ||
+      loadedImage.canvas.height !== loadedImage.naturalHeight;
+    message(
+      `Capture prête (${loadedImage.canvas.width} × ${loadedImage.canvas.height}px)` +
+      (reduced ? " · redimensionnée pour fiabiliser l’OCR." : ".")
+    );
+  } catch (exception) {
+    $("preview").hidden = true;
+    message(exception.message, true);
+  } finally {
+    $("analyzeButton").disabled = false;
+  }
 });
 
 function message(text, error = false) {
@@ -564,7 +639,7 @@ function extractWords(data) {
   return wordsFromTsv(data?.tsv);
 }
 
-async function runOcr(image) {
+async function runOcr(ocrSource) {
   if (!window.Tesseract?.createWorker) {
     throw new Error(
       "Le moteur OCR n’a pas pu être chargé. Vérifie la connexion Internet, " +
@@ -608,7 +683,7 @@ async function runOcr(image) {
     });
 
     const result = await withTimeout(
-      worker.recognize(image, {}, { blocks: true, text: true, tsv: true }),
+      worker.recognize(ocrSource, {}, { blocks: true, text: true, tsv: true }),
       120000,
       "La lecture de la capture a dépassé deux minutes. " +
       "Essaie avec une capture JPEG ou PNG moins lourde."
@@ -693,12 +768,12 @@ $("analyzeButton").addEventListener("click", async () => {
   analysis = null;
   message("Préparation de l’image…");
   try {
-    const { text, words } = await runOcr(loadedImage);
+    const { text, words } = await runOcr(loadedImage.ocrSource);
     const type = $("planningType").value;
     message("Analyse de la grille et des couleurs…");
     analysis = type === "workshop"
       ? parseWorkshop(words, text)
-      : await analyzeGrid(type, ocrImage, words, text);
+      : await analyzeGrid(type, loadedImage.canvas, words, text);
 
     if (analysis.date) $("planningDate").value = analysis.date;
     render();
