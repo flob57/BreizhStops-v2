@@ -377,19 +377,104 @@ function parseWorkshop(words, fullText) {
   }
   return { planning_type:"workshop", date:dateDefault, items };
 }
-async function runOcr(image) {
-  if (!window.Tesseract) throw new Error("Le module de lecture de texte n’a pas pu être chargé.");
-  const result = await Tesseract.recognize(image, "fra+eng", {
-    logger: progress => {
-      if (progress.status === "recognizing text") {
-        message(`Lecture du texte… ${Math.round((progress.progress || 0) * 100)} %`);
+function withTimeout(promise, milliseconds, messageText) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error(messageText)),
+      milliseconds
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+}
+
+function extractWords(data) {
+  if (Array.isArray(data?.words) && data.words.length) return data.words;
+
+  const words = [];
+  for (const block of data?.blocks || []) {
+    for (const paragraph of block.paragraphs || []) {
+      for (const line of paragraph.lines || []) {
+        for (const word of line.words || []) {
+          words.push(word);
+        }
       }
     }
-  });
-  return {
-    text: result.data.text || "",
-    words: result.data.words || []
-  };
+  }
+  return words;
+}
+
+async function runOcr(image) {
+  if (!window.Tesseract?.createWorker) {
+    throw new Error(
+      "Le moteur OCR n’a pas pu être chargé. Vérifie la connexion Internet, " +
+      "désactive temporairement un bloqueur de scripts, puis recharge la page."
+    );
+  }
+
+  let worker = null;
+  try {
+    message("Chargement du moteur OCR…");
+
+    worker = await withTimeout(
+      Tesseract.createWorker("eng", 1, {
+        workerPath:
+          "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
+        corePath:
+          "https://cdn.jsdelivr.net/npm/tesseract.js-core@5",
+        langPath:
+          "https://tessdata.projectnaptha.com/4.0.0",
+        logger: progress => {
+          const percent = Math.round((progress.progress || 0) * 100);
+          const labels = {
+            "loading tesseract core": "Chargement du cœur OCR",
+            "initializing tesseract": "Initialisation OCR",
+            "loading language traineddata": "Chargement de la langue",
+            "initializing api": "Préparation de la lecture",
+            "recognizing text": "Lecture du texte"
+          };
+          const label = labels[progress.status] || progress.status || "OCR";
+          message(`${label}… ${percent} %`);
+        }
+      }),
+      120000,
+      "Le chargement du moteur OCR a dépassé deux minutes. " +
+      "Recharge la page et réessaie avec une connexion stable."
+    );
+
+    await worker.setParameters({
+      preserve_interword_spaces: "1",
+      user_defined_dpi: "150"
+    });
+
+    const result = await withTimeout(
+      worker.recognize(image, {}, { blocks: true, text: true }),
+      120000,
+      "La lecture de la capture a dépassé deux minutes. " +
+      "Essaie avec une capture JPEG ou PNG moins lourde."
+    );
+
+    const words = extractWords(result.data);
+    if (!result.data?.text && !words.length) {
+      throw new Error(
+        "Aucun texte n’a été détecté. Utilise une capture originale, " +
+        "non recadrée et suffisamment nette."
+      );
+    }
+
+    return {
+      text: result.data?.text || "",
+      words
+    };
+  } finally {
+    if (worker) {
+      try {
+        await worker.terminate();
+      } catch {
+        // La terminaison du worker ne doit pas masquer le résultat.
+      }
+    }
+  }
 }
 function activityOptions(current) {
   const options = [
@@ -427,6 +512,8 @@ $("analyzeButton").addEventListener("click", async () => {
   if (!file || !loadedImage) return message("Choisis d’abord une capture.", true);
 
   $("analyzeButton").disabled = true;
+  $("resultSection").hidden = true;
+  analysis = null;
   message("Préparation de l’image…");
   try {
     const { text, words } = await runOcr(loadedImage);

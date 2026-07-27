@@ -16,3 +16,20 @@ button{border:0;border-radius:11px;padding:13px 18px;background:var(--green);col
 .actions{display:flex;gap:9px;margin-top:16px}.secondary{background:#202b23;color:#fff;border:1px solid #435146}
 .help-card{display:grid;gap:8px}.help-card p{color:var(--muted);line-height:1.55}
 @media(max-width:850px){.upload-card{grid-template-columns:1fr}.result-row{grid-template-columns:1fr 1fr}.result-row .wide{grid-column:1/-1}}
+
+#message:not(:empty){
+  padding:12px 14px;
+  border:1px solid #405247;
+  border-radius:10px;
+  background:#101812;
+  line-height:1.45;
+}
+#message.error{
+  border-color:#8b3441;
+  background:#241116;
+}
+#analyzeButton:disabled,
+#saveButton:disabled{
+  opacity:.65;
+  cursor:wait;
+}

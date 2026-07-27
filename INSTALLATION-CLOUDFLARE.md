@@ -212,7 +212,7 @@ Notion utilisées par l'interface :
 Après le déploiement, testez ces deux adresses depuis une fenêtre privée. Elles
 ne doivent pas afficher la page de connexion Cloudflare.
 
-## Route publique supplémentaire en V10.1
+## Route publique supplémentaire en V10.2
 
 La synchronisation du stationnement appelle maintenant :
 
@@ -232,7 +232,7 @@ Après déploiement, le bouton Stationnement ne doit plus produire de
 redirection HTTP 302 vers `cloudflareaccess.com`.
 
 
-## V10.1 — chemins publics utilisés par l'application
+## V10.2 — chemins publics utilisés par l'application
 
 La règle Access doit cibler uniquement :
 
