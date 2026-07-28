@@ -2208,3 +2208,55 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
   #routesLibraryDialog .modal-card,
   #kmlLibraryDialog .modal-card { padding-bottom:calc(18px + env(safe-area-inset-bottom)); }
 }
+
+/* ========================================================================== */
+/* V12.0 — Centre d'exploitation                                              */
+/* ========================================================================== */
+.operations-button { border-color: #f7b32b !important; }
+.operations-dialog { width: min(1180px, calc(100vw - 24px)); }
+.operations-card { width: 100%; max-width: none; max-height: min(90vh, 900px); overflow: auto; }
+.operations-kpis { display: grid; grid-template-columns: repeat(6, minmax(120px, 1fr)); gap: 10px; margin: 14px 0; }
+.operations-kpis article { background: linear-gradient(145deg, #0b2818, #113c24); color: #fff; border: 1px solid #2f7047; border-radius: 14px; padding: 14px; min-height: 92px; display: flex; flex-direction: column; justify-content: center; }
+.operations-kpis strong { color: #78f125; font-size: clamp(1.6rem, 3vw, 2.5rem); line-height: 1; }
+.operations-kpis span { margin-top: 8px; font-size: .88rem; color: #d8eadf; }
+.operations-map-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 14px; margin-bottom: 14px; background: #eef8f1; border: 1px solid #bddcc7; border-radius: 14px; }
+.operations-map-controls h3 { margin: 0 8px 0 0; }
+.operations-map-controls label { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; }
+.operations-map-controls input { width: 20px; height: 20px; }
+.operations-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.operations-section { min-width: 0; border: 1px solid #d3e2d8; border-radius: 14px; background: #f9fcfa; overflow: hidden; }
+.operations-section-title { padding: 12px 14px; background: #e8f4ec; border-bottom: 1px solid #d3e2d8; }
+.operations-section-title h3 { margin: 0; font-size: 1rem; }
+.operations-list { max-height: 340px; overflow: auto; padding: 8px; }
+.ops-list-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px; border-radius: 10px; background: #fff; border: 1px solid #d9e6dd; margin-bottom: 7px; }
+.ops-list-item > div:first-child { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ops-list-item strong { overflow-wrap: anywhere; }
+.ops-list-item small { color: #5c6b62; }
+.ops-badge { flex: 0 0 auto; padding: 5px 8px; border-radius: 999px; font-weight: 800; font-size: .72rem; }
+.ops-badge-workshop { color: #5f3b00; background: #ffe7a8; }
+.ops-badge-immobilized { color: #fff; background: #7b2cbf; }
+.ops-badge-alert { color: #fff; background: #d62828; }
+.ops-badge-soon { color: #5f3b00; background: #ffd166; }
+.ops-item-actions { display: flex; align-items: center; gap: 6px; }
+.ops-focus-city { padding: 6px 9px; border-radius: 8px; }
+.ops-empty { margin: 12px; color: #68756d; font-style: italic; }
+.operations-footer { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #d6e1d9; }
+.operations-footer span { margin-right: auto; color: #647168; }
+
+@media (max-width: 900px) {
+  .operations-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .operations-columns { grid-template-columns: 1fr; }
+  .operations-list { max-height: 260px; }
+}
+
+@media (max-width: 600px) {
+  .operations-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
+  .operations-card { width: 100%; height: 100%; max-height: none; border-radius: 0; padding: calc(14px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)); }
+  .operations-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .operations-kpis article { min-height: 82px; padding: 11px; }
+  .operations-map-controls { align-items: stretch; }
+  .operations-map-controls h3 { flex: 0 0 100%; }
+  .operations-map-controls label { flex: 0 0 100%; }
+  .operations-map-controls button { flex: 1 1 45%; min-height: 44px; }
+  .operations-footer { position: sticky; bottom: 0; background: #fff; padding-bottom: env(safe-area-inset-bottom); }
+}

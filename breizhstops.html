@@ -4,23 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#005493">
-  <title>BreizhStops V11.6</title>
+  <title>BreizhStops V12.0</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-  <link rel="stylesheet" href="./style.css?v=11.6">
+  <link rel="stylesheet" href="./style.css?v=12.0">
 </head>
 
 <body class="breizhstops-page">
   <header class="app-header">
     <div>
-      <h1 class="brand-title"><img src="./assets/london-bus-side.png" class="brand-bus-icon" alt=""> BreizhStops <span class="app-version">V11.6</span></h1>
+      <h1 class="brand-title"><img src="./assets/london-bus-side.png" class="brand-bus-icon" alt=""> BreizhStops <span class="app-version">V12.0</span></h1>
       <div class="subtitle">Arrêts, lignes et itinéraires</div>
     </div>
 
     <div class="header-actions">
       <a href="./index.html" class="header-button home-button">🏠 Accueil</a>
+      <button id="openOperations" class="header-button operations-button">🎛️ Exploitation</button>
       <button id="openRoutesLibrary" class="header-button">📚 Mes itinéraires</button>
       <button id="openKmlLibrary" class="header-button">🗺️ Itinéraires My Maps</button>
       <button id="openLinesExplorer" class="header-button">🚌 Lignes</button>
@@ -717,12 +718,63 @@
     </main>
   </section>
 
+  <dialog id="operationsDialog" class="modal operations-dialog">
+    <form method="dialog" class="modal-card operations-card">
+      <div class="modal-header">
+        <div>
+          <h2>🎛️ Centre d’exploitation</h2>
+          <div class="meta">Vue synthétique de la journée et pilotage rapide de la carte.</div>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="operations-kpis">
+        <article><strong id="opsStopsCount">0</strong><span>arrêts chargés</span></article>
+        <article><strong id="opsRoutesCount">0</strong><span>lignes affichées</span></article>
+        <article><strong id="opsWorkshopCount">0</strong><span>RDV atelier aujourd’hui</span></article>
+        <article><strong id="opsImmobilizedCount">0</strong><span>véhicules immobilisés</span></article>
+        <article><strong id="opsRoadworksCount">0</strong><span>travaux en cours</span></article>
+        <article><strong id="opsUpcomingCount">0</strong><span>travaux à venir</span></article>
+      </div>
+
+      <section class="operations-map-controls">
+        <h3>Affichage de la carte</h3>
+        <label><input id="opsShowAllStops" type="checkbox" checked> Tous les arrêts</label>
+        <label><input id="opsShowRoutes" type="checkbox" checked> Itinéraires My Maps sélectionnés</label>
+        <button type="button" id="opsOpenHome" class="secondary">🏠 Tableau de bord</button>
+        <button type="button" id="opsOpenWorkshop" class="secondary">🔧 Rendez-vous atelier</button>
+      </section>
+
+      <div class="operations-columns">
+        <section class="operations-section">
+          <div class="operations-section-title"><h3>🔧 Atelier — 7 prochains jours</h3></div>
+          <div id="opsWorkshopList" class="operations-list"></div>
+        </section>
+        <section class="operations-section">
+          <div class="operations-section-title"><h3>🚧 Travaux et déviations</h3></div>
+          <div id="opsRoadworksList" class="operations-list"></div>
+        </section>
+        <section class="operations-section">
+          <div class="operations-section-title"><h3>🛠️ Véhicules immobilisés</h3></div>
+          <div id="opsImmobilizedList" class="operations-list"></div>
+        </section>
+      </div>
+
+      <div class="operations-footer">
+        <span id="opsLastRefresh">Pas encore actualisé</span>
+        <button type="button" id="refreshOperations">🔄 Actualiser</button>
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./app.js?v=11.2.2"></script>
-  <script src="./network-map.js?v=11.6"></script>
-  <script src="./map-panels.js?v=11.6"></script>
+  <script src="./network-map.js?v=12.0"></script>
+  <script src="./map-panels.js?v=12.0"></script>
+  <script src="./exploitation-control.js?v=12.0"></script>
   <script src="./v4.js"></script>
   <script src="./sae.js"></script>
 </body>
