@@ -99,6 +99,9 @@ function getDepartureMode() {
 
 function initMap() {
   map = L.map("map").setView([48.2, -3.2], 8);
+  // Expose explicitement l’instance Leaflet aux modules complémentaires.
+  // Ne pas utiliser window.map : un élément HTML id="map" peut occuper ce nom.
+  window.breizhStopsMap = map;
 
   L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",

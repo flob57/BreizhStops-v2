@@ -72,12 +72,25 @@
     return file.text();
   }
 
-  function getMainMap() {
-    // app.js déclare `let map` dans un script classique : la variable est globale,
-    // mais elle n'est pas forcément exposée dans window.map.
-    try { return typeof map !== "undefined" ? map : window.map; }
-    catch { return window.map; }
+  function isLeafletMap(value) {
+    return Boolean(
+      value &&
+      typeof value.addLayer === "function" &&
+      typeof value.removeLayer === "function" &&
+      typeof value.fitBounds === "function"
+    );
   }
+
+  function getMainMap() {
+    // Utilise uniquement la référence explicite publiée par app.js.
+    // window.map peut désigner automatiquement le <div id="map"> dans le navigateur.
+    if (isLeafletMap(window.breizhStopsMap)) return window.breizhStopsMap;
+    try {
+      if (typeof map !== "undefined" && isLeafletMap(map)) return map;
+    } catch {}
+    return null;
+  }
+
   function ensureLayer(){
     const mainMap = getMainMap();
     if(!mainMap || !window.L) return false;
