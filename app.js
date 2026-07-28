@@ -108,7 +108,16 @@ function initMap() {
     }
   ).addTo(map);
 
-  markersLayer = L.layerGroup().addTo(map);
+  markersLayer = L.markerClusterGroup({
+    chunkedLoading: true,
+    chunkInterval: 100,
+    chunkDelay: 25,
+    removeOutsideVisibleBounds: true,
+    showCoverageOnHover: false,
+    spiderfyOnMaxZoom: true,
+    disableClusteringAtZoom: 16,
+    maxClusterRadius: 55
+  }).addTo(map);
   routeLayer = L.layerGroup().addTo(map);
   waypointLayer = L.layerGroup().addTo(map);
 
@@ -278,22 +287,14 @@ function refreshSearch() {
   const words = query.split(/\s+/).filter(Boolean);
 
   const matches = stops.filter(stop => {
-    if (selectedNetwork && stop.reseau !== selectedNetwork) {
-      return false;
-    }
+    if (selectedNetwork && stop.reseau !== selectedNetwork) return false;
+    if (selectedCity && stop.commune !== selectedCity) return false;
 
-    if (selectedCity && stop.commune !== selectedCity) {
-      return false;
-    }
-
-    if (!words.length) {
-      return Boolean(selectedNetwork || selectedCity);
-    }
+    if (!words.length) return true;
 
     const haystack = normalize(
       `${stop.nom || ""} ${stop.commune || ""} ${stop.reseau || ""}`
     );
-
     return words.every(word => haystack.includes(word));
   });
 
@@ -301,7 +302,8 @@ function refreshSearch() {
   displayResults(currentResults, matches.length);
 
   if (!routeDisplayMode) {
-    displayMarkers(currentResults);
+    // La liste reste limitée à 100 résultats, mais la carte affiche tous les arrêts correspondants.
+    displayMarkers(matches, Boolean(query || selectedNetwork || selectedCity));
   }
 }
 
@@ -362,7 +364,7 @@ function displayResults(results, total) {
   `).join("");
 }
 
-function displayMarkers(results) {
+function displayMarkers(results, fitToResults = false) {
   markersLayer.clearLayers();
   markerById.clear();
 
@@ -401,13 +403,10 @@ function displayMarkers(results) {
     bounds.push([lat, lon]);
   });
 
-  if (bounds.length === 1) {
+  if (fitToResults && bounds.length === 1) {
     map.setView(bounds[0], 16);
-  } else if (bounds.length > 1) {
-    map.fitBounds(bounds, {
-      padding: [40, 40],
-      maxZoom: 15
-    });
+  } else if (fitToResults && bounds.length > 1) {
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
   }
 }
 
@@ -450,7 +449,7 @@ function displayRouteMarkers(points) {
 function restoreAllStopMarkers() {
   routeDisplayMode = false;
   $("showAllStops").classList.add("hidden");
-  displayMarkers(currentResults);
+  refreshSearch();
 }
 
 function zoomToStop(index) {

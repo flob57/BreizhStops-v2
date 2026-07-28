@@ -1935,3 +1935,25 @@ button:disabled {
   background: #222923;
   color: #ffffff;
 }
+
+/* V11.1 — Carte complète, clusters et bibliothèque KML */
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgba(98, 230, 29, .28); }
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+  background: #75e923; color: #071008; font-weight: 900; box-shadow: 0 3px 12px rgba(0,0,0,.28);
+}
+.kml-library-card { max-width: 980px; }
+.kml-drop-zone { border: 2px dashed #65a777; border-radius: 18px; min-height: 150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; cursor:pointer; margin: 12px 0 16px; background: rgba(117,233,35,.035); text-align:center; }
+.kml-drop-zone strong { font-size: 1.15rem; }
+.kml-drop-zone span { color: #a9bcae; }
+.kml-drop-zone.dragging { border-color:#75e923; background:rgba(117,233,35,.13); transform:scale(1.005); }
+.kml-toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+.kml-toolbar label { margin-right:auto; display:flex; gap:8px; align-items:center; }
+.kml-routes-list { display:grid; gap:8px; max-height:52vh; overflow:auto; padding-right:4px; }
+.kml-route-row { display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid #31503a; padding:10px 12px; border-radius:12px; background:#0d1a11; }
+.kml-route-main { display:flex; align-items:center; gap:10px; min-width:0; }
+.kml-route-main > span:last-child { display:flex; flex-direction:column; min-width:0; }
+.kml-route-main strong, .kml-route-main small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kml-route-main small { color:#95aa9b; margin-top:3px; }
+.kml-route-swatch { width:18px; height:18px; border-radius:50%; flex:0 0 auto; box-shadow:0 0 0 2px rgba(255,255,255,.15); }
+.kml-route-actions { display:flex; gap:7px; }
+@media(max-width:700px){ .kml-route-row{align-items:flex-start;flex-direction:column}.kml-route-actions{width:100%}.kml-route-actions button{flex:1} }
