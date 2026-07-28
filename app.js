@@ -1276,6 +1276,9 @@ async function confirmSaveRoute() {
 }
 
 async function openRoutesLibrary() {
+  if (typeof window.openUnifiedRoutesLibrary === "function") {
+    return window.openUnifiedRoutesLibrary();
+  }
   $("routesLibraryDialog").showModal();
   $("routesLibrary").innerHTML = "<p>Chargement…</p>";
 
@@ -2002,6 +2005,17 @@ $("importSourceType").addEventListener("change", event => {
 
 
 handleDepartureModeChange();
+
+// V11.3 — API légère pour les modules cartographiques complémentaires.
+window.BreizhStopsMapApi = {
+  getStops: () => stops,
+  showStops: (subset, fit = false) => {
+    routeDisplayMode = false;
+    displayMarkers(Array.isArray(subset) ? subset : [], fit);
+  },
+  showAllStops: () => restoreAllStopMarkers(),
+  getMap: () => map
+};
 
 loadStops().then(() => {
   loadSharedRouteFromUrl();
