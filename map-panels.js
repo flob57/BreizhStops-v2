@@ -9,10 +9,14 @@
     lines: document.getElementById('toggleLinesPanel')
   };
 
-  const storageKey = 'breizhstops-map-panels-v11.4';
-  let state = { search: true, route: true, lines: true };
+  const storageKey = 'breizhstops-map-panels-v11.6';
+  const isMobile = window.matchMedia('(max-width: 700px)').matches;
+  let state = isMobile
+    ? { search: false, route: false, lines: false }
+    : { search: true, route: true, lines: true };
   try {
-    state = { ...state, ...JSON.parse(localStorage.getItem(storageKey) || '{}') };
+    const saved = localStorage.getItem(storageKey);
+    if (saved) state = { ...state, ...JSON.parse(saved) };
   } catch (_) {}
 
   const invalidateMap = () => {
