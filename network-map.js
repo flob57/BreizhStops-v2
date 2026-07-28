@@ -363,6 +363,45 @@
     $n("routesLibrary")?.addEventListener("click",e=>handleRouteListClick(e,$n("routesLibraryDialog")));$n("routesLibrary")?.addEventListener("change",handleRouteVisibility);
   }
 
+  window.BreizhStopsRoutesApi = {
+    getRoutes: () => routeRecords.map(route => ({ ...route, segments: route.segments || [] })),
+    getVisibleRoutes: () => visibleRoutes().map(route => ({ ...route, segments: route.segments || [] })),
+    getStopsNearRoute: routeId => {
+      const route = routeRecords.find(item => item.id === routeId);
+      if (!route) return [];
+      const previous = routeRecords.map(item => item.visible);
+      routeRecords.forEach(item => { item.visible = item.id === routeId; });
+      const result = stopsNearVisibleRoutes();
+      routeRecords.forEach((item, index) => { item.visible = previous[index]; });
+      return result;
+    },
+    showOnlyRoute: async routeId => {
+      for (const route of routeRecords) {
+        route.visible = route.id === routeId;
+        await putRoute(route);
+      }
+      renderList(); renderUnifiedList(); drawRoutes(); applyStopMode();
+      const selected = routeRecords.find(item => item.id === routeId);
+      const bounds = selected ? routeBounds(selected) : null;
+      const mainMap = getMainMap();
+      if (bounds && mainMap) mainMap.fitBounds(bounds, { padding: [35, 35] });
+      document.dispatchEvent(new CustomEvent("breizhstops:routes-updated"));
+    },
+    showRouteStops: routeId => {
+      const api = window.BreizhStopsMapApi;
+      if (!api) return;
+      const stops = window.BreizhStopsRoutesApi.getStopsNearRoute(routeId);
+      api.showStops(stops, true);
+    },
+    showAllStops: () => window.BreizhStopsMapApi?.showAllStops(),
+    fitRoute: routeId => {
+      const route = routeRecords.find(item => item.id === routeId);
+      const bounds = route ? routeBounds(route) : null;
+      const mainMap = getMainMap();
+      if (bounds && mainMap) mainMap.fitBounds(bounds, { padding: [35, 35] });
+    }
+  };
+
   const start=()=>init().catch(error=>{console.error("Initialisation My Maps impossible",error);const status=$n("kmlImportStatus");if(status)status.textContent=`Initialisation impossible : ${error.message}`;});
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
   const layerTimer=setInterval(()=>{if(ensureLayer()){clearInterval(layerTimer);drawRoutes();}},100);setTimeout(()=>clearInterval(layerTimer),15000);

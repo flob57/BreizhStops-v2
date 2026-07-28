@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#005493">
-  <title>BreizhStops V12.0</title>
+  <title>BreizhStops V12.1</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-  <link rel="stylesheet" href="./style.css?v=12.0">
+  <link rel="stylesheet" href="./style.css?v=12.1">
 </head>
 
 <body class="breizhstops-page">
   <header class="app-header">
     <div>
-      <h1 class="brand-title"><img src="./assets/london-bus-side.png" class="brand-bus-icon" alt=""> BreizhStops <span class="app-version">V12.0</span></h1>
+      <h1 class="brand-title"><img src="./assets/london-bus-side.png" class="brand-bus-icon" alt=""> BreizhStops <span class="app-version">V12.1</span></h1>
       <div class="subtitle">Arrêts, lignes et itinéraires</div>
     </div>
 
     <div class="header-actions">
       <a href="./index.html" class="header-button home-button">🏠 Accueil</a>
       <button id="openOperations" class="header-button operations-button">🎛️ Exploitation</button>
+      <button id="openLineOperations" class="header-button line-operations-button">🚍 Mode ligne</button>
       <button id="openRoutesLibrary" class="header-button">📚 Mes itinéraires</button>
       <button id="openKmlLibrary" class="header-button">🗺️ Itinéraires My Maps</button>
       <button id="openLinesExplorer" class="header-button">🚌 Lignes</button>
@@ -718,6 +719,67 @@
     </main>
   </section>
 
+
+  <dialog id="lineOperationsDialog" class="modal line-operations-dialog">
+    <form method="dialog" class="modal-card line-operations-card">
+      <div class="modal-header">
+        <div>
+          <h2>🚍 Mode Exploitant par ligne</h2>
+          <div class="meta">Choisis une ligne My Maps pour afficher son tracé, ses arrêts et les informations utiles.</div>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <section class="line-operations-picker">
+        <label>Réseau
+          <select id="lineOpsNetwork"><option value="">Tous les réseaux</option></select>
+        </label>
+        <label>Ligne / direction
+          <select id="lineOpsRoute"><option value="">Choisir une ligne…</option></select>
+        </label>
+        <button type="button" id="lineOpsRefresh" class="secondary">🔄 Actualiser</button>
+      </section>
+
+      <div id="lineOpsEmpty" class="information-box">Sélectionne une ligne pour ouvrir sa fiche d’exploitation.</div>
+
+      <section id="lineOpsContent" class="line-operations-content hidden">
+        <div class="line-operations-hero">
+          <span id="lineOpsColor" class="line-operations-color"></span>
+          <div><h3 id="lineOpsTitle">Ligne</h3><p id="lineOpsMeta"></p></div>
+        </div>
+
+        <div class="line-operations-kpis">
+          <article><strong id="lineOpsStopsCount">0</strong><span>arrêts proches du tracé</span></article>
+          <article><strong id="lineOpsDistance">0 km</strong><span>longueur du tracé</span></article>
+          <article><strong id="lineOpsSegments">0</strong><span>segment(s)</span></article>
+          <article><strong id="lineOpsWorksCount">0</strong><span>travaux sur les communes</span></article>
+        </div>
+
+        <div class="line-operations-actions">
+          <button type="button" id="lineOpsShowOnly">🎯 Afficher uniquement cette ligne</button>
+          <button type="button" id="lineOpsShowStops">📍 Arrêts de la ligne</button>
+          <button type="button" id="lineOpsShowAllStops" class="secondary">🌍 Tous les arrêts</button>
+          <button type="button" id="lineOpsOpenMyMaps" class="secondary">🗺️ Ouvrir My Maps</button>
+        </div>
+
+        <div class="line-operations-columns">
+          <section>
+            <div class="line-operations-section-title"><h3>📍 Arrêts de la ligne</h3><small id="lineOpsStopsHint"></small></div>
+            <div id="lineOpsStopsList" class="line-operations-list"></div>
+          </section>
+          <section>
+            <div class="line-operations-section-title"><h3>🚧 Travaux et déviations</h3></div>
+            <div id="lineOpsWorksList" class="line-operations-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <div class="modal-actions line-operations-footer">
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="operationsDialog" class="modal operations-dialog">
     <form method="dialog" class="modal-card operations-card">
       <div class="modal-header">
@@ -772,9 +834,10 @@
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./app.js?v=11.2.2"></script>
-  <script src="./network-map.js?v=12.0"></script>
-  <script src="./map-panels.js?v=12.0"></script>
-  <script src="./exploitation-control.js?v=12.0"></script>
+  <script src="./network-map.js?v=12.1"></script>
+  <script src="./map-panels.js?v=12.1"></script>
+  <script src="./exploitation-control.js?v=12.1"></script>
+  <script src="./mode-exploitant.js?v=12.1"></script>
   <script src="./v4.js"></script>
   <script src="./sae.js"></script>
 </body>
