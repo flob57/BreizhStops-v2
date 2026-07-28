@@ -72,7 +72,18 @@
     return file.text();
   }
 
-  function ensureLayer(){ if(!window.map||!window.L)return false; if(!routeLayerGroup)routeLayerGroup=L.layerGroup().addTo(map); return true; }
+  function getMainMap() {
+    // app.js déclare `let map` dans un script classique : la variable est globale,
+    // mais elle n'est pas forcément exposée dans window.map.
+    try { return typeof map !== "undefined" ? map : window.map; }
+    catch { return window.map; }
+  }
+  function ensureLayer(){
+    const mainMap = getMainMap();
+    if(!mainMap || !window.L) return false;
+    if(!routeLayerGroup) routeLayerGroup=L.layerGroup().addTo(mainMap);
+    return true;
+  }
   function drawRoutes(){ if(!ensureLayer())return; routeLayerGroup.clearLayers(); if($n("showAllKml")?.checked===false)return; routeRecords.filter(r=>r.visible!==false&&r.segments?.length).forEach(route=>route.segments.forEach(points=>L.polyline(points,{color:route.color,weight:5,opacity:.82}).bindPopup(`<strong>${esc(route.name)}</strong><br><small>${esc(route.sourceName||"Google My Maps")}</small>`).addTo(routeLayerGroup))); }
   function routeBounds(route){const pts=(route.segments||[]).flat(); return pts.length?L.latLngBounds(pts):null;}
   function dateLabel(value){if(!value)return "Jamais"; try{return new Intl.DateTimeFormat("fr-FR",{dateStyle:"short",timeStyle:"short"}).format(new Date(value));}catch{return value;}}
@@ -129,15 +140,37 @@
     routeRecords=await getAllRoutes();renderList();drawRoutes();status.textContent=`Synchronisation terminée : ${ok} itinéraire(s) mis à jour, ${failed} échec(s).`;
   }
 
-  function fitAllVisible(){const pts=[];routeRecords.filter(r=>r.visible!==false).forEach(r=>(r.segments||[]).flat().forEach(p=>pts.push(p)));if(pts.length)map.fitBounds(pts,{padding:[35,35]});}
+  function fitAllVisible(){const pts=[];routeRecords.filter(r=>r.visible!==false).forEach(r=>(r.segments||[]).flat().forEach(p=>pts.push(p)));const mainMap=getMainMap();if(pts.length&&mainMap)mainMap.fitBounds(pts,{padding:[35,35]});}
   async function init(){
-    const dialog=$n("kmlLibraryDialog");if(!dialog)return;routeRecords=await getAllRoutes();ensureLayer();renderList();drawRoutes();
-    $n("openKmlLibrary")?.addEventListener("click",()=>{renderList();dialog.showModal();});
+    const dialog=$n("kmlLibraryDialog");if(!dialog)return;
+    routeRecords=await getAllRoutes();
+    // Le bouton doit fonctionner même si Leaflet finit de s'initialiser après ce module.
+    $n("openKmlLibrary")?.addEventListener("click",()=>{
+      renderList();
+      if (typeof dialog.showModal === "function") dialog.showModal();
+      else dialog.setAttribute("open", "");
+    });
+    ensureLayer();renderList();drawRoutes();
     const input=$n("kmlFiles"),zone=$n("kmlDropZone");zone.addEventListener("click",()=>input.click());zone.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")input.click();});["dragenter","dragover"].forEach(t=>zone.addEventListener(t,e=>{e.preventDefault();zone.classList.add("dragging");}));["dragleave","drop"].forEach(t=>zone.addEventListener(t,e=>{e.preventDefault();zone.classList.remove("dragging");}));zone.addEventListener("drop",e=>importFiles(e.dataTransfer.files));input.addEventListener("change",()=>{importFiles(input.files);input.value="";});
     $n("showAllKml")?.addEventListener("change",drawRoutes);$n("syncAllKml")?.addEventListener("click",()=>syncAll().catch(e=>$n("kmlImportStatus").textContent=e.message));$n("fitKmlRoutes")?.addEventListener("click",fitAllVisible);
     $n("deleteAllKml")?.addEventListener("click",async()=>{if(!confirm("Supprimer tous les itinéraires enregistrés ?"))return;await clearRoutes();routeRecords=[];renderList();drawRoutes();});
-    $n("kmlRoutesList")?.addEventListener("click",async e=>{const row=e.target.closest(".kml-route-row");if(!row)return;const route=routeRecords.find(r=>r.id===row.dataset.id);if(!route)return;if(e.target.closest(".kml-delete")){await deleteRoute(route.id);routeRecords=routeRecords.filter(r=>r.id!==route.id);renderList();drawRoutes();}else if(e.target.closest(".kml-zoom")){const b=routeBounds(route);if(b)map.fitBounds(b,{padding:[30,30]});dialog.close();}else if(e.target.closest(".kml-sync")){const status=$n("kmlImportStatus");status.textContent=`Synchronisation : ${route.name}`;try{await syncRoute(route);status.textContent=`${route.name} a été mis à jour.`;}catch(error){status.textContent=`Échec : ${error.message}`;}}});
+    $n("kmlRoutesList")?.addEventListener("click",async e=>{const row=e.target.closest(".kml-route-row");if(!row)return;const route=routeRecords.find(r=>r.id===row.dataset.id);if(!route)return;if(e.target.closest(".kml-delete")){await deleteRoute(route.id);routeRecords=routeRecords.filter(r=>r.id!==route.id);renderList();drawRoutes();}else if(e.target.closest(".kml-zoom")){const b=routeBounds(route);const mainMap=getMainMap();if(b&&mainMap)mainMap.fitBounds(b,{padding:[30,30]});dialog.close();}else if(e.target.closest(".kml-sync")){const status=$n("kmlImportStatus");status.textContent=`Synchronisation : ${route.name}`;try{await syncRoute(route);status.textContent=`${route.name} a été mis à jour.`;}catch(error){status.textContent=`Échec : ${error.message}`;}}});
     $n("kmlRoutesList")?.addEventListener("change",async e=>{if(!e.target.classList.contains("kml-route-visible"))return;const row=e.target.closest(".kml-route-row"),route=routeRecords.find(r=>r.id===row.dataset.id);route.visible=e.target.checked;await putRoute(route);drawRoutes();});
   }
-  const timer=setInterval(()=>{if(window.map&&window.L){clearInterval(timer);init().catch(console.error);}},100);
+  // L'interface d'import est initialisée dès que le DOM est prêt. La couche Leaflet
+  // se rattache ensuite à la carte dès que celle-ci existe.
+  const start = () => init().catch(error => {
+    console.error("Initialisation My Maps impossible", error);
+    const status=$n("kmlImportStatus");
+    if(status) status.textContent=`Initialisation impossible : ${error.message}`;
+  });
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, {once:true});
+  else start();
+  const layerTimer=setInterval(()=>{
+    if(ensureLayer()){
+      clearInterval(layerTimer);
+      drawRoutes();
+    }
+  },100);
+  setTimeout(()=>clearInterval(layerTimer),15000);
 })();
