@@ -1961,3 +1961,43 @@ button:disabled {
 /* V11.3 — Bibliothèque unifiée des lignes */
 .unified-routes-toolbar{display:grid;grid-template-columns:1fr 1.25fr 1.4fr auto;gap:12px;align-items:end;margin:8px 0 14px;padding:14px;border:1px solid #31503a;border-radius:14px;background:#0d1a11}.unified-routes-toolbar label{display:grid;gap:5px;font-weight:700}.unified-routes-toolbar select,.unified-routes-toolbar input{width:100%}.routes-selection-summary{margin:8px 0 12px;padding:10px 12px;border-radius:10px;background:#eaf6ff;color:#17364a}.saved-routes-section{margin-top:16px;border-top:1px solid #d7e1da;padding-top:12px}.saved-routes-section summary{cursor:pointer;font-weight:800}.visible-lines-panel{position:absolute;z-index:850;left:12px;bottom:18px;width:min(360px,calc(100% - 24px));border:1px solid #31503a;border-radius:14px;background:rgba(8,20,12,.94);color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.35);overflow:hidden}.visible-lines-title{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;font-weight:900;background:#102a17}.visible-lines-title button{padding:3px 9px}.visible-lines-panel.collapsed #visibleLinesBody{display:none}#visibleLinesBody{padding:10px 12px;display:grid;gap:9px}.visible-line-chips{display:flex;gap:6px;flex-wrap:wrap}.visible-line-chips span{border-left:5px solid var(--route-color);background:#eef7f0;color:#132318;border-radius:8px;padding:5px 8px;font-weight:800;font-size:.84rem}#visibleLinesBody select{width:100%}#hideAllVisibleRoutes{width:100%}
 @media(max-width:900px){.unified-routes-toolbar{grid-template-columns:1fr 1fr}.unified-routes-toolbar button{grid-column:1/-1}}@media(max-width:600px){.unified-routes-toolbar{grid-template-columns:1fr}.visible-lines-panel{bottom:10px}.kml-route-main small{white-space:normal}}
+
+/* V11.4 — panneaux escamotables de la carte */
+.layout { transition: grid-template-columns .22s ease; }
+.search-tools,.results-panel,.route-panel { transition: opacity .18s ease, transform .22s ease; }
+body.search-panel-collapsed .layout { grid-template-columns: 0 minmax(0,1fr) 370px; }
+body.search-panel-collapsed .search-tools,
+body.search-panel-collapsed .results-panel { opacity:0; pointer-events:none; overflow:hidden; padding-left:0; padding-right:0; border:0; }
+body.route-panel-collapsed .layout { grid-template-columns: 380px minmax(0,1fr) 0; }
+body.route-panel-collapsed .route-panel { opacity:0; pointer-events:none; overflow:hidden; padding-left:0; padding-right:0; border:0; }
+body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-columns: 0 minmax(0,1fr) 0; }
+
+.map-panel-tabs { position:fixed; inset:0; pointer-events:none; z-index:920; }
+.map-panel-tab { pointer-events:auto; position:absolute; border:1px solid rgba(255,255,255,.45); background:rgba(8,20,12,.94); color:#fff; box-shadow:0 5px 20px rgba(0,0,0,.28); font-weight:800; padding:9px 12px; margin:0; }
+.map-panel-tab:hover,.map-panel-tab.active { background:#173d24; }
+.map-panel-tab-left { left:0; top:50%; transform:translateY(-50%); border-radius:0 12px 12px 0; writing-mode:vertical-rl; rotate:180deg; }
+.map-panel-tab-right { right:0; top:50%; transform:translateY(-50%); border-radius:12px 0 0 12px; writing-mode:vertical-rl; }
+.map-panel-tab-lines { left:50%; bottom:12px; transform:translateX(-50%); border-radius:12px; }
+.visible-lines-panel.panel-hidden { display:none !important; }
+
+/* Lisibilité de Mes itinéraires */
+#routesLibrary .kml-route-row { background:#f4faf5; border-color:#c9dccd; color:#132318; }
+#routesLibrary .kml-route-main strong { color:#102b18; }
+#routesLibrary .kml-route-main small { color:#52675a; }
+#routesLibrary .kml-route-actions button { background:#132318; color:#fff; }
+#routesLibrary .unified-routes-toolbar { background:#edf6ef; border-color:#c9dccd; color:#132318; }
+#routesLibrary .unified-routes-toolbar label { color:#132318; }
+#routesLibrary .routes-selection-summary { color:#17364a; }
+
+@media (max-width:1000px) {
+  body.search-panel-collapsed .layout,
+  body.route-panel-collapsed .layout,
+  body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-columns:1fr; }
+  body.search-panel-collapsed .search-tools,
+  body.search-panel-collapsed .results-panel,
+  body.route-panel-collapsed .route-panel { display:none; }
+  .map-panel-tab-left,.map-panel-tab-right { writing-mode:horizontal-tb; rotate:0deg; transform:none; top:auto; bottom:12px; }
+  .map-panel-tab-left { left:10px; border-radius:12px; }
+  .map-panel-tab-right { right:10px; border-radius:12px; }
+  .map-panel-tab-lines { bottom:58px; }
+}

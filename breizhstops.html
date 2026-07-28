@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#005493">
-  <title>BreizhStops V11.2</title>
+  <title>BreizhStops V11.4</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
@@ -15,7 +15,7 @@
 <body class="breizhstops-page">
   <header class="app-header">
     <div>
-      <h1 class="brand-title"><img src="./assets/london-bus-side.png" class="brand-bus-icon" alt=""> BreizhStops <span class="app-version">V11.2</span></h1>
+      <h1 class="brand-title"><img src="./assets/london-bus-side.png" class="brand-bus-icon" alt=""> BreizhStops <span class="app-version">V11.4</span></h1>
       <div class="subtitle">Arrêts, lignes et itinéraires</div>
     </div>
 
@@ -32,6 +32,11 @@
   </header>
 
   <main class="layout">
+    <div class="map-panel-tabs" aria-label="Panneaux de la carte">
+      <button type="button" id="toggleSearchPanel" class="map-panel-tab map-panel-tab-left" aria-expanded="true">🔎 Recherche</button>
+      <button type="button" id="toggleRoutePanel" class="map-panel-tab map-panel-tab-right" aria-expanded="true">🧭 Mon itinéraire</button>
+      <button type="button" id="toggleLinesPanel" class="map-panel-tab map-panel-tab-lines" aria-expanded="true">🚌 Lignes affichées</button>
+    </div>
     <section class="search-tools">
       <input
         id="search"
@@ -716,7 +721,8 @@
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./app.js?v=11.2.2"></script>
-  <script src="./network-map.js?v=11.3"></script>
+  <script src="./network-map.js?v=11.4"></script>
+  <script src="./map-panels.js?v=11.4"></script>
   <script src="./v4.js"></script>
   <script src="./sae.js"></script>
 </body>
