@@ -22,7 +22,7 @@
     <div class="header-actions">
       <a href="./index.html" class="header-button home-button">🏠 Accueil</a>
       <button id="openRoutesLibrary" class="header-button">📚 Mes itinéraires</button>
-      <button id="openKmlLibrary" class="header-button">🗺️ Tracés KML</button>
+      <button id="openKmlLibrary" class="header-button">🗺️ Itinéraires My Maps</button>
       <button id="openLinesExplorer" class="header-button">🚌 Lignes</button>
       <button id="openGpsLauncher" class="header-button">🧭 GPS</button>
       <button id="openSae" class="header-button">🚌 SAE</button>
@@ -268,25 +268,26 @@
     <form method="dialog" class="modal-card large kml-library-card">
       <div class="modal-header">
         <div>
-          <h2>Tracés de lignes KML / KMZ</h2>
-          <div class="meta">Importe plusieurs fichiers à la fois. Les tracés restent enregistrés dans ce navigateur.</div>
+          <h2>Itinéraires Google My Maps</h2>
+          <div class="meta">Dépose une seule fois tes fichiers KML de lien réseau. BreizhStops pourra ensuite synchroniser les tracés directement depuis My Maps.</div>
         </div>
         <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
       </div>
 
       <section id="kmlDropZone" class="kml-drop-zone" tabindex="0">
-        <strong>Dépose tes fichiers KML ou KMZ ici</strong>
-        <span>ou clique pour sélectionner plusieurs fichiers</span>
+        <strong>Dépose tous tes KML de lien réseau ici</strong>
+        <span>ou clique pour en sélectionner plusieurs à la fois</span>
         <input id="kmlFiles" type="file" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" multiple hidden>
       </section>
 
       <div class="kml-toolbar">
         <label><input id="showAllKml" type="checkbox" checked> Afficher les tracés</label>
+        <button type="button" id="syncAllKml" class="primary">🔄 Synchroniser tout</button>
         <button type="button" id="fitKmlRoutes" class="secondary">🎯 Cadrer les tracés</button>
         <button type="button" id="deleteAllKml" class="danger">🗑 Tout supprimer</button>
       </div>
 
-      <div id="kmlImportStatus" class="information-box">Aucun import en cours.</div>
+      <div id="kmlImportStatus" class="information-box">Ajoute tes fichiers de lien réseau, puis utilise « Synchroniser tout ».</div>
       <div id="kmlRoutesList" class="kml-routes-list"></div>
     </form>
   </dialog>
@@ -715,7 +716,7 @@
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./app.js?v=11.1"></script>
-  <script src="./network-map.js?v=11.1"></script>
+  <script src="./network-map.js?v=11.2"></script>
   <script src="./v4.js"></script>
   <script src="./sae.js"></script>
 </body>
