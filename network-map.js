@@ -33,9 +33,81 @@
     });
   }
   const getAllRoutes = () => storeAction("readonly", s => s.getAll()).then(x => x || []);
-  const putRoute = route => storeAction("readwrite", s => { s.put(route); });
-  const deleteRoute = id => storeAction("readwrite", s => { s.delete(id); });
-  const clearRoutes = () => storeAction("readwrite", s => { s.clear(); });
+  const putLocalRoute = route => storeAction("readwrite", s => { s.put(route); });
+  const deleteLocalRoute = id => storeAction("readwrite", s => { s.delete(id); });
+  const clearLocalRoutes = () => storeAction("readwrite", s => { s.clear(); });
+
+  async function fetchRemoteRoutes() {
+    const response = await fetch("/api/my-maps/routes", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Stockage partagé indisponible (${response.status})`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  async function saveRemoteRoute(route) {
+    const response = await fetch("/api/my-maps/routes", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(route)
+    });
+    if (!response.ok) {
+      let message = `Enregistrement partagé impossible (${response.status})`;
+      try { message = (await response.json()).error || message; } catch {}
+      throw new Error(message);
+    }
+  }
+
+  async function deleteRemoteRoute(id) {
+    const response = await fetch(`/api/my-maps/routes/${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Suppression partagée impossible (${response.status})`);
+  }
+
+  async function putRoute(route, options = {}) {
+    await putLocalRoute(route);
+    if (options.localOnly) return;
+    try { await saveRemoteRoute(route); }
+    catch (error) { console.warn("Sauvegarde D1 My Maps impossible, copie locale conservée", error); }
+  }
+
+  async function deleteRoute(id) {
+    await deleteLocalRoute(id);
+    try { await deleteRemoteRoute(id); }
+    catch (error) { console.warn("Suppression D1 My Maps impossible", error); }
+  }
+
+  async function clearRoutes() {
+    const ids = routeRecords.map(route => route.id);
+    await clearLocalRoutes();
+    await Promise.allSettled(ids.map(deleteRemoteRoute));
+  }
+
+  async function loadSharedRoutes() {
+    const local = (await getAllRoutes()).map(enrichRoute);
+    try {
+      const remote = (await fetchRemoteRoutes()).map(enrichRoute);
+      const remoteById = new Map(remote.map(route => [route.id, route]));
+      const localById = new Map(local.map(route => [route.id, route]));
+
+      // Migration automatique : les anciens itinéraires du PC sont envoyés une seule fois dans D1.
+      for (const route of local) {
+        if (!remoteById.has(route.id)) {
+          try { await saveRemoteRoute(route); remoteById.set(route.id, route); }
+          catch (error) { console.warn("Migration d'un itinéraire local impossible", route.name, error); }
+        }
+      }
+
+      const merged = [...remoteById.values()].map(route => ({
+        ...route,
+        // Le choix affiché/masqué reste propre à chaque appareil.
+        visible: localById.has(route.id) ? localById.get(route.id).visible !== false : route.visible !== false
+      }));
+      await Promise.all(merged.map(route => putLocalRoute(route)));
+      return merged;
+    } catch (error) {
+      console.warn("Chargement partagé impossible, utilisation du cache local", error);
+      return local;
+    }
+  }
 
   function hashText(text) { let h = 2166136261; for (let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);} return (h>>>0).toString(16); }
   function colorFromName(name) { const p=["#0066cc","#d62828","#2a9d8f","#8a2be2","#f77f00","#008000","#c2185b","#455a64"]; let n=0; for(const c of name)n=(n*31+c.charCodeAt(0))>>>0; return p[n%p.length]; }
@@ -155,7 +227,7 @@
     if(!routes.length){list.innerHTML='<p class="empty">Aucun itinéraire My Maps correspondant.</p>';return;}
     list.innerHTML=routes.map(route=>`
       <article class="kml-route-row" data-id="${esc(route.id)}">
-        <label class="kml-route-main"><input class="kml-route-visible" type="checkbox" ${route.visible!==false?"checked":""}><span class="kml-route-swatch" style="background:${esc(route.color)}"></span><span><strong>${esc(route.network)} · ${esc(route.line || route.name)}</strong><small>${esc(route.direction || route.name)} · synchro ${esc(dateLabel(route.syncedAt))}</small></span></label>
+        <label class="kml-route-main"><input class="kml-route-visible" type="checkbox" ${route.visible!==false?"checked":""}><span class="kml-route-swatch" style="background:${esc(route.color)}"></span><span class="kml-route-text"><strong title="${esc(route.name)}">${esc(route.name)}</strong><small>${esc(route.network)}${route.line ? ` · ligne ${esc(route.line)}` : ""}${route.direction ? ` · ${esc(route.direction)}` : ""} · synchro ${esc(dateLabel(route.syncedAt))}</small></span></label>
         <div class="kml-route-actions"><button type="button" class="secondary kml-zoom">Voir</button>${route.networkUrl?'<button type="button" class="secondary kml-sync">Synchroniser</button>':''}</div>
       </article>`).join("");
   }
@@ -175,7 +247,7 @@
     if(!routeRecords.length){list.innerHTML='<p class="empty">Aucun itinéraire My Maps enregistré.</p>';return;}
     list.innerHTML=routeRecords.slice().sort((a,b)=>a.name.localeCompare(b.name,"fr")).map(route=>`
       <article class="kml-route-row" data-id="${esc(route.id)}">
-        <label class="kml-route-main"><input class="kml-route-visible" type="checkbox" ${route.visible!==false?"checked":""}><span class="kml-route-swatch" style="background:${esc(route.color)}"></span><span><strong>${esc(route.name)}</strong><small>${esc(route.network)} ${route.line?`· ligne ${esc(route.line)}`:""} · ${route.segments?.length||0} tracé(s)</small></span></label>
+        <label class="kml-route-main"><input class="kml-route-visible" type="checkbox" ${route.visible!==false?"checked":""}><span class="kml-route-swatch" style="background:${esc(route.color)}"></span><span class="kml-route-text"><strong title="${esc(route.name)}">${esc(route.name)}</strong><small>${esc(route.network)} ${route.line?`· ligne ${esc(route.line)}`:""} · ${route.segments?.length||0} tracé(s)</small></span></label>
         <div class="kml-route-actions">${route.networkUrl?'<button type="button" class="secondary kml-sync">Synchroniser</button>':''}<button type="button" class="secondary kml-zoom">Voir</button><button type="button" class="danger kml-delete">Supprimer</button></div>
       </article>`).join("");
   }
@@ -278,10 +350,12 @@
 
   async function init(){
     const dialog=$n("kmlLibraryDialog");if(!dialog)return;
-    routeRecords=(await getAllRoutes()).map(enrichRoute); for(const route of routeRecords) await putRoute(route);
+    routeRecords=await loadSharedRoutes();
     $n("openKmlLibrary")?.addEventListener("click",()=>{renderList();dialog.showModal?.()||dialog.setAttribute("open","");});
     window.openUnifiedRoutesLibrary=()=>{renderLibraryFilters();$n("routesLibraryDialog")?.showModal();};
     ensureLayer();renderList();drawRoutes();updateFloatingPanel();
+    const sharedStatus=$n("kmlImportStatus");
+    if(sharedStatus && routeRecords.length) sharedStatus.textContent=`${routeRecords.length} itinéraire(s) chargé(s) depuis le stockage partagé. Ils sont disponibles sur PC et smartphone.`;
     const input=$n("kmlFiles"),zone=$n("kmlDropZone");zone.addEventListener("click",()=>input.click());zone.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")input.click();});["dragenter","dragover"].forEach(t=>zone.addEventListener(t,e=>{e.preventDefault();zone.classList.add("dragging");}));["dragleave","drop"].forEach(t=>zone.addEventListener(t,e=>{e.preventDefault();zone.classList.remove("dragging");}));zone.addEventListener("drop",e=>importFiles(e.dataTransfer.files));input.addEventListener("change",()=>{importFiles(input.files);input.value="";});
     $n("showAllKml")?.addEventListener("change",drawRoutes);$n("syncAllKml")?.addEventListener("click",()=>syncAll().catch(e=>$n("kmlImportStatus").textContent=e.message));$n("fitKmlRoutes")?.addEventListener("click",fitAllVisible);
     $n("deleteAllKml")?.addEventListener("click",async()=>{if(!confirm("Supprimer tous les itinéraires enregistrés ?"))return;await clearRoutes();routeRecords=[];renderList();renderUnifiedList();drawRoutes();applyStopMode();});

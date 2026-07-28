@@ -486,3 +486,22 @@ ON planning_items(planning_date, planning_type);
 
 CREATE INDEX IF NOT EXISTS idx_planning_items_registration
 ON planning_items(registration, planning_date);
+
+-- V11.5 - Itinéraires Google My Maps partagés entre appareils
+CREATE TABLE IF NOT EXISTS my_maps_routes (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  network TEXT NOT NULL DEFAULT '',
+  line TEXT NOT NULL DEFAULT '',
+  direction TEXT NOT NULL DEFAULT '',
+  color TEXT NOT NULL DEFAULT '#0066cc',
+  network_url TEXT NOT NULL DEFAULT '',
+  source_name TEXT NOT NULL DEFAULT '',
+  segments_json TEXT NOT NULL DEFAULT '[]',
+  imported_at TEXT,
+  synced_at TEXT,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_my_maps_routes_network_line
+ON my_maps_routes(network, line);

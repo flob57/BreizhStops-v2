@@ -2001,3 +2001,31 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
   .map-panel-tab-right { right:10px; border-radius:12px; }
   .map-panel-tab-lines { bottom:58px; }
 }
+
+/* V11.5 — noms complets et bibliothèque My Maps lisible */
+#routesLibrary .kml-route-row,
+#kmlRoutesList .kml-route-row { align-items:flex-start; }
+#routesLibrary .kml-route-main,
+#kmlRoutesList .kml-route-main { flex:1 1 auto; min-width:0; align-items:flex-start; }
+#routesLibrary .kml-route-text,
+#kmlRoutesList .kml-route-text { display:flex; flex-direction:column; min-width:0; flex:1 1 auto; }
+#routesLibrary .kml-route-main strong,
+#routesLibrary .kml-route-main small,
+#kmlRoutesList .kml-route-main strong,
+#kmlRoutesList .kml-route-main small {
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
+  line-height:1.25;
+}
+#routesLibrary .kml-route-main strong,
+#kmlRoutesList .kml-route-main strong { font-size:1rem; }
+#routesLibrary .kml-route-main small,
+#kmlRoutesList .kml-route-main small { margin-top:4px; }
+#routesLibrary .kml-route-actions,
+#kmlRoutesList .kml-route-actions { flex:0 0 auto; align-self:center; }
+@media (min-width: 760px) {
+  #routesLibraryDialog { width:min(940px, 94vw); }
+  #routesLibrary .kml-route-row { padding:12px 14px; }
+}
