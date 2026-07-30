@@ -2355,3 +2355,26 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
 
 .works-route-form-grid select { width:100%; box-sizing:border-box; }
 .deviation-map-icon span { font-weight:900; }
+
+
+/* V12.6.1 — Lisibilité des couches travaux/déviations et choix des arrêts */
+.floating-works-layer{display:grid;gap:8px;margin-bottom:10px;padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(4,25,13,.72)}
+.floating-special-layers-title{font-size:.82rem;font-weight:900;letter-spacing:.02em;color:#d9eee0;padding:0 2px 2px}
+.floating-layer-choice{display:grid!important;grid-template-columns:auto 34px minmax(0,1fr) auto;align-items:center;gap:9px;min-height:54px;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:800!important;border:1px solid transparent}
+.floating-layer-choice.works-choice{background:rgba(245,124,0,.18);border-color:rgba(255,152,0,.55)}
+.floating-layer-choice.deviations-choice{background:rgba(22,163,74,.17);border-color:rgba(34,197,94,.48)}
+.floating-layer-choice input{width:20px;height:20px;margin:0;accent-color:#fff}
+.floating-layer-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#fff;font-size:18px;box-shadow:0 1px 5px rgba(0,0,0,.25)}
+.floating-layer-text{display:grid;min-width:0;line-height:1.15}
+.floating-layer-text strong{font-size:.96rem;color:#fff}
+.floating-layer-text small{margin-top:3px;font-size:.74rem;color:#d7e6db;font-weight:700}
+.floating-layer-count{min-width:28px;text-align:center;padding:4px 8px;border-radius:999px;color:#fff;font-size:.82rem}
+.works-choice .floating-layer-count{background:#ef6c00}
+.deviations-choice .floating-layer-count{background:#16a34a}
+.floating-stops-card{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0;padding:10px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}
+.floating-stops-card-title{grid-column:1/-1;font-size:.84rem;font-weight:900;color:#e4f3e9}
+.floating-stop-choice{display:flex;align-items:center;gap:7px;min-height:42px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.08);color:#fff;font-size:.82rem;font-weight:800;cursor:pointer}
+.floating-stop-choice:has(input:checked){background:#e9f6ed;color:#12301d;box-shadow:inset 0 0 0 2px #42a568}
+.floating-stop-choice input{width:18px;height:18px;margin:0;accent-color:#25894a}
+#floatingStopsMode{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}
+@media(max-width:700px){.floating-stops-card{grid-template-columns:1fr}.floating-stops-card-title{grid-column:auto}.floating-layer-choice{grid-template-columns:auto 32px minmax(0,1fr) auto}.floating-routes-list{max-height:230px}}

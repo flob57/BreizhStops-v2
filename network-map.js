@@ -367,15 +367,29 @@
     const visibleCount=visibleRoutes().length;
     body.innerHTML=`
       <div class="floating-lines-summary"><strong>${visibleCount}</strong> ligne(s) affichée(s) sur ${routeRecords.length}</div>
+      <div class="floating-stops-card" role="group" aria-label="Choix des arrêts affichés">
+        <span class="floating-stops-card-title">📍 Arrêts à afficher</span>
+        <label class="floating-stop-choice"><input type="radio" name="floatingStopsModeChoice" value="all" ${stopDisplayMode === "all" ? "checked" : ""}><span>Tous les arrêts</span></label>
+        <label class="floating-stop-choice"><input type="radio" name="floatingStopsModeChoice" value="lines" ${stopDisplayMode === "lines" ? "checked" : ""}><span>Arrêts des lignes affichées</span></label>
+        <select id="floatingStopsMode" aria-hidden="true" tabindex="-1"><option value="all">Tous les arrêts</option><option value="lines">Arrêts des lignes affichées</option></select>
+      </div>
       <div class="floating-lines-actions">
         <button type="button" id="showAllVisibleRoutes" class="secondary">Tout afficher</button>
         <button type="button" id="hideAllVisibleRoutes" class="secondary">Tout masquer</button>
       </div>
       <input id="floatingLinesSearch" class="floating-lines-search" type="search" placeholder="Rechercher une ligne…" autocomplete="off">
-      <div id="floatingRoutesList" class="floating-routes-list" role="group" aria-label="Lignes disponibles"></div>
-      <label class="floating-stops-mode">Arrêts affichés<select id="floatingStopsMode"><option value="all">Tous les arrêts</option><option value="lines">Arrêts des lignes affichées</option></select></label>`;
+      <div id="floatingRoutesList" class="floating-routes-list" role="group" aria-label="Lignes disponibles"></div>`;
     renderFloatingRouteRows();
-    const select=$n("floatingStopsMode");if(select){select.value=stopDisplayMode;select.addEventListener("change",e=>{stopDisplayMode=e.target.value;applyStopMode();const other=$n("routeStopsMode");if(other)other.value=stopDisplayMode;});}
+    const select=$n("floatingStopsMode");
+    const setFloatingStopMode=value=>{
+      stopDisplayMode=value === "lines" ? "lines" : "all";
+      if(select) select.value=stopDisplayMode;
+      document.querySelectorAll('input[name="floatingStopsModeChoice"]').forEach(input=>{input.checked=input.value===stopDisplayMode;});
+      applyStopMode();
+      const other=$n("routeStopsMode");if(other)other.value=stopDisplayMode;
+    };
+    if(select){select.value=stopDisplayMode;select.addEventListener("change",e=>setFloatingStopMode(e.target.value));}
+    document.querySelectorAll('input[name="floatingStopsModeChoice"]').forEach(input=>input.addEventListener("change",e=>{if(e.target.checked)setFloatingStopMode(e.target.value);}));
     $n("floatingLinesSearch")?.addEventListener("input",e=>renderFloatingRouteRows(e.target.value));
     $n("floatingRoutesList")?.addEventListener("change",e=>{if(e.target.classList.contains("floating-route-check"))setRouteVisibleFromPanel(e.target.dataset.routeId,e.target.checked);});
     $n("showAllVisibleRoutes")?.addEventListener("click",()=>setAllRoutesVisible(true));

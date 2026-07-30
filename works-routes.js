@@ -15,6 +15,7 @@
   let controlPoints = []; // départ, passages, arrivée
   let routedPoints = [];
   let worksVisible = true;
+  let deviationsVisible = true;
   let records = [];
   let routeRequest = 0;
 
@@ -153,9 +154,10 @@
     if (!map || !window.L) return;
     if (!layerGroup) layerGroup = L.layerGroup().addTo(map);
     layerGroup.clearLayers();
-    if (!worksVisible) { syncWorksToggle(); return; }
+    if (!worksVisible && !deviationsVisible) { syncWorksToggle(); return; }
 
     records.forEach(record => {
+      if (record.routeType === 'deviation' ? !deviationsVisible : !worksVisible) return;
       const source = record.routePoints?.length >= 2 ? record.routePoints : record.controlPoints;
       if (!Array.isArray(source) || source.length < 2) return;
       const latlngs = source.map(point => [point.lat, point.lng]);
@@ -352,18 +354,38 @@
 
   function injectWorksToggle() {
     const body = $('visibleLinesBody');
-    if (!body || body.querySelector('#toggleWorksLayer')) return;
+    if (!body || body.querySelector('#toggleWorksLayer') || body.querySelector('#toggleDeviationsLayer')) return;
     const block = document.createElement('div');
     block.className = 'floating-works-layer';
-    block.innerHTML = `<label><input type="checkbox" id="toggleWorksLayer" ${worksVisible ? 'checked' : ''}> <span>🚧 Travaux / ↪ Déviations</span><strong>${records.length}</strong></label>`;
+    const worksCount = records.filter(item => item.routeType !== 'deviation').length;
+    const deviationsCount = records.filter(item => item.routeType === 'deviation').length;
+    block.innerHTML = `
+      <div class="floating-special-layers-title">🗺️ Couches temporaires</div>
+      <label class="floating-layer-choice works-choice">
+        <input type="checkbox" id="toggleWorksLayer" ${worksVisible ? 'checked' : ''}>
+        <span class="floating-layer-icon">🚧</span>
+        <span class="floating-layer-text"><strong>Travaux</strong><small>Segments orange</small></span>
+        <b class="floating-layer-count" data-count-type="travaux">${worksCount}</b>
+      </label>
+      <label class="floating-layer-choice deviations-choice">
+        <input type="checkbox" id="toggleDeviationsLayer" ${deviationsVisible ? 'checked' : ''}>
+        <span class="floating-layer-icon">↪</span>
+        <span class="floating-layer-text"><strong>Déviations</strong><small>Segments verts</small></span>
+        <b class="floating-layer-count" data-count-type="deviation">${deviationsCount}</b>
+      </label>`;
     body.prepend(block);
     $('toggleWorksLayer')?.addEventListener('change', event => { worksVisible = event.target.checked; render(); });
+    $('toggleDeviationsLayer')?.addEventListener('change', event => { deviationsVisible = event.target.checked; render(); });
   }
 
   function syncWorksToggle() {
     injectWorksToggle();
-    const toggle = $('toggleWorksLayer'); if (toggle) toggle.checked = worksVisible;
-    const count = toggle?.closest('label')?.querySelector('strong'); if (count) count.textContent = records.length;
+    const worksToggle = $('toggleWorksLayer'); if (worksToggle) worksToggle.checked = worksVisible;
+    const deviationsToggle = $('toggleDeviationsLayer'); if (deviationsToggle) deviationsToggle.checked = deviationsVisible;
+    const worksCount = document.querySelector('[data-count-type="travaux"]');
+    const deviationsCount = document.querySelector('[data-count-type="deviation"]');
+    if (worksCount) worksCount.textContent = records.filter(item => item.routeType !== 'deviation').length;
+    if (deviationsCount) deviationsCount.textContent = records.filter(item => item.routeType === 'deviation').length;
   }
 
   function cancelEditing() {
@@ -400,7 +422,9 @@
     syncWorksToggle();
     window.BreizhStopsWorksApi = {
       getAll: () => records.map(item => structuredClone(item)),
-      setVisible: visible => { worksVisible = Boolean(visible); render(); },
+      setVisible: visible => { worksVisible = Boolean(visible); deviationsVisible = Boolean(visible); render(); },
+      setWorksVisible: visible => { worksVisible = Boolean(visible); render(); },
+      setDeviationsVisible: visible => { deviationsVisible = Boolean(visible); render(); },
       startDrawing
     };
     return true;
