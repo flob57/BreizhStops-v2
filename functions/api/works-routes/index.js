@@ -7,11 +7,16 @@ async function ensureTable(db) {
     start_date TEXT NOT NULL DEFAULT '',
     end_date TEXT NOT NULL DEFAULT '',
     comment TEXT NOT NULL DEFAULT '',
+    route_type TEXT NOT NULL DEFAULT 'travaux',
     control_points_json TEXT NOT NULL DEFAULT '[]',
     route_points_json TEXT NOT NULL DEFAULT '[]',
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`).run();
+  const columns = await db.prepare(`PRAGMA table_info(works_routes)`).all();
+  if (!(columns.results || []).some(column => column.name === 'route_type')) {
+    await db.prepare(`ALTER TABLE works_routes ADD COLUMN route_type TEXT NOT NULL DEFAULT 'travaux'`).run();
+  }
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_works_routes_dates ON works_routes(start_date, end_date)`).run();
 }
 
@@ -26,6 +31,7 @@ function normalize(row) {
     startDate: row.start_date || "",
     endDate: row.end_date || "",
     comment: row.comment || "",
+    routeType: row.route_type === 'deviation' ? 'deviation' : 'travaux',
     controlPoints: parseJson(row.control_points_json),
     routePoints: parseJson(row.route_points_json),
     updatedAt: row.updated_at || null,
@@ -68,14 +74,15 @@ export async function onRequestPost(context) {
       : new Date().toISOString();
 
     await db.prepare(`INSERT INTO works_routes (
-      id, title, start_date, end_date, comment,
+      id, title, start_date, end_date, comment, route_type,
       control_points_json, route_points_json, updated_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(id) DO UPDATE SET
       title = excluded.title,
       start_date = excluded.start_date,
       end_date = excluded.end_date,
       comment = excluded.comment,
+      route_type = excluded.route_type,
       control_points_json = excluded.control_points_json,
       route_points_json = excluded.route_points_json,
       updated_at = excluded.updated_at`).bind(
@@ -84,6 +91,7 @@ export async function onRequestPost(context) {
         String(body.startDate || "").slice(0, 30),
         String(body.endDate || "").slice(0, 30),
         String(body.comment || "").slice(0, 4000),
+        body.routeType === 'deviation' ? 'deviation' : 'travaux',
         JSON.stringify(controlPoints),
         JSON.stringify(routePoints.length >= 2 ? routePoints : controlPoints),
         updatedAt

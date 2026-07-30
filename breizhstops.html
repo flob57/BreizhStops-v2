@@ -839,14 +839,15 @@
     <form id="worksRouteForm" class="modal-card works-route-card">
       <div class="modal-header">
         <div>
-          <h2>🚧 Itinéraire travaux</h2>
+          <h2 id="worksRouteDialogTitle">🚧 Itinéraire travaux</h2>
           <div class="meta">Le tracé suit les routes. Déplacez les poignées ou ajoutez un passage pour choisir une autre rue.</div>
         </div>
         <button type="button" id="cancelWorksRoute" class="icon-button" aria-label="Fermer">✕</button>
       </div>
       <input type="hidden" id="worksRouteId">
       <div class="works-route-form-grid">
-        <label>Nom des travaux<input id="worksRouteTitle" type="text" placeholder="Ex. Travaux avenue de la Gare" required></label>
+        <label>Type de segment<select id="worksRouteType"><option value="travaux">🚧 Travaux — orange</option><option value="deviation">↪ Déviation — vert</option></select></label>
+        <label>Nom du segment<input id="worksRouteTitle" type="text" placeholder="Ex. Travaux avenue de la Gare ou Déviation centre-ville" required></label>
         <label>Date de début<input id="worksRouteStart" type="date"></label>
         <label>Date de fin<input id="worksRouteEnd" type="date"></label>
         <label class="works-route-comment">Commentaire<textarea id="worksRouteComment" rows="4" placeholder="Circulation alternée, route barrée…"></textarea></label>
@@ -858,7 +859,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" id="cancelWorksRouteFooter" class="secondary">Annuler</button>
-        <button type="submit">💾 Enregistrer les travaux</button>
+        <button type="submit" id="saveWorksRoute">💾 Enregistrer les travaux</button>
       </div>
     </form>
   </dialog>
@@ -868,7 +869,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./app.js?v=11.2.2"></script>
   <script src="./network-map.js?v=12.2"></script>
-  <script src="./works-routes.js?v=12.4"></script>
+  <script src="./works-routes.js?v=12.6"></script>
   <script src="./map-panels.js?v=12.1"></script>
   <script src="./exploitation-control.js?v=12.1"></script>
   <script src="./mode-exploitant.js?v=12.1"></script>

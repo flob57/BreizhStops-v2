@@ -2326,7 +2326,7 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
 .works-create-button { background:#ef6c00 !important; border-color:#ff9800 !important; color:#fff !important; }
 .works-drawing-mode { cursor: crosshair !important; }
 .roadworks-map-icon { background:transparent; border:0; }
-.roadworks-map-icon span { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:#fff; border:3px solid #f57c00; box-shadow:0 2px 8px rgba(0,0,0,.35); font-size:17px; }
+.roadworks-map-icon span { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:#fff; border:3px solid var(--route-color, #f57c00); box-shadow:0 2px 8px rgba(0,0,0,.35); font-size:17px; }
 .floating-works-layer { margin-bottom:10px; padding:9px 10px; border:1px solid rgba(255,152,0,.55); border-radius:10px; background:rgba(245,124,0,.15); }
 .floating-works-layer label { display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:800; }
 .floating-works-layer label span { flex:1; }
@@ -2352,3 +2352,6 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
 #worksRoutingStatus { flex:1 1 220px; font-size:.9rem; font-weight:700; }
 #worksRoutingStatus.error { color:#b71c1c; }
 @media (max-width:700px) { .works-routing-tools { grid-column:auto; } .works-routing-tools button { width:100%; } }
+
+.works-route-form-grid select { width:100%; box-sizing:border-box; }
+.deviation-map-icon span { font-weight:900; }

@@ -33,7 +33,8 @@
     return {
       ...record,
       id: String(record?.id || `works-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
-      title: String(record?.title || 'Travaux'),
+      title: String(record?.title || (record?.routeType === 'deviation' ? 'Déviation' : 'Travaux')),
+      routeType: record?.routeType === 'deviation' ? 'deviation' : 'travaux',
       startDate: record?.startDate || '',
       endDate: record?.endDate || '',
       comment: String(record?.comment || ''),
@@ -111,11 +112,18 @@
     return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('fr-FR').format(date);
   }
 
+  function routeMeta(record) {
+    return record?.routeType === 'deviation'
+      ? { label: 'Déviation', icon: '↪', color: '#16a34a', draftColor: '#22c55e' }
+      : { label: 'Travaux', icon: '🚧', color: '#f57c00', draftColor: '#ff9800' };
+  }
+
   function makePopup(record) {
     const dates = record.startDate || record.endDate
       ? `<div><strong>Dates :</strong> ${esc(formatDate(record.startDate))} → ${esc(formatDate(record.endDate))}</div>` : '';
+    const meta = routeMeta(record);
     return `<div class="works-popup">
-      <strong>🚧 ${esc(record.title || 'Travaux')}</strong>
+      <strong>${meta.icon} ${esc(record.title || meta.label)}</strong>
       ${dates}
       ${record.comment ? `<p>${esc(record.comment)}</p>` : ''}
       <div><small>${Math.max(0, (record.controlPoints?.length || 2) - 2)} passage(s) imposé(s)</small></div>
@@ -126,8 +134,14 @@
     </div>`;
   }
 
-  function roadworksIcon() {
-    return L.divIcon({ className: 'roadworks-map-icon', html: '<span>🚧</span>', iconSize: [30, 30], iconAnchor: [15, 15] });
+  function routeIcon(record) {
+    const meta = routeMeta(record);
+    return L.divIcon({
+      className: `roadworks-map-icon ${record?.routeType === 'deviation' ? 'deviation-map-icon' : ''}`,
+      html: `<span style="--route-color:${meta.color}">${meta.icon}</span>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
   }
 
   function midpointOnPath(points) {
@@ -145,10 +159,11 @@
       const source = record.routePoints?.length >= 2 ? record.routePoints : record.controlPoints;
       if (!Array.isArray(source) || source.length < 2) return;
       const latlngs = source.map(point => [point.lat, point.lng]);
-      L.polyline(latlngs, { color: '#f57c00', weight: 9, opacity: 0.9, lineCap: 'round', dashArray: '15 8' })
+      const meta = routeMeta(record);
+      L.polyline(latlngs, { color: meta.color, weight: 9, opacity: 0.9, lineCap: 'round', dashArray: '15 8' })
         .bindPopup(makePopup(record), { minWidth: 240 }).addTo(layerGroup);
       const middle = midpointOnPath(latlngs);
-      if (middle) L.marker(middle, { icon: roadworksIcon(), interactive: true })
+      if (middle) L.marker(middle, { icon: routeIcon(record), interactive: true })
         .bindPopup(makePopup(record), { minWidth: 240 }).addTo(layerGroup);
     });
     syncWorksToggle();
@@ -197,14 +212,17 @@
     draftLayer.clearLayers();
     draftMarkers = [];
     const displayed = routedPoints.length >= 2 ? routedPoints : controlPoints;
+    const selectedType = $('worksRouteType')?.value === 'deviation' ? 'deviation' : 'travaux';
+    const draftMeta = routeMeta({ routeType: selectedType });
     draftLine = L.polyline(displayed.map(p => [p.lat, p.lng]), {
-      color: '#ff9800', weight: 10, opacity: 0.95, dashArray: '12 8', lineCap: 'round'
+      color: draftMeta.draftColor, weight: 10, opacity: 0.95, dashArray: '12 8', lineCap: 'round'
     }).addTo(draftLayer);
 
     controlPoints.forEach((point, index) => {
       const isStart = index === 0;
       const isEnd = index === controlPoints.length - 1;
-      const title = isStart ? 'Départ des travaux' : isEnd ? 'Fin des travaux' : `Passage ${index}`;
+      const selectedType = $('worksRouteType')?.value === 'deviation' ? 'déviation' : 'travaux';
+      const title = isStart ? `Départ ${selectedType}` : isEnd ? `Fin ${selectedType}` : `Passage ${index}`;
       const marker = L.marker([point.lat, point.lng], { draggable: true, title }).addTo(draftLayer);
       marker.bindTooltip(title);
       marker.on('dragend', async event => {
@@ -252,17 +270,26 @@
   function openForm(record = null) {
     const dialog = $('worksRouteDialog');
     if (!dialog) return;
-    $('worksRouteId').value = record?.id || $('worksRouteId').value || '';
+    $('worksRouteId').value = record?.id || '';
+    if (!record) {
+      $('worksRouteTitle').value = '';
+      $('worksRouteStart').value = '';
+      $('worksRouteEnd').value = '';
+      $('worksRouteComment').value = '';
+      if ($('worksRouteType')) $('worksRouteType').value = 'travaux';
+    }
     if (record) {
       $('worksRouteTitle').value = record.title || '';
       $('worksRouteStart').value = record.startDate || '';
       $('worksRouteEnd').value = record.endDate || '';
       $('worksRouteComment').value = record.comment || '';
+      if ($('worksRouteType')) $('worksRouteType').value = record.routeType === 'deviation' ? 'deviation' : 'travaux';
       controlPoints = (record.controlPoints || record.points || []).map(p => ({ ...p }));
       routedPoints = (record.routePoints || record.points || []).map(p => ({ ...p }));
       drawDraft(true);
       calculateRoadRoute(false);
     }
+    $('worksRouteType')?.dispatchEvent(new Event('change'));
     dialog.showModal?.() || dialog.setAttribute('open', '');
   }
 
@@ -294,7 +321,8 @@
     const id = $('worksRouteId').value || `works-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const record = {
       id,
-      title: $('worksRouteTitle').value.trim() || 'Travaux',
+      routeType: $('worksRouteType')?.value === 'deviation' ? 'deviation' : 'travaux',
+      title: $('worksRouteTitle').value.trim() || ($('worksRouteType')?.value === 'deviation' ? 'Déviation' : 'Travaux'),
       startDate: $('worksRouteStart').value,
       endDate: $('worksRouteEnd').value,
       comment: $('worksRouteComment').value.trim(),
@@ -316,7 +344,7 @@
   function editRecord(id) { const record = records.find(item => item.id === id); if (record) openForm(record); }
   async function deleteRecord(id) {
     const record = records.find(item => item.id === id);
-    if (!record || !confirm(`Supprimer « ${record.title || 'Travaux'} » ?`)) return;
+    if (!record || !confirm(`Supprimer « ${record.title || routeMeta(record).label} » ?`)) return;
     records = records.filter(item => item.id !== id); saveLocal();
     try { await deleteCloud(id); } catch (error) { console.warn('Suppression locale effectuée, suppression cloud non confirmée.', error); }
     map?.closePopup(); render();
@@ -327,7 +355,7 @@
     if (!body || body.querySelector('#toggleWorksLayer')) return;
     const block = document.createElement('div');
     block.className = 'floating-works-layer';
-    block.innerHTML = `<label><input type="checkbox" id="toggleWorksLayer" ${worksVisible ? 'checked' : ''}> <span>🚧 Travaux</span><strong>${records.length}</strong></label>`;
+    block.innerHTML = `<label><input type="checkbox" id="toggleWorksLayer" ${worksVisible ? 'checked' : ''}> <span>🚧 Travaux / ↪ Déviations</span><strong>${records.length}</strong></label>`;
     body.prepend(block);
     $('toggleWorksLayer')?.addEventListener('change', event => { worksVisible = event.target.checked; render(); });
   }
@@ -351,6 +379,15 @@
     await synchronize(); render();
     $('createWorksRoute')?.addEventListener('click', startDrawing);
     $('worksRouteForm')?.addEventListener('submit', submitForm);
+    $('worksRouteType')?.addEventListener('change', () => {
+      const type = $('worksRouteType').value === 'deviation' ? 'deviation' : 'travaux';
+      const meta = routeMeta({ routeType: type });
+      const heading = $('worksRouteDialogTitle');
+      if (heading) heading.textContent = `${meta.icon} Itinéraire ${meta.label.toLowerCase()}`;
+      const submit = $('saveWorksRoute');
+      if (submit) submit.textContent = `💾 Enregistrer ${type === 'deviation' ? 'la déviation' : 'les travaux'}`;
+      if (controlPoints.length >= 2) drawDraft(false);
+    });
     $('addWorksWaypoint')?.addEventListener('click', startWaypointPicking);
     $('clearWorksWaypoints')?.addEventListener('click', clearWaypoints);
     [$('cancelWorksRoute'), $('cancelWorksRouteFooter')].filter(Boolean).forEach(button => button.addEventListener('click', cancelEditing));
