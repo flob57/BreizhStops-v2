@@ -2,6 +2,7 @@
   const STORAGE_KEY = 'breizhstops-roadworks-routes-v2';
   const LEGACY_KEY = 'breizhstops-roadworks-routes-v1';
   const ROUTING_ENDPOINT = 'https://router.project-osrm.org/route/v1/driving';
+  const API_ENDPOINT = '/api/works-routes';
   const $ = id => document.getElementById(id);
 
   let map;
@@ -28,19 +29,81 @@
     return null;
   }
 
-  function load() {
+  function normalizeRecord(record) {
+    return {
+      ...record,
+      id: String(record?.id || `works-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
+      title: String(record?.title || 'Travaux'),
+      startDate: record?.startDate || '',
+      endDate: record?.endDate || '',
+      comment: String(record?.comment || ''),
+      controlPoints: Array.isArray(record?.controlPoints) ? record.controlPoints : (record?.points || []),
+      routePoints: Array.isArray(record?.routePoints) ? record.routePoints : (record?.points || []),
+      updatedAt: record?.updatedAt || new Date().toISOString()
+    };
+  }
+
+  function loadLocal() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY) || '[]';
-      records = JSON.parse(raw).map(record => ({
-        ...record,
-        controlPoints: record.controlPoints || record.points || [],
-        routePoints: record.routePoints || record.points || []
-      }));
-      save();
+      records = JSON.parse(raw).map(normalizeRecord);
+      saveLocal();
     } catch { records = []; }
   }
 
-  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+  function saveLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+
+  function timestamp(value) {
+    const time = new Date(value || 0).getTime();
+    return Number.isFinite(time) ? time : 0;
+  }
+
+  async function apiRequest(url, options = {}) {
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'content-type': 'application/json', ...(options.headers || {}) },
+      ...options
+    });
+    if (!response.ok) {
+      let message = `HTTP ${response.status}`;
+      try { message = (await response.json())?.error || message; } catch {}
+      throw new Error(message);
+    }
+    return response.status === 204 ? null : response.json();
+  }
+
+  async function upsertCloud(record) {
+    return apiRequest(API_ENDPOINT, { method: 'POST', body: JSON.stringify(record) });
+  }
+
+  async function deleteCloud(id) {
+    return apiRequest(`${API_ENDPOINT}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  }
+
+  async function synchronize() {
+    loadLocal();
+    try {
+      const cloud = (await apiRequest(API_ENDPOINT)).map(normalizeRecord);
+      const merged = new Map(cloud.map(item => [item.id, item]));
+      const pending = [];
+
+      for (const local of records) {
+        const remote = merged.get(local.id);
+        if (!remote || timestamp(local.updatedAt) > timestamp(remote.updatedAt)) {
+          merged.set(local.id, local);
+          pending.push(local);
+        }
+      }
+
+      records = [...merged.values()].sort((a, b) => String(a.title).localeCompare(String(b.title), 'fr', { numeric: true }));
+      saveLocal();
+      if (pending.length) await Promise.allSettled(pending.map(upsertCloud));
+      return true;
+    } catch (error) {
+      console.warn('Synchronisation des travaux indisponible, utilisation du cache local.', error);
+      return false;
+    }
+  }
 
   function formatDate(value) {
     if (!value) return 'Non renseignée';
@@ -225,7 +288,7 @@
     await calculateRoadRoute(true);
   }
 
-  function submitForm(event) {
+  async function submitForm(event) {
     event.preventDefault();
     if (controlPoints.length < 2) return alert('Sélectionnez d’abord un point de départ et un point d’arrivée.');
     const id = $('worksRouteId').value || `works-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -241,7 +304,8 @@
     };
     const index = records.findIndex(item => item.id === id);
     if (index >= 0) records[index] = record; else records.push(record);
-    save();
+    saveLocal();
+    try { await upsertCloud(record); } catch (error) { console.warn('Travaux sauvegardés localement, synchronisation différée.', error); }
     $('worksRouteDialog').close();
     clearDraft();
     worksVisible = true;
@@ -250,10 +314,12 @@
   }
 
   function editRecord(id) { const record = records.find(item => item.id === id); if (record) openForm(record); }
-  function deleteRecord(id) {
+  async function deleteRecord(id) {
     const record = records.find(item => item.id === id);
     if (!record || !confirm(`Supprimer « ${record.title || 'Travaux'} » ?`)) return;
-    records = records.filter(item => item.id !== id); save(); map?.closePopup(); render();
+    records = records.filter(item => item.id !== id); saveLocal();
+    try { await deleteCloud(id); } catch (error) { console.warn('Suppression locale effectuée, suppression cloud non confirmée.', error); }
+    map?.closePopup(); render();
   }
 
   function injectWorksToggle() {
@@ -279,9 +345,10 @@
     map?.getContainer().classList.remove('works-drawing-mode');
   }
 
-  function init() {
+  async function init() {
     map = getMap(); if (!map || !window.L) return false;
-    load(); layerGroup = L.layerGroup().addTo(map); draftLayer = L.layerGroup().addTo(map); render();
+    loadLocal(); layerGroup = L.layerGroup().addTo(map); draftLayer = L.layerGroup().addTo(map); render();
+    await synchronize(); render();
     $('createWorksRoute')?.addEventListener('click', startDrawing);
     $('worksRouteForm')?.addEventListener('submit', submitForm);
     $('addWorksWaypoint')?.addEventListener('click', startWaypointPicking);
@@ -302,6 +369,11 @@
     return true;
   }
 
-  const timer = setInterval(() => { if (init()) clearInterval(timer); }, 150);
+  let initializing = false;
+  const timer = setInterval(async () => {
+    if (initializing) return;
+    initializing = true;
+    try { if (await init()) clearInterval(timer); } finally { initializing = false; }
+  }, 150);
   setTimeout(() => clearInterval(timer), 15000);
 })();
