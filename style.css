@@ -2322,7 +2322,7 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
 .floating-stops-mode{display:grid;gap:5px;font-weight:800;font-size:.82rem}
 @media(max-width:700px){.visible-lines-panel{left:8px;bottom:8px;width:calc(100% - 16px);max-height:65dvh}.floating-routes-list{max-height:260px}.floating-route-row{padding:9px 8px}.floating-lines-actions button{min-height:42px}}
 
-/* V12.3 — Itinéraires travaux */
+/* V12.4 — Itinéraires travaux */
 .works-create-button { background:#ef6c00 !important; border-color:#ff9800 !important; color:#fff !important; }
 .works-drawing-mode { cursor: crosshair !important; }
 .roadworks-map-icon { background:transparent; border:0; }
@@ -2345,3 +2345,10 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
   .works-route-form-grid label:first-child,.works-route-comment { grid-column:auto; }
   #createWorksRoute { font-size:13px; }
 }
+
+/* V12.4 — routage des travaux sur la voirie */
+.works-routing-tools { grid-column:1/-1; display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:12px; border-radius:10px; background:rgba(245,124,0,.10); border:1px solid rgba(245,124,0,.35); }
+.works-routing-tools button { min-height:40px; }
+#worksRoutingStatus { flex:1 1 220px; font-size:.9rem; font-weight:700; }
+#worksRoutingStatus.error { color:#b71c1c; }
+@media (max-width:700px) { .works-routing-tools { grid-column:auto; } .works-routing-tools button { width:100%; } }

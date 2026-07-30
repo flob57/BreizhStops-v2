@@ -1,34 +1,46 @@
 (() => {
-  const STORAGE_KEY = 'breizhstops-roadworks-routes-v1';
+  const STORAGE_KEY = 'breizhstops-roadworks-routes-v2';
+  const LEGACY_KEY = 'breizhstops-roadworks-routes-v1';
+  const ROUTING_ENDPOINT = 'https://router.project-osrm.org/route/v1/driving';
   const $ = id => document.getElementById(id);
+
   let map;
   let layerGroup;
+  let draftLayer;
   let draftLine;
   let draftMarkers = [];
   let drawing = false;
-  let selectedPoints = [];
+  let waypointPicking = false;
+  let controlPoints = []; // départ, passages, arrivée
+  let routedPoints = [];
   let worksVisible = true;
   let records = [];
+  let routeRequest = 0;
 
   const esc = value => String(value ?? '')
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 
   function getMap() {
-    if (window.breizhStopsMap && typeof window.breizhStopsMap.addLayer === 'function') return window.breizhStopsMap;
+    if (window.breizhStopsMap?.addLayer) return window.breizhStopsMap;
     if (window.BreizhStopsMapApi?.getMap) return window.BreizhStopsMapApi.getMap();
-    try { if (typeof window.map !== 'undefined' && window.map?.addLayer) return window.map; } catch {}
+    try { if (window.map?.addLayer) return window.map; } catch {}
     return null;
   }
 
   function load() {
-    try { records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch { records = []; }
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY) || '[]';
+      records = JSON.parse(raw).map(record => ({
+        ...record,
+        controlPoints: record.controlPoints || record.points || [],
+        routePoints: record.routePoints || record.points || []
+      }));
+      save();
+    } catch { records = []; }
   }
 
-  function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-  }
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
 
   function formatDate(value) {
     if (!value) return 'Non renseignée';
@@ -43,6 +55,7 @@
       <strong>🚧 ${esc(record.title || 'Travaux')}</strong>
       ${dates}
       ${record.comment ? `<p>${esc(record.comment)}</p>` : ''}
+      <div><small>${Math.max(0, (record.controlPoints?.length || 2) - 2)} passage(s) imposé(s)</small></div>
       <div class="works-popup-actions">
         <button type="button" data-work-edit="${esc(record.id)}">Modifier</button>
         <button type="button" class="danger" data-work-delete="${esc(record.id)}">Supprimer</button>
@@ -51,66 +64,94 @@
   }
 
   function roadworksIcon() {
-    return L.divIcon({
-      className: 'roadworks-map-icon',
-      html: '<span>🚧</span>',
-      iconSize: [30, 30],
-      iconAnchor: [15, 15]
-    });
+    return L.divIcon({ className: 'roadworks-map-icon', html: '<span>🚧</span>', iconSize: [30, 30], iconAnchor: [15, 15] });
+  }
+
+  function midpointOnPath(points) {
+    if (!points.length) return null;
+    return points[Math.floor(points.length / 2)];
   }
 
   function render() {
     if (!map || !window.L) return;
     if (!layerGroup) layerGroup = L.layerGroup().addTo(map);
     layerGroup.clearLayers();
-    if (!worksVisible) return;
+    if (!worksVisible) { syncWorksToggle(); return; }
 
     records.forEach(record => {
-      if (!Array.isArray(record.points) || record.points.length < 2) return;
-      const latlngs = record.points.map(point => [point.lat, point.lng]);
-      const line = L.polyline(latlngs, {
-        color: '#f57c00', weight: 9, opacity: 0.9, lineCap: 'round', dashArray: '15 8'
-      }).bindPopup(makePopup(record), { minWidth: 240 });
-      line.addTo(layerGroup);
-
-      const middle = L.latLng(
-        (latlngs[0][0] + latlngs[latlngs.length - 1][0]) / 2,
-        (latlngs[0][1] + latlngs[latlngs.length - 1][1]) / 2
-      );
-      L.marker(middle, { icon: roadworksIcon(), interactive: true })
-        .bindPopup(makePopup(record), { minWidth: 240 })
-        .addTo(layerGroup);
+      const source = record.routePoints?.length >= 2 ? record.routePoints : record.controlPoints;
+      if (!Array.isArray(source) || source.length < 2) return;
+      const latlngs = source.map(point => [point.lat, point.lng]);
+      L.polyline(latlngs, { color: '#f57c00', weight: 9, opacity: 0.9, lineCap: 'round', dashArray: '15 8' })
+        .bindPopup(makePopup(record), { minWidth: 240 }).addTo(layerGroup);
+      const middle = midpointOnPath(latlngs);
+      if (middle) L.marker(middle, { icon: roadworksIcon(), interactive: true })
+        .bindPopup(makePopup(record), { minWidth: 240 }).addTo(layerGroup);
     });
     syncWorksToggle();
   }
 
-  function clearDraft() {
-    if (draftLine && map) map.removeLayer(draftLine);
-    draftMarkers.forEach(marker => map?.removeLayer(marker));
-    draftLine = null;
-    draftMarkers = [];
-    selectedPoints = [];
+  function setRoutingStatus(message, isError = false) {
+    const el = $('worksRoutingStatus');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.toggle('error', isError);
   }
 
-  function updateDraft() {
-    if (!map || selectedPoints.length < 2) return;
-    if (draftLine) map.removeLayer(draftLine);
-    draftMarkers.forEach(marker => map.removeLayer(marker));
+  async function calculateRoadRoute(fit = false) {
+    if (controlPoints.length < 2) return;
+    const requestId = ++routeRequest;
+    setRoutingStatus('Calcul du tracé routier…');
+    const coordinates = controlPoints.map(p => `${Number(p.lng)},${Number(p.lat)}`).join(';');
+    try {
+      const response = await fetch(`${ROUTING_ENDPOINT}/${coordinates}?overview=full&geometries=geojson&steps=false`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (requestId !== routeRequest) return;
+      if (!data.routes?.[0]?.geometry?.coordinates) throw new Error('Aucun itinéraire routier trouvé');
+      routedPoints = data.routes[0].geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      drawDraft(fit);
+      const km = data.routes[0].distance / 1000;
+      setRoutingStatus(`${km.toFixed(2)} km · ${Math.max(0, controlPoints.length - 2)} passage(s) imposé(s)`);
+    } catch (error) {
+      routedPoints = controlPoints.map(p => ({ ...p }));
+      drawDraft(fit);
+      setRoutingStatus('Routage indisponible : tracé provisoire en ligne droite.', true);
+    }
+  }
+
+  function clearDraft() {
+    if (draftLayer) draftLayer.clearLayers();
+    draftLine = null;
     draftMarkers = [];
+    controlPoints = [];
+    routedPoints = [];
+  }
 
-    draftLine = L.polyline(selectedPoints.map(p => [p.lat, p.lng]), {
-      color: '#ff9800', weight: 10, opacity: 0.95, dashArray: '12 8'
-    }).addTo(map);
+  function drawDraft(fit = false) {
+    if (!map || controlPoints.length < 2) return;
+    if (!draftLayer) draftLayer = L.layerGroup().addTo(map);
+    draftLayer.clearLayers();
+    draftMarkers = [];
+    const displayed = routedPoints.length >= 2 ? routedPoints : controlPoints;
+    draftLine = L.polyline(displayed.map(p => [p.lat, p.lng]), {
+      color: '#ff9800', weight: 10, opacity: 0.95, dashArray: '12 8', lineCap: 'round'
+    }).addTo(draftLayer);
 
-    selectedPoints.forEach((point, index) => {
-      const marker = L.marker([point.lat, point.lng], { draggable: true, title: index === 0 ? 'Départ des travaux' : 'Fin des travaux' }).addTo(map);
-      marker.on('drag', event => {
+    controlPoints.forEach((point, index) => {
+      const isStart = index === 0;
+      const isEnd = index === controlPoints.length - 1;
+      const title = isStart ? 'Départ des travaux' : isEnd ? 'Fin des travaux' : `Passage ${index}`;
+      const marker = L.marker([point.lat, point.lng], { draggable: true, title }).addTo(draftLayer);
+      marker.bindTooltip(title);
+      marker.on('dragend', async event => {
         const ll = event.target.getLatLng();
-        selectedPoints[index] = { lat: ll.lat, lng: ll.lng };
-        draftLine.setLatLngs(selectedPoints.map(p => [p.lat, p.lng]));
+        controlPoints[index] = { lat: ll.lat, lng: ll.lng };
+        await calculateRoadRoute(false);
       });
       draftMarkers.push(marker);
     });
+    if (fit && draftLine.getBounds().isValid()) map.fitBounds(draftLine.getBounds(), { padding: [35, 35] });
   }
 
   function stopDrawing() {
@@ -121,19 +162,17 @@
     if (button) button.textContent = '🚧 Créer un itinéraire travaux';
   }
 
-  function handleMapClick(event) {
+  async function handleMapClick(event) {
     if (!drawing) return;
-    selectedPoints.push({ lat: event.latlng.lat, lng: event.latlng.lng });
-    if (selectedPoints.length === 1) {
-      const marker = L.marker(event.latlng, { draggable: true }).addTo(map);
-      marker.bindTooltip('Point de départ', { permanent: false }).openTooltip();
-      marker.on('drag', ev => selectedPoints[0] = { lat: ev.target.getLatLng().lat, lng: ev.target.getLatLng().lng });
-      draftMarkers.push(marker);
+    controlPoints.push({ lat: event.latlng.lat, lng: event.latlng.lng });
+    if (controlPoints.length === 1) {
+      if (!draftLayer) draftLayer = L.layerGroup().addTo(map);
+      L.marker(event.latlng, { draggable: true }).bindTooltip('Point de départ').addTo(draftLayer);
       return;
     }
-    selectedPoints = selectedPoints.slice(0, 2);
-    updateDraft();
+    controlPoints = controlPoints.slice(0, 2);
     stopDrawing();
+    await calculateRoadRoute(true);
     openForm();
   }
 
@@ -150,21 +189,45 @@
   function openForm(record = null) {
     const dialog = $('worksRouteDialog');
     if (!dialog) return;
-    $('worksRouteId').value = record?.id || '';
-    $('worksRouteTitle').value = record?.title || '';
-    $('worksRouteStart').value = record?.startDate || '';
-    $('worksRouteEnd').value = record?.endDate || '';
-    $('worksRouteComment').value = record?.comment || '';
+    $('worksRouteId').value = record?.id || $('worksRouteId').value || '';
     if (record) {
-      selectedPoints = record.points.map(p => ({ ...p }));
-      updateDraft();
+      $('worksRouteTitle').value = record.title || '';
+      $('worksRouteStart').value = record.startDate || '';
+      $('worksRouteEnd').value = record.endDate || '';
+      $('worksRouteComment').value = record.comment || '';
+      controlPoints = (record.controlPoints || record.points || []).map(p => ({ ...p }));
+      routedPoints = (record.routePoints || record.points || []).map(p => ({ ...p }));
+      drawDraft(true);
+      calculateRoadRoute(false);
     }
     dialog.showModal?.() || dialog.setAttribute('open', '');
   }
 
+  function startWaypointPicking() {
+    if (controlPoints.length < 2) return alert('Créez d’abord le départ et l’arrivée.');
+    $('worksRouteDialog')?.close();
+    waypointPicking = true;
+    map.getContainer().classList.add('works-drawing-mode');
+    setRoutingStatus('Cliquez sur la rue par laquelle le chantier doit passer.');
+    const onPick = async event => {
+      map.off('click', onPick);
+      waypointPicking = false;
+      map.getContainer().classList.remove('works-drawing-mode');
+      controlPoints.splice(controlPoints.length - 1, 0, { lat: event.latlng.lat, lng: event.latlng.lng });
+      await calculateRoadRoute(true);
+      openForm();
+    };
+    map.on('click', onPick);
+  }
+
+  async function clearWaypoints() {
+    if (controlPoints.length > 2) controlPoints = [controlPoints[0], controlPoints[controlPoints.length - 1]];
+    await calculateRoadRoute(true);
+  }
+
   function submitForm(event) {
     event.preventDefault();
-    if (selectedPoints.length < 2) return alert('Sélectionnez d’abord un point de départ et un point d’arrivée.');
+    if (controlPoints.length < 2) return alert('Sélectionnez d’abord un point de départ et un point d’arrivée.');
     const id = $('worksRouteId').value || `works-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const record = {
       id,
@@ -172,7 +235,8 @@
       startDate: $('worksRouteStart').value,
       endDate: $('worksRouteEnd').value,
       comment: $('worksRouteComment').value.trim(),
-      points: selectedPoints.map(p => ({ lat: p.lat, lng: p.lng })),
+      controlPoints: controlPoints.map(p => ({ lat: p.lat, lng: p.lng })),
+      routePoints: (routedPoints.length >= 2 ? routedPoints : controlPoints).map(p => ({ lat: p.lat, lng: p.lng })),
       updatedAt: new Date().toISOString()
     };
     const index = records.findIndex(item => item.id === id);
@@ -185,18 +249,11 @@
     document.dispatchEvent(new CustomEvent('breizhstops:works-updated'));
   }
 
-  function editRecord(id) {
-    const record = records.find(item => item.id === id);
-    if (record) openForm(record);
-  }
-
+  function editRecord(id) { const record = records.find(item => item.id === id); if (record) openForm(record); }
   function deleteRecord(id) {
     const record = records.find(item => item.id === id);
     if (!record || !confirm(`Supprimer « ${record.title || 'Travaux'} » ?`)) return;
-    records = records.filter(item => item.id !== id);
-    save();
-    map?.closePopup();
-    render();
+    records = records.filter(item => item.id !== id); save(); map?.closePopup(); render();
   }
 
   function injectWorksToggle() {
@@ -206,49 +263,39 @@
     block.className = 'floating-works-layer';
     block.innerHTML = `<label><input type="checkbox" id="toggleWorksLayer" ${worksVisible ? 'checked' : ''}> <span>🚧 Travaux</span><strong>${records.length}</strong></label>`;
     body.prepend(block);
-    $('toggleWorksLayer')?.addEventListener('change', event => {
-      worksVisible = event.target.checked;
-      render();
-    });
+    $('toggleWorksLayer')?.addEventListener('change', event => { worksVisible = event.target.checked; render(); });
   }
 
   function syncWorksToggle() {
     injectWorksToggle();
-    const toggle = $('toggleWorksLayer');
-    if (toggle) toggle.checked = worksVisible;
-    const count = toggle?.closest('label')?.querySelector('strong');
-    if (count) count.textContent = records.length;
+    const toggle = $('toggleWorksLayer'); if (toggle) toggle.checked = worksVisible;
+    const count = toggle?.closest('label')?.querySelector('strong'); if (count) count.textContent = records.length;
+  }
+
+  function cancelEditing() {
+    $('worksRouteDialog')?.close();
+    clearDraft(); stopDrawing();
+    waypointPicking = false;
+    map?.getContainer().classList.remove('works-drawing-mode');
   }
 
   function init() {
-    map = getMap();
-    if (!map || !window.L) return false;
-    load();
-    layerGroup = L.layerGroup().addTo(map);
-    render();
-
+    map = getMap(); if (!map || !window.L) return false;
+    load(); layerGroup = L.layerGroup().addTo(map); draftLayer = L.layerGroup().addTo(map); render();
     $('createWorksRoute')?.addEventListener('click', startDrawing);
     $('worksRouteForm')?.addEventListener('submit', submitForm);
-    [$('cancelWorksRoute'), $('cancelWorksRouteFooter')].filter(Boolean).forEach(button => button.addEventListener('click', () => {
-      $('worksRouteDialog')?.close();
-      clearDraft();
-      stopDrawing();
-    }));
-
+    $('addWorksWaypoint')?.addEventListener('click', startWaypointPicking);
+    $('clearWorksWaypoints')?.addEventListener('click', clearWaypoints);
+    [$('cancelWorksRoute'), $('cancelWorksRouteFooter')].filter(Boolean).forEach(button => button.addEventListener('click', cancelEditing));
     document.addEventListener('click', event => {
-      const edit = event.target.closest('[data-work-edit]');
-      if (edit) editRecord(edit.dataset.workEdit);
-      const del = event.target.closest('[data-work-delete]');
-      if (del) deleteRecord(del.dataset.workDelete);
+      const edit = event.target.closest('[data-work-edit]'); if (edit) editRecord(edit.dataset.workEdit);
+      const del = event.target.closest('[data-work-delete]'); if (del) deleteRecord(del.dataset.workDelete);
     });
-
     const observer = new MutationObserver(syncWorksToggle);
-    const target = $('visibleLinesBody');
-    if (target) observer.observe(target, { childList: true, subtree: false });
+    const target = $('visibleLinesBody'); if (target) observer.observe(target, { childList: true, subtree: false });
     syncWorksToggle();
-
     window.BreizhStopsWorksApi = {
-      getAll: () => records.map(item => ({ ...item, points: item.points.map(p => ({ ...p })) })),
+      getAll: () => records.map(item => structuredClone(item)),
       setVisible: visible => { worksVisible = Boolean(visible); render(); },
       startDrawing
     };
