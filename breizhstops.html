@@ -4,18 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#005493">
-  <title>BreizhStops V12.2</title>
+  <title>BreizhStops V12.3</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-  <link rel="stylesheet" href="./style.css?v=12.1">
+  <link rel="stylesheet" href="./style.css?v=12.3">
 </head>
 
 <body class="breizhstops-page">
   <header class="app-header">
     <div>
-      <h1 class="brand-title"><img src="./assets/london-bus-side.png" class="brand-bus-icon" alt=""> BreizhStops <span class="app-version">V12.2</span></h1>
+      <h1 class="brand-title"><img src="./assets/london-bus-side.png" class="brand-bus-icon" alt=""> BreizhStops <span class="app-version">V12.3</span></h1>
       <div class="subtitle">Arrêts, lignes et itinéraires</div>
     </div>
 
@@ -81,6 +81,10 @@
 
         <button id="startCreateStop">
           ➕ Créer un arrêt
+        </button>
+
+        <button id="createWorksRoute" class="works-create-button">
+          🚧 Créer un itinéraire travaux
         </button>
       </div>
     </section>
@@ -830,11 +834,36 @@
     </form>
   </dialog>
 
+
+  <dialog id="worksRouteDialog" class="modal works-route-dialog">
+    <form id="worksRouteForm" class="modal-card works-route-card">
+      <div class="modal-header">
+        <div>
+          <h2>🚧 Itinéraire travaux</h2>
+          <div class="meta">Les deux extrémités du segment peuvent être déplacées avant l’enregistrement.</div>
+        </div>
+        <button type="button" id="cancelWorksRoute" class="icon-button" aria-label="Fermer">✕</button>
+      </div>
+      <input type="hidden" id="worksRouteId">
+      <div class="works-route-form-grid">
+        <label>Nom des travaux<input id="worksRouteTitle" type="text" placeholder="Ex. Travaux avenue de la Gare" required></label>
+        <label>Date de début<input id="worksRouteStart" type="date"></label>
+        <label>Date de fin<input id="worksRouteEnd" type="date"></label>
+        <label class="works-route-comment">Commentaire<textarea id="worksRouteComment" rows="4" placeholder="Circulation alternée, route barrée…"></textarea></label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="cancelWorksRouteFooter" class="secondary">Annuler</button>
+        <button type="submit">💾 Enregistrer les travaux</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./app.js?v=11.2.2"></script>
-  <script src="./network-map.js?v=12.1"></script>
+  <script src="./network-map.js?v=12.2"></script>
+  <script src="./works-routes.js?v=12.3"></script>
   <script src="./map-panels.js?v=12.1"></script>
   <script src="./exploitation-control.js?v=12.1"></script>
   <script src="./mode-exploitant.js?v=12.1"></script>

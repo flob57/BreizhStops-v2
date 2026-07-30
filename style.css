@@ -2321,3 +2321,27 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
 .floating-routes-empty{margin:4px 0;color:#d5e5d9;text-align:center}
 .floating-stops-mode{display:grid;gap:5px;font-weight:800;font-size:.82rem}
 @media(max-width:700px){.visible-lines-panel{left:8px;bottom:8px;width:calc(100% - 16px);max-height:65dvh}.floating-routes-list{max-height:260px}.floating-route-row{padding:9px 8px}.floating-lines-actions button{min-height:42px}}
+
+/* V12.3 — Itinéraires travaux */
+.works-create-button { background:#ef6c00 !important; border-color:#ff9800 !important; color:#fff !important; }
+.works-drawing-mode { cursor: crosshair !important; }
+.roadworks-map-icon { background:transparent; border:0; }
+.roadworks-map-icon span { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:#fff; border:3px solid #f57c00; box-shadow:0 2px 8px rgba(0,0,0,.35); font-size:17px; }
+.floating-works-layer { margin-bottom:10px; padding:9px 10px; border:1px solid rgba(255,152,0,.55); border-radius:10px; background:rgba(245,124,0,.15); }
+.floating-works-layer label { display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:800; }
+.floating-works-layer label span { flex:1; }
+.floating-works-layer label strong { min-width:25px; text-align:center; padding:2px 7px; border-radius:999px; background:#ef6c00; color:#fff; }
+.works-route-card { width:min(620px, calc(100vw - 28px)); }
+.works-route-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:18px 0; }
+.works-route-form-grid label { display:grid; gap:6px; font-weight:800; }
+.works-route-form-grid input,.works-route-form-grid textarea { width:100%; box-sizing:border-box; }
+.works-route-form-grid label:first-child,.works-route-comment { grid-column:1/-1; }
+.works-popup p { margin:8px 0; white-space:pre-wrap; }
+.works-popup-actions { display:flex; gap:8px; margin-top:10px; }
+.works-popup-actions button { padding:7px 10px; border-radius:8px; border:0; cursor:pointer; }
+.works-popup-actions .danger { background:#b71c1c; color:#fff; }
+@media (max-width:700px) {
+  .works-route-form-grid { grid-template-columns:1fr; }
+  .works-route-form-grid label:first-child,.works-route-comment { grid-column:auto; }
+  #createWorksRoute { font-size:13px; }
+}
