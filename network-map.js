@@ -324,18 +324,62 @@
     else api.showAllStops();
   }
 
+  const naturalLabel = route => `${route.network || ""} ${route.line || route.name || ""} ${route.direction || ""}`.trim();
+  const naturalSort = (a, b) => naturalLabel(a).localeCompare(naturalLabel(b), "fr", { numeric: true, sensitivity: "base" });
+
   function ensureFloatingPanel() {
     if($n("visibleLinesPanel"))return;
     const panel=document.createElement("section"); panel.id="visibleLinesPanel"; panel.className="visible-lines-panel";
-    panel.innerHTML='<div class="visible-lines-title">🚌 Lignes affichées <button type="button" id="toggleVisibleLines">−</button></div><div id="visibleLinesBody"></div>';
+    panel.innerHTML='<div class="visible-lines-title"><span>🚌 Lignes à afficher</span><button type="button" id="toggleVisibleLines" aria-label="Réduire le panneau">−</button></div><div id="visibleLinesBody"></div>';
     $n("map")?.appendChild(panel);
-    $n("toggleVisibleLines")?.addEventListener("click",()=>panel.classList.toggle("collapsed"));
+    $n("toggleVisibleLines")?.addEventListener("click",()=>{
+      panel.classList.toggle("collapsed");
+      const collapsed=panel.classList.contains("collapsed");
+      $n("toggleVisibleLines").textContent=collapsed?"+":"−";
+      $n("toggleVisibleLines").setAttribute("aria-label",collapsed?"Déplier le panneau":"Réduire le panneau");
+    });
   }
+
+  async function setAllRoutesVisible(visible) {
+    routeRecords.forEach(route => { route.visible = visible; });
+    await Promise.all(routeRecords.map(route => putRoute(route)));
+    renderList(); renderUnifiedList(); drawRoutes(); applyStopMode();
+    document.dispatchEvent(new CustomEvent("breizhstops:routes-updated"));
+  }
+
+  async function setRouteVisibleFromPanel(routeId, visible) {
+    const route=routeRecords.find(item=>item.id===routeId); if(!route)return;
+    route.visible=visible;
+    await putRoute(route);
+    renderList(); renderUnifiedList(); drawRoutes(); applyStopMode();
+    document.dispatchEvent(new CustomEvent("breizhstops:routes-updated"));
+  }
+
+  function renderFloatingRouteRows(query="") {
+    const list=$n("floatingRoutesList"); if(!list)return;
+    const needle=normalize(query);
+    const rows=[...routeRecords].sort(naturalSort).filter(route=>!needle||normalize(naturalLabel(route)).includes(needle));
+    list.innerHTML=rows.length?rows.map(route=>`<label class="floating-route-row" title="${esc(route.name)}"><input type="checkbox" class="floating-route-check" data-route-id="${esc(route.id)}" ${route.visible!==false?"checked":""}><span class="floating-route-swatch" style="--route-color:${esc(route.color)}"></span><span class="floating-route-name"><strong>${esc(route.network)} ${esc(route.line||route.name)}</strong>${route.direction?`<small>${esc(route.direction)}</small>`:""}</span></label>`).join(""):'<p class="floating-routes-empty">Aucune ligne correspondante.</p>';
+  }
+
   function updateFloatingPanel() {
-    ensureFloatingPanel(); const body=$n("visibleLinesBody");if(!body)return; const routes=visibleRoutes();
-    body.innerHTML=routes.length?`<div class="visible-line-chips">${routes.map(r=>`<span style="--route-color:${esc(r.color)}">${esc(r.network)} ${esc(r.line||r.name)}</span>`).join("")}</div><label><select id="floatingStopsMode"><option value="all">Tous les arrêts</option><option value="lines">Arrêts des lignes</option></select></label><button type="button" id="hideAllVisibleRoutes" class="secondary">Masquer toutes les lignes</button>`:'<p>Aucune ligne affichée.</p>';
+    ensureFloatingPanel(); const body=$n("visibleLinesBody");if(!body)return;
+    const visibleCount=visibleRoutes().length;
+    body.innerHTML=`
+      <div class="floating-lines-summary"><strong>${visibleCount}</strong> ligne(s) affichée(s) sur ${routeRecords.length}</div>
+      <div class="floating-lines-actions">
+        <button type="button" id="showAllVisibleRoutes" class="secondary">Tout afficher</button>
+        <button type="button" id="hideAllVisibleRoutes" class="secondary">Tout masquer</button>
+      </div>
+      <input id="floatingLinesSearch" class="floating-lines-search" type="search" placeholder="Rechercher une ligne…" autocomplete="off">
+      <div id="floatingRoutesList" class="floating-routes-list" role="group" aria-label="Lignes disponibles"></div>
+      <label class="floating-stops-mode">Arrêts affichés<select id="floatingStopsMode"><option value="all">Tous les arrêts</option><option value="lines">Arrêts des lignes affichées</option></select></label>`;
+    renderFloatingRouteRows();
     const select=$n("floatingStopsMode");if(select){select.value=stopDisplayMode;select.addEventListener("change",e=>{stopDisplayMode=e.target.value;applyStopMode();const other=$n("routeStopsMode");if(other)other.value=stopDisplayMode;});}
-    $n("hideAllVisibleRoutes")?.addEventListener("click",async()=>{for(const r of routeRecords){r.visible=false;await putRoute(r);}renderList();renderUnifiedList();drawRoutes();applyStopMode();});
+    $n("floatingLinesSearch")?.addEventListener("input",e=>renderFloatingRouteRows(e.target.value));
+    $n("floatingRoutesList")?.addEventListener("change",e=>{if(e.target.classList.contains("floating-route-check"))setRouteVisibleFromPanel(e.target.dataset.routeId,e.target.checked);});
+    $n("showAllVisibleRoutes")?.addEventListener("click",()=>setAllRoutesVisible(true));
+    $n("hideAllVisibleRoutes")?.addEventListener("click",()=>setAllRoutesVisible(false));
   }
 
   async function handleRouteListClick(e, dialog) {

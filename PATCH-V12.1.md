@@ -1,4 +1,4 @@
-# BreizhStops V12.1 — Mode Exploitant par ligne
+# BreizhStops V12.2 — Mode Exploitant par ligne
 
 ## Nouveautés
 - Nouveau bouton **Mode ligne** dans la carte.
