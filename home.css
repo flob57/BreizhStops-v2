@@ -632,3 +632,17 @@ a[href*="mon-parc"] {
 
 /* V11.0 — rendez-vous atelier */
 .appointment-panel{border-top:3px solid #8b5cf6}.appointment-card{border-left:4px solid #8b5cf6}.appointment-date{display:inline-flex;margin-top:6px;padding:4px 8px;border-radius:999px;background:rgba(139,92,246,.16);color:#d8ccff;font-size:12px;font-weight:800}.panel-link{display:inline-block;margin-top:14px;color:#bda8ff;text-decoration:none;font-weight:800}.panel-link:hover{text-decoration:underline}
+
+/* V12.7 — Carte Vidange Tachy */
+.tachy-home-card{min-height:390px}
+.tachy-home-visual{min-height:220px;display:grid;grid-template-columns:170px 1fr;align-items:center;gap:22px;padding:24px;background:radial-gradient(circle at 30% 30%,rgba(73,194,122,.12),transparent 55%),linear-gradient(145deg,#142219,#07100b)}
+.tachy-donut{--late:0;--soon:0;--current:100;width:164px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#df5548 0 calc(var(--late)*1%),#efa83c calc(var(--late)*1%) calc((var(--late) + var(--soon))*1%),#4ac47a calc((var(--late) + var(--soon))*1%) 100%);box-shadow:0 14px 34px rgba(0,0,0,.28);position:relative}
+.tachy-donut::after{content:"";position:absolute;inset:23px;border-radius:50%;background:#0b140e;border:1px solid rgba(255,255,255,.08)}
+.tachy-donut-center{position:relative;z-index:1;text-align:center;display:grid;gap:2px}
+.tachy-donut-center strong{font-size:35px;line-height:1;color:#fff}
+.tachy-donut-center span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#aab8ae}
+.tachy-legend{display:grid;gap:12px}
+.tachy-legend span{display:grid;grid-template-columns:12px 30px 1fr;align-items:center;gap:8px;color:#c6d0c9;font-size:14px}
+.tachy-legend i{width:10px;height:10px;border-radius:50%}.tachy-legend i.late{background:#df5548}.tachy-legend i.soon{background:#efa83c}.tachy-legend i.current{background:#4ac47a}
+.tachy-legend b{font-size:18px;color:#fff}
+@media(max-width:500px){.tachy-home-visual{grid-template-columns:135px 1fr;padding:18px;gap:14px}.tachy-donut{width:132px}.tachy-donut::after{inset:19px}.tachy-donut-center strong{font-size:28px}.tachy-legend span{grid-template-columns:10px 24px 1fr;gap:6px;font-size:12px}}

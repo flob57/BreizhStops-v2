@@ -409,3 +409,30 @@ async function loadWorkshopAppointments() {
 }
 
 loadWorkshopAppointments();
+
+// V12.7 — Résumé Vidange Tachy
+async function loadTachySummary() {
+  const donut = document.getElementById("tachyDonut");
+  if (!donut) return;
+  const message = document.getElementById("tachyHomeMessage");
+  try {
+    const payload = await api("/api/tachy");
+    const counts = payload.counts || { total: 0, late: 0, soon: 0, current: 0 };
+    const total = Math.max(0, Number(counts.total || 0));
+    const latePct = total ? (Number(counts.late || 0) / total) * 100 : 0;
+    const soonPct = total ? (Number(counts.soon || 0) / total) * 100 : 0;
+    donut.style.setProperty("--late", latePct.toFixed(2));
+    donut.style.setProperty("--soon", soonPct.toFixed(2));
+    donut.style.setProperty("--current", Math.max(0, 100 - latePct - soonPct).toFixed(2));
+    document.getElementById("tachyTotal").textContent = total;
+    document.getElementById("tachyLate").textContent = counts.late || 0;
+    document.getElementById("tachySoon").textContent = counts.soon || 0;
+    document.getElementById("tachyCurrent").textContent = counts.current || 0;
+    message.textContent = counts.unknown
+      ? `${counts.unknown} véhicule(s) sans date de déchargement renseignée.`
+      : total ? "Échéance calculée à 90 jours après le dernier déchargement." : "Aucun véhicule en service trouvé.";
+  } catch (error) {
+    message.textContent = `Impossible de charger les échéances : ${error.message}`;
+  }
+}
+loadTachySummary();

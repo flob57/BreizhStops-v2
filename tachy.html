@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07100b">
+  <title>Vidange Tachy — Mon dépôt</title>
+  <link rel="stylesheet" href="./tachy.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="./index.html" class="back">← Accueil</a>
+    <div><strong>Vidange Tachy</strong><span>Échéance maximale : 90 jours</span></div>
+    <button id="refresh" type="button">↻ Actualiser</button>
+  </header>
+
+  <main>
+    <section class="summary">
+      <div class="summary-copy">
+        <span class="kicker">CHRONOTACHYGRAPHES</span>
+        <h1>Suivi des déchargements</h1>
+        <p>Seuls les véhicules dont l’état est « En service sur mon parc » sont pris en compte.</p>
+      </div>
+      <div class="summary-counts">
+        <div class="count late"><strong id="lateCount">—</strong><span>En retard</span></div>
+        <div class="count soon"><strong id="soonCount">—</strong><span>À vider sous 30 jours</span></div>
+        <div class="count current"><strong id="currentCount">—</strong><span>À jour</span></div>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Rechercher une immatriculation ou un n° de parc"></label>
+      <span id="total" class="total">— véhicule(s)</span>
+    </section>
+
+    <p id="message" class="message">Chargement des véhicules…</p>
+    <section id="vehicles" class="vehicle-grid" aria-live="polite"></section>
+  </main>
+
+  <script src="./tachy.js"></script>
+</body>
+</html>
