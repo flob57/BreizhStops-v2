@@ -190,7 +190,8 @@ async function loadStops() {
           return {
             ...stop,
             nom: override.custom_name || stop.nom,
-            direction: override.direction || ""
+            direction: override.direction || "",
+            status: override.status || ""
           };
         });
     } catch (overrideError) {
@@ -326,6 +327,28 @@ function getSourceBadges(stop) {
   return badges.join("");
 }
 
+function isStopOutOfService(stop) {
+  return String(stop?.status || "").toLowerCase() === "hors_service";
+}
+
+function getStopMarkerOptions(stop) {
+  if (!isStopOutOfService(stop)) {
+    return {};
+  }
+
+  return {
+    icon: L.divIcon({
+      className: "stop-marker-wrapper",
+      html: '<div class="stop-marker stop-marker--out-of-service" title="Arrêt hors service"><span aria-hidden="true">🚫</span></div>',
+      iconSize: [34, 42],
+      iconAnchor: [17, 40],
+      popupAnchor: [0, -38]
+    }),
+    opacity: 0.72,
+    zIndexOffset: -200
+  };
+}
+
 function displayResults(results, total) {
   counterEl.textContent =
     `${total} résultat(s). ` +
@@ -340,7 +363,8 @@ function displayResults(results, total) {
   resultsEl.innerHTML = results.map((stop, index) => `
     <article class="result">
       <div class="result-title">
-        🚏 ${escapeHtml(stop.nom || "Arrêt sans nom")}
+        ${isStopOutOfService(stop) ? "🚫" : "🚏"} ${escapeHtml(stop.nom || "Arrêt sans nom")}
+        ${isStopOutOfService(stop) ? '<span class="badge stop-out-of-service-badge">Hors service</span>' : ""}
       </div>
 
       <div class="meta">
@@ -381,15 +405,16 @@ function displayMarkers(results, fitToResults = false) {
       return;
     }
 
-    const marker = L.marker([lat, lon]);
+    const marker = L.marker([lat, lon], getStopMarkerOptions(stop));
     const safeId = String(stop.id)
       .replace(/\\/g, "\\\\")
       .replace(/'/g, "\\'");
 
     marker.bindPopup(`
       <div class="popup-title">
-        🚏 ${escapeHtml(stop.nom || "Arrêt sans nom")}
+        ${isStopOutOfService(stop) ? "🚫" : "🚏"} ${escapeHtml(stop.nom || "Arrêt sans nom")}
       </div>
+      ${isStopOutOfService(stop) ? '<div class="popup-stop-status popup-stop-status--out">Hors service</div>' : ""}
       <div>📍 ${escapeHtml(stop.commune || "")}</div>
       <div>🚌 ${escapeHtml(stop.reseau || "")}</div>
       <br>
@@ -1063,7 +1088,7 @@ async function openStopSheetFor(stop) {
   $("stopDirection").value = stop.direction || "";
   $("stopLines").value = "";
   $("stopNotes").value = "";
-  $("stopStatus").value = "";
+  $("stopStatus").value = stop.status || "";
   $("stopPhotos").innerHTML = "";
 
   $("stopDialog").showModal();
@@ -1076,6 +1101,7 @@ async function openStopSheetFor(stop) {
     $("stopLines").value = (data.lines || []).join(", ");
     $("stopNotes").value = data.notes || "";
     $("stopStatus").value = data.status || "";
+    activeStop.status = data.status || "";
 
     renderStopPhotos(data.photos || []);
   } catch (error) {
@@ -1126,6 +1152,7 @@ async function saveStopDetails() {
     activeStop.nom =
       $("stopEditableName").value.trim() || activeStop.nom;
     activeStop.direction = $("stopDirection").value;
+    activeStop.status = $("stopStatus").value;
 
     $("stopDialogTitle").textContent = activeStop.nom;
     refreshSearch();

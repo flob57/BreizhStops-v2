@@ -9,11 +9,14 @@ export async function onRequestGet(context) {
     const db = requireDb(context);
     const result = await db.prepare(
       `SELECT
-         stop_id,
-         custom_name,
-         direction,
-         deleted
-       FROM stop_overrides`
+         overrides.stop_id,
+         overrides.custom_name,
+         overrides.direction,
+         overrides.deleted,
+         COALESCE(details.status, '') AS status
+       FROM stop_overrides AS overrides
+       LEFT JOIN stop_details AS details
+         ON details.stop_id = overrides.stop_id`
     ).all();
 
     return json(result.results || []);

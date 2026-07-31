@@ -2378,3 +2378,51 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
 .floating-stop-choice input{width:18px;height:18px;margin:0;accent-color:#25894a}
 #floatingStopsMode{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}
 @media(max-width:700px){.floating-stops-card{grid-template-columns:1fr}.floating-stops-card-title{grid-column:auto}.floating-layer-choice{grid-template-columns:auto 32px minmax(0,1fr) auto}.floating-routes-list{max-height:230px}}
+
+
+/* V12.8 — Arrêts hors service */
+.stop-marker-wrapper {
+  background: transparent;
+  border: 0;
+}
+
+.stop-marker--out-of-service {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #747b84;
+  border: 3px solid #f5f7f8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .42);
+  color: #fff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.stop-marker--out-of-service span {
+  transform: rotate(45deg);
+  line-height: 1;
+  filter: grayscale(1);
+}
+
+.stop-out-of-service-badge,
+.popup-stop-status--out {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-left: .4rem;
+  padding: .18rem .48rem;
+  border-radius: 999px;
+  background: #69717a;
+  color: #fff;
+  border: 1px solid #8d949b;
+  font-size: .75rem;
+  font-weight: 800;
+}
+
+.popup-stop-status--out {
+  margin: .35rem 0 .45rem;
+}
