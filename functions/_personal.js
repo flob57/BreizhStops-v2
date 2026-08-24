@@ -56,7 +56,6 @@ export function sqlDateExpression(column) {
   return `date(${column}, '+2 hours')`;
 }
 
-
 export async function ensurePersonalSchema(db) {
   const statements = [
     `CREATE TABLE IF NOT EXISTS personal_settings (id TEXT PRIMARY KEY, overtime_balance_minutes INTEGER NOT NULL DEFAULT 0, overtime_baseline_date TEXT NOT NULL DEFAULT '2026-07-17', paid_leave_n1 REAL NOT NULL DEFAULT 0, paid_leave_n REAL NOT NULL DEFAULT 0, paid_leave_baseline_date TEXT NOT NULL DEFAULT '2026-07-17', updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
@@ -95,13 +94,43 @@ export async function calendarForRange(db, start, end) {
   return result.results || [];
 }
 
+// Several calendar events may overlap (for example "Vacances Été" and
+// "Congés payés semaine 1"). A simple find() used to return the first event,
+// usually the long school-holiday period, and therefore ignored the paid leave.
+// Prefer the most specific/non-working event whenever several events cover
+// the same date.
 export function calendarEventForDate(events, date) {
-  return events.find(e => e.start_date <= date && e.end_date >= date) || null;
+  const matching = events.filter(e => e.start_date <= date && e.end_date >= date);
+  if (!matching.length) return null;
+
+  const priority = event => {
+    if (["public_holiday", "paid_leave", "recovery"].includes(event.event_type)) return 100;
+    if (event.service_profile === "none") return 90;
+    if (event.event_type === "school_holiday") return 20;
+    return 10;
+  };
+
+  return matching
+    .slice()
+    .sort((a, b) => {
+      const priorityDiff = priority(b) - priority(a);
+      if (priorityDiff) return priorityDiff;
+      const aSpan = String(a.start_date || "").length && String(a.end_date || "").length
+        ? (new Date(`${a.end_date}T12:00:00Z`) - new Date(`${a.start_date}T12:00:00Z`))
+        : 0;
+      const bSpan = String(b.start_date || "").length && String(b.end_date || "").length
+        ? (new Date(`${b.end_date}T12:00:00Z`) - new Date(`${b.start_date}T12:00:00Z`))
+        : 0;
+      return aSpan - bSpan;
+    })[0];
 }
 
 export function expectedMinutesForDate(date, events) {
   const event = calendarEventForDate(events, date);
-  if (event && ["public_holiday", "recovery", "paid_leave"].includes(event.event_type)) {
+  if (event && (
+    ["public_holiday", "recovery", "paid_leave"].includes(event.event_type) ||
+    event.service_profile === "none"
+  )) {
     return 0;
   }
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
@@ -111,7 +140,10 @@ export function expectedMinutesForDate(date, events) {
 export function prefillForDate(date, events) {
   const event = calendarEventForDate(events, date);
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
-  if (event && ["public_holiday", "recovery", "paid_leave"].includes(event.event_type)) {
+  if (event && (
+    ["public_holiday", "recovery", "paid_leave"].includes(event.event_type) ||
+    event.service_profile === "none"
+  )) {
     return { morning_start: "", morning_end: "", afternoon_start: "", afternoon_end: "" };
   }
   if (event && event.event_type === "school_holiday") {
