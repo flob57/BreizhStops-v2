@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050806">
+<title>Girouettes — Mon dépôt</title>
+<style>
+:root{color-scheme:dark;--bg:#050806;--panel:#0d120f;--line:#344038;--muted:#aeb8b0;--accent:#9be564;--danger:#d66b67}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f7f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit;text-decoration:none}.top{padding:18px 20px;border-bottom:1px solid #263029;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;background:rgba(5,8,6,.94);backdrop-filter:blur(14px);z-index:5}.back{padding:10px 14px;border:1px solid var(--line);border-radius:12px}.title{font-weight:800;font-size:20px}.sub{color:var(--muted);font-size:13px;margin-top:2px}.wrap{max-width:1100px;margin:auto;padding:28px 20px 60px}.hero{background:linear-gradient(135deg,#101811,#0a0e0b);border:1px solid var(--line);border-radius:24px;padding:26px;margin-bottom:20px}.eyebrow{color:var(--accent);font-weight:800;letter-spacing:.08em;font-size:12px}.hero h1{font-size:34px;margin:8px 0}.hero p{color:var(--muted);max-width:760px;line-height:1.5}.modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:20px 0}.module{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:20px}.module.active{border-color:#60765d}.module h2{margin:8px 0;font-size:20px}.module p{color:var(--muted);line-height:1.45;font-size:14px}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#19251b;color:var(--accent);font-size:11px;font-weight:800}.badge.soon{color:#b7c0ba;background:#151a17}.guide{border:1px solid var(--line);background:var(--panel);border-radius:24px;padding:18px;overflow:hidden}.guide-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.guide h2{margin:0;font-size:24px}.animation{width:100%;display:block;border-radius:18px;background:#070a08;border:1px solid #263029}.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-top:16px}.step{display:flex;gap:12px;border:1px solid #29332c;background:#101610;border-radius:14px;padding:14px}.num{min-width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#071007;font-weight:900}.step strong{display:block;margin-bottom:5px}.step span{display:block;color:var(--muted);font-size:13px;line-height:1.4}.warning{margin-top:18px;padding:14px;border-radius:14px;background:#241916;border:1px solid #5b302d;color:#f0c5c2;font-size:13px;line-height:1.45}.footer{color:#778178;text-align:center;font-size:12px;margin-top:28px}
+@media(max-width:600px){.wrap{padding:18px 12px 40px}.hero{padding:20px}.hero h1{font-size:28px}.top{padding:14px 12px}.animation{border-radius:12px}}
+</style>
+</head>
+<body>
+<header class="top"><a class="back" href="./index.html">← Accueil</a><div><div class="title">🎛️ Girouettes</div><div class="sub">Suivi et procédures des systèmes de girouettes</div></div></header>
+<main class="wrap">
+<section class="hero"><div class="eyebrow">GESTION DES GIROUETTES</div><h1>Girouettes des véhicules</h1><p>Un espace dédié aux procédures, au suivi des équipements et aux futures fonctions de gestion des girouettes. La première procédure disponible concerne la mise à jour des pupitres <strong>HANOVER EG4</strong>.</p></section>
+<section class="modules">
+<article class="module active"><span class="badge">DISPONIBLE</span><h2>🔄 Mise à jour HANOVER EG4</h2><p>Guide pas à pas pour effectuer une mise à jour du pupitre avec une clé USB.</p><a class="back" href="#guide">Ouvrir le guide ↓</a></article>
+<article class="module"><span class="badge soon">À VENIR</span><h2>🚍 Suivi des véhicules</h2><p>Prévu pour suivre l’état et la version du système de girouette de chaque véhicule.</p></article>
+<article class="module"><span class="badge soon">À VENIR</span><h2>📋 Historique</h2><p>Prévu pour conserver les dates de mises à jour et les interventions réalisées.</p></article>
+</section>
+<section id="guide" class="guide"><div class="guide-head"><div><div class="eyebrow">HANOVER EG4</div><h2>Guide de mise à jour</h2></div><span class="badge">9 étapes</span></div><img class="animation" src="./assets/girouettes-guide.svg" alt="Animation du guide de mise à jour HANOVER EG4">
+<div class="steps">
+<div class="step"><b class="num">1</b><div><strong>Prise de poste</strong><span>Appuyez sur l’icône roue crantée en bas.</span></div></div>
+<div class="step"><b class="num">2</b><div><strong>Code maintenance</strong><span>Saisissez <strong>2711</strong>.</span></div></div>
+<div class="step"><b class="num">3</b><div><strong>Menu maintenance</strong><span>Restez appuyé sur l’icône QUB en haut à gauche jusqu’à ce que l’heure se fige.</span></div></div>
+<div class="step"><b class="num">4</b><div><strong>Redémarrage</strong><span>Le pupitre redémarre et affiche le logo HANOVER.</span></div></div>
+<div class="step"><b class="num">5</b><div><strong>Clé USB</strong><span>Attendez « Il n’y a pas de destination sélectionnée », puis insérez la clé USB.</span></div></div>
+<div class="step"><b class="num">6</b><div><strong>Mise à jour</strong><span>La mise à jour démarre. Patientez sans retirer la clé.</span></div></div>
+<div class="step"><b class="num">7</b><div><strong>Progression</strong><span>La barre de progression avance. Ne pas interrompre le pupitre.</span></div></div>
+<div class="step"><b class="num">8</b><div><strong>Fin du transfert</strong><span>Continuez d’attendre jusqu’à la fin de la mise à jour.</span></div></div>
+<div class="step"><b class="num">9</b><div><strong>Mise à jour réussie</strong><span>Retirez la clé USB puis appuyez sur « Fermer ».</span></div></div>
+</div>
+<div class="warning">⚠️ <strong>Important :</strong> ne retirez pas la clé USB et n’interrompez pas l’alimentation pendant la mise à jour. Si le pupitre reste bloqué ou affiche une erreur, interrompez la procédure et faites remonter l’anomalie.</div>
+</section>
+<div class="footer">Mon dépôt · BreizhStops · Girouettes</div>
+</main>
+</body>
+</html>
