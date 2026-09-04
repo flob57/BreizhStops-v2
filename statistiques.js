@@ -36,7 +36,11 @@ function renderVehicleHistory(){
    ...drives.map(x=>({date:x.started_at,type:"Conduite",detail:`${fmtDate(x.started_at)} → ${fmtDate(x.ended_at)}`,extra:x.km_end==null?"En cours":`${x.km_start} → ${x.km_end} km · ${Math.max(0,Number(x.km_end)-Number(x.km_start))} km`})),
    ...fuels.map(x=>({date:x.filled_at,type:"Plein",detail:fmtDate(x.filled_at),extra:`${x.odometer_km} km · ${Number(x.litres).toFixed(2)} L`}))
  ].sort((a,b)=>new Date(b.date)-new Date(a.date));
- const latestKm=events.map(e=>{const m=e.extra.match(/(?:^|· )([0-9]+) km/);return m?Number(m[1]):null}).find(v=>v!=null);
+ const latestKm=Math.max(
+   ...drives.flatMap(x=>[x.km_start,x.km_end].filter(v=>v!=null).map(Number)),
+   ...fuels.map(x=>Number(x.odometer_km)).filter(Number.isFinite),
+   0
+ );
  list.innerHTML=`
    <div class="vehicle-history-summary"><strong>${esc(reg)}</strong><span>Dernier kilométrage connu : <b>${latestKm==null?"—":latestKm+" km"}</b></span></div>
    ${events.length?events.map(e=>`<div class="history-row"><div><strong>${esc(e.type)}</strong><span>${esc(e.detail)}</span></div><strong>${esc(e.extra)}</strong></div>`).join(""):"<div class='history-empty'>Aucune activité enregistrée pour ce véhicule.</div>"}
