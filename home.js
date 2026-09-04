@@ -65,8 +65,25 @@ async function loadVehicles(sync=false) {
   // On le relit à chaque ouverture de la prise de volant afin d'inclure
   // immédiatement les véhicules ajoutés dans Notion.
   try {
-    const fleet=await api(`/api/fleet?v=${Date.now()}`);
-    vehicleDetails=new Map((fleet.vehicles||[]).map(v=>[String(v.registration).toUpperCase(),v]));
+    const [fleet, stats]=await Promise.all([
+      api(`/api/fleet?v=${Date.now()}`),
+      api(`/api/timeclock/stats?v=${Date.now()}`).catch(()=>({driving_sessions:[],fuel_fillups:[]}))
+    ]);
+    const lastKm=new Map();
+    for(const row of (stats.driving_sessions||[])){
+      const reg=String(row.vehicle_registration||"").toUpperCase();
+      const km=row.km_end!=null ? Number(row.km_end) : Number(row.km_start);
+      if(reg && Number.isFinite(km)) lastKm.set(reg,Math.max(lastKm.get(reg)||0,km));
+    }
+    for(const row of (stats.fuel_fillups||[])){
+      const reg=String(row.vehicle_registration||"").toUpperCase();
+      const km=Number(row.odometer_km);
+      if(reg && Number.isFinite(km)) lastKm.set(reg,Math.max(lastKm.get(reg)||0,km));
+    }
+    vehicleDetails=new Map((fleet.vehicles||[]).map(v=>[
+      String(v.registration).toUpperCase(),
+      {...v,last_km:lastKm.get(String(v.registration).toUpperCase()) ?? null}
+    ]));
     vehicles=(fleet.vehicles||[]).map(v=>v.registration).filter(Boolean);
   } catch(e) {
     console.warn("Parc Notion indisponible :",e);
