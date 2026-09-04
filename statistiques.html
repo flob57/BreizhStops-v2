@@ -51,13 +51,21 @@
   </section>
 
   <section class="panel">
-    <h2>Sessions de travail réelles</h2>
+    <div class="panel-title"><div><h2>Sessions de travail réelles</h2><div id="workWeekLabel" class="subtle"></div></div></div>
     <div id="workSessions" class="table-wrap"></div>
   </section>
 
   <section class="panel">
-    <h2>Sessions de conduite</h2>
+    <div class="panel-title"><div><h2>Sessions de conduite</h2><div id="drivingWeekLabel" class="subtle"></div></div></div>
     <div id="drivingSessions" class="table-wrap"></div>
+  </section>
+
+  <section class="panel vehicle-history-panel">
+    <div class="panel-title">
+      <div><h2>Historique par véhicule</h2><div class="subtle">Conduites et pleins enregistrés</div></div>
+      <select id="vehicleHistorySelect" aria-label="Choisir un véhicule"></select>
+    </div>
+    <div id="vehicleHistory" class="vehicle-history"></div>
   </section>
 
   <section class="panel">
