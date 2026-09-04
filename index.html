@@ -196,6 +196,7 @@
       <label>Véhicule
         <select id="drivingVehicle" required></select>
       </label>
+      <div id="drivingVehicleCard" class="driving-vehicle-card-host"></div>
       <label>Kilométrage de départ
         <input id="drivingKmStart" type="number" min="0" step="1" required>
       </label>
@@ -206,6 +207,8 @@
   <dialog id="drivingEndDialog" class="home-dialog">
     <form id="drivingEndForm" method="dialog">
       <h2>Terminer la conduite</h2>
+      <div id="drivingEndVehicleCard" class="driving-vehicle-card-host"></div>
+      <div class="driving-duration-preview"><span>Temps de conduite</span><strong id="drivingEndDuration">—</strong></div>
       <label>Kilométrage d’arrivée
         <input id="drivingKmEnd" type="number" min="0" step="1" required>
       </label>
