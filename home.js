@@ -1,6 +1,8 @@
 const $ = id => document.getElementById(id);
 let clockState = { work: null, driving: null };
 let vehicles = [];
+let vehicleDetails = new Map();
+let drivingEndTimer = null;
 
 function parisDate() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -59,11 +61,23 @@ async function loadVehicles(sync=false) {
   if(sync) {
     try { await api("/api/public/vehicles/sync",{method:"POST",body:"{}"}); } catch(e) { console.warn(e); }
   }
-  const payload=await api("/api/timeclock/vehicles");
-  vehicles=payload.vehicles||[];
-  $("drivingVehicle").innerHTML=vehicles.length
-    ? vehicles.map(v=>`<option>${v}</option>`).join("")
+  // Le parc Notion reste la source de vérité pour la fiche véhicule.
+  // On le relit à chaque ouverture de la prise de volant afin d'inclure
+  // immédiatement les véhicules ajoutés dans Notion.
+  try {
+    const fleet=await api(`/api/fleet?v=${Date.now()}`);
+    vehicleDetails=new Map((fleet.vehicles||[]).map(v=>[String(v.registration).toUpperCase(),v]));
+    vehicles=(fleet.vehicles||[]).map(v=>v.registration).filter(Boolean);
+  } catch(e) {
+    console.warn("Parc Notion indisponible :",e);
+    const payload=await api("/api/timeclock/vehicles");
+    vehicles=payload.vehicles||[];
+  }
+  const select=$("drivingVehicle");
+  select.innerHTML=vehicles.length
+    ? vehicles.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("")
     : `<option value="">Aucun véhicule synchronisé</option>`;
+  renderSelectedVehicleCard();
 }
 async function refreshActivity() {
   try {
@@ -89,12 +103,18 @@ async function toggleWork() {
 }
 async function toggleDriving() {
   if(!clockState.driving) {
-    if(!vehicles.length) await loadVehicles(true);
+    await loadVehicles(true);
+    $("drivingKmStart").value="";
+    renderSelectedVehicleCard();
     $("drivingDialog").showModal();
   } else {
     $("drivingKmEnd").min=clockState.driving.km_start;
     $("drivingKmEnd").value=clockState.driving.km_start;
+    renderDrivingEndCard();
     $("drivingEndDialog").showModal();
+    updateDrivingEndDuration();
+    clearInterval(drivingEndTimer);
+    drivingEndTimer=setInterval(updateDrivingEndDuration,1000);
   }
 }
 async function submitDrivingStart(e) {
@@ -110,9 +130,56 @@ async function submitDrivingEnd(e) {
   e.preventDefault();
   try {
     await api("/api/timeclock/driving",{method:"POST",body:JSON.stringify({action:"stop",km_end:$("drivingKmEnd").value})});
+    clearInterval(drivingEndTimer);
     $("drivingEndDialog").close(); e.target.reset(); await refreshActivity();
   } catch(err){alert(err.message);}
 }
+function selectedVehicle() {
+  return vehicleDetails.get(String($("drivingVehicle")?.value || "").toUpperCase()) || {
+    registration:$("drivingVehicle")?.value || ""
+  };
+}
+function vehicleCardHtml(vehicle, kmLabel="Dernier kilométrage connu", kmValue="—") {
+  const cover=vehicle.cover_url
+    ? `<img class="driving-vehicle-cover" src="${escapeHtml(vehicle.cover_url)}" alt="">`
+    : `<div class="driving-vehicle-placeholder">🚌</div>`;
+  return `
+    <div class="driving-vehicle-card">
+      <div class="driving-vehicle-photo">${cover}</div>
+      <div class="driving-vehicle-info">
+        <div class="driving-vehicle-title">
+          <strong>${escapeHtml(vehicle.registration || "Véhicule")}</strong>
+          <span>Véhicule Notion</span>
+        </div>
+        <div class="driving-vehicle-grid">
+          <div><span>Parc Océlorn</span><strong>${escapeHtml(vehicle.ocelorn_number || "—")}</strong></div>
+          <div><span>N° QUB</span><strong>${escapeHtml(vehicle.qub_number || "—")}</strong></div>
+          <div><span>Immatriculation</span><strong>${escapeHtml(vehicle.registration || "—")}</strong></div>
+          <div><span>${escapeHtml(kmLabel)}</span><strong>${escapeHtml(String(kmValue))}</strong></div>
+        </div>
+      </div>
+    </div>`;
+}
+function renderSelectedVehicleCard() {
+  const card=$("drivingVehicleCard");
+  if(!card) return;
+  const vehicle=selectedVehicle();
+  card.innerHTML=vehicleCardHtml(vehicle,"Dernier kilométrage connu",vehicle.last_km == null ? "—" : `${vehicle.last_km} km`);
+}
+function renderDrivingEndCard() {
+  const card=$("drivingEndVehicleCard");
+  if(!card) return;
+  const vehicle=vehicleDetails.get(String(clockState.driving?.vehicle_registration||"").toUpperCase()) || {registration:clockState.driving?.vehicle_registration||""};
+  card.innerHTML=vehicleCardHtml(vehicle,"Kilométrage de départ",`${clockState.driving?.km_start ?? "—"} km`);
+}
+function updateDrivingEndDuration() {
+  const el=$("drivingEndDuration");
+  if(!el || !clockState.driving?.started_at) return;
+  const minutes=Math.max(0,Math.round((Date.now()-new Date(clockState.driving.started_at).getTime())/60000));
+  el.textContent=fmtMinutes(minutes);
+}
+$("drivingVehicle")?.addEventListener("change",renderSelectedVehicleCard);
+
 function openFuel() {
   $("fuelVehicleLabel").textContent=`Véhicule : ${clockState.driving.vehicle_registration}`;
   $("fuelKm").min=clockState.driving.km_start;
