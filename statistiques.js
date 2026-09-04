@@ -42,7 +42,7 @@ function renderVehicleHistory(){
    0
  );
  list.innerHTML=`
-   <div class="vehicle-history-summary"><strong>${esc(reg)}</strong><span>Dernier kilométrage connu : <b>${latestKm==null?"—":latestKm+" km"}</b></span></div>
+   <div class="vehicle-history-summary"><strong>${esc(reg)}</strong><span>Dernier kilométrage connu : <b>${latestKm>0?latestKm+" km":"—"}</b></span></div>
    ${events.length?events.map(e=>`<div class="history-row"><div><strong>${esc(e.type)}</strong><span>${esc(e.detail)}</span></div><strong>${esc(e.extra)}</strong></div>`).join(""):"<div class='history-empty'>Aucune activité enregistrée pour ce véhicule.</div>"}
  `;
 }
