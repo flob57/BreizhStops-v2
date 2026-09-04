@@ -84,6 +84,10 @@ function render(){
  $("drivingSessions").innerHTML=table(["Date","Véhicule","Début","Fin","Durée","Km début","Km fin","Distance",""],weekDriving.map(x=>[dateOnly(x.started_at),x.vehicle_registration,fmtDate(x.started_at),fmtDate(x.ended_at),fmt(duration(x)),x.km_start,x.km_end??"—",x.km_end==null?"—":`${x.km_end-x.km_start} km`,actions("driving",x.id)]));
  $("workWeekLabel").textContent=`Semaine du ${d.week_start} au ${d.week_end}`;
  $("drivingWeekLabel").textContent=`Semaine du ${d.week_start} au ${d.week_end}`;
+ const selectedWeek=isoWeekValue(new Date(`${d.week_start}T12:00:00`));
+ $("weekPicker").value=selectedWeek;
+ $("workWeekPicker").value=selectedWeek;
+ $("drivingWeekPicker").value=selectedWeek;
  renderVehicleHistory();
  const dist=d.distance_totals;$("distanceSummary").innerHTML=[["Aujourd’hui",dist.today],["Cette semaine",dist.week],["Ce mois",dist.month],["Cette année",dist.year],["Depuis toujours",dist.all]].map(([l,v])=>`<div><span>${l}</span><strong>${v} km</strong></div>`).join("");
 }
@@ -270,7 +274,20 @@ async function submitRecordEdit(event){
   closeRecordDialog();
   await load();
 }
-$("weekPicker").value=isoWeekValue();$("weekPicker").addEventListener("change",load);$("dailyPeriod").addEventListener("change",renderDaily);
+$("weekPicker").value=isoWeekValue();
+ $("workWeekPicker").value=isoWeekValue();
+ $("drivingWeekPicker").value=isoWeekValue();
+ function changeWeek(value){
+   if(!value)return;
+   $("weekPicker").value=value;
+   $("workWeekPicker").value=value;
+   $("drivingWeekPicker").value=value;
+   load();
+ }
+ $("weekPicker").addEventListener("change",e=>changeWeek(e.target.value));
+ $("workWeekPicker").addEventListener("change",e=>changeWeek(e.target.value));
+ $("drivingWeekPicker").addEventListener("change",e=>changeWeek(e.target.value));
+ $("dailyPeriod").addEventListener("change",renderDaily);
 $("vehicleHistorySelect")?.addEventListener("change",renderVehicleHistory);$("declareHere").addEventListener("click",()=>openDeclaration().catch(e=>alert(e.message)));$("declareForm").addEventListener("submit",submitDeclaration);
 $("settingsButton").addEventListener("click",async()=>{try{const s=state.data?.settings||(await api("/api/timeclock/settings")).settings;$("settingOvertime").value=s.overtime_balance_minutes??720;$("settingOvertimeDate").value=s.overtime_baseline_date||"2026-07-17";$("settingN1").value=s.paid_leave_n1??28;$("settingN").value=s.paid_leave_n??5;$("settingLeaveDate").value=s.paid_leave_baseline_date||"2026-07-17";$("settingsDialog").showModal()}catch(e){alert(e.message)}});
 $("settingsForm").addEventListener("submit",async e=>{e.preventDefault();await api("/api/timeclock/settings",{method:"POST",body:JSON.stringify({overtime_balance_minutes:$("settingOvertime").value,overtime_baseline_date:$("settingOvertimeDate").value,paid_leave_n1:$("settingN1").value,paid_leave_n:$("settingN").value,paid_leave_baseline_date:$("settingLeaveDate").value})});$("settingsDialog").close();await load()});
