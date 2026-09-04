@@ -646,3 +646,20 @@ a[href*="mon-parc"] {
 .tachy-legend i{width:10px;height:10px;border-radius:50%}.tachy-legend i.late{background:#df5548}.tachy-legend i.soon{background:#efa83c}.tachy-legend i.current{background:#4ac47a}
 .tachy-legend b{font-size:18px;color:#fff}
 @media(max-width:500px){.tachy-home-visual{grid-template-columns:135px 1fr;padding:18px;gap:14px}.tachy-donut{width:132px}.tachy-donut::after{inset:19px}.tachy-donut-center strong{font-size:28px}.tachy-legend span{grid-template-columns:10px 24px 1fr;gap:6px;font-size:12px}}
+
+
+/* V12.9 — fiche véhicule lors d'une session de conduite */
+.driving-vehicle-card-host{margin:4px 0 14px}
+.driving-vehicle-card{display:grid;grid-template-columns:145px 1fr;gap:14px;overflow:hidden;border:1px solid #405047;border-radius:14px;background:#09100b}
+.driving-vehicle-photo{min-height:118px;background:#111813;display:flex;align-items:center;justify-content:center}
+.driving-vehicle-cover{width:100%;height:100%;min-height:118px;object-fit:cover}
+.driving-vehicle-placeholder{font-size:42px;opacity:.7}
+.driving-vehicle-info{padding:13px 14px 13px 0}
+.driving-vehicle-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.driving-vehicle-title strong{font-size:21px}.driving-vehicle-title span{font-size:11px;color:var(--muted)}
+.driving-vehicle-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.driving-vehicle-grid div{padding:7px 9px;border:1px solid #29372e;border-radius:8px}
+.driving-vehicle-grid span,.driving-vehicle-grid strong{display:block}.driving-vehicle-grid span{font-size:10px;color:var(--muted)}.driving-vehicle-grid strong{margin-top:2px;font-size:13px}
+.driving-duration-preview{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px;padding:12px 14px;border:1px solid #405047;border-radius:10px;background:#101912}
+.driving-duration-preview span{color:var(--muted);font-size:13px}.driving-duration-preview strong{color:var(--green);font-size:23px}
+@media(max-width:520px){.driving-vehicle-card{grid-template-columns:105px 1fr}.driving-vehicle-photo,.driving-vehicle-cover{min-height:105px}.driving-vehicle-info{padding-right:10px}.driving-vehicle-title{display:block}.driving-vehicle-title span{display:block;margin-top:2px}}
