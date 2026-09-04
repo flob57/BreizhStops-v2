@@ -8,6 +8,40 @@ function isoWeekValue(date=new Date()){const d=new Date(Date.UTC(date.getFullYea
 function mondayFromWeek(value){const [y,w]=value.split("-W").map(Number);const jan4=new Date(Date.UTC(y,0,4));const monday=new Date(jan4);monday.setUTCDate(jan4.getUTCDate()-((jan4.getUTCDay()||7)-1)+(w-1)*7);return monday.toISOString().slice(0,10)}
 function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;")}
 function duration(row){return Math.max(0,Math.round((new Date(row.ended_at||Date.now())-new Date(row.started_at))/60000))}
+function sessionWeekRows(rows){
+ const start=state.data.week_start,end=state.data.week_end;
+ return rows.filter(x=>{
+   const date=dateOnly(x.started_at||x.filled_at);
+   return date>=start&&date<=end;
+ });
+}
+function vehicleNames(){
+ const names=new Set();
+ for(const x of state.data.driving_sessions||[]) if(x.vehicle_registration) names.add(x.vehicle_registration);
+ for(const x of state.data.fuel_fillups||[]) if(x.vehicle_registration) names.add(x.vehicle_registration);
+ return [...names].sort((a,b)=>a.localeCompare(b,"fr",{numeric:true}));
+}
+function renderVehicleHistory(){
+ const select=$("vehicleHistorySelect"),list=$("vehicleHistory");
+ if(!select||!list)return;
+ const names=vehicleNames();
+ const current=select.value;
+ select.innerHTML=`<option value="">Choisir un véhicule…</option>`+names.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+ if(current&&names.includes(current))select.value=current;
+ if(!select.value){list.innerHTML="<div class='history-empty'>Sélectionne un véhicule pour afficher son historique.</div>";return;}
+ const reg=select.value;
+ const drives=(state.data.driving_sessions||[]).filter(x=>x.vehicle_registration===reg);
+ const fuels=(state.data.fuel_fillups||[]).filter(x=>x.vehicle_registration===reg);
+ const events=[
+   ...drives.map(x=>({date:x.started_at,type:"Conduite",detail:`${fmtDate(x.started_at)} → ${fmtDate(x.ended_at)}`,extra:x.km_end==null?"En cours":`${x.km_start} → ${x.km_end} km · ${Math.max(0,Number(x.km_end)-Number(x.km_start))} km`})),
+   ...fuels.map(x=>({date:x.filled_at,type:"Plein",detail:fmtDate(x.filled_at),extra:`${x.odometer_km} km · ${Number(x.litres).toFixed(2)} L`}))
+ ].sort((a,b)=>new Date(b.date)-new Date(a.date));
+ const latestKm=events.map(e=>{const m=e.extra.match(/(?:^|· )([0-9]+) km/);return m?Number(m[1]):null}).find(v=>v!=null);
+ list.innerHTML=`
+   <div class="vehicle-history-summary"><strong>${esc(reg)}</strong><span>Dernier kilométrage connu : <b>${latestKm==null?"—":latestKm+" km"}</b></span></div>
+   ${events.length?events.map(e=>`<div class="history-row"><div><strong>${esc(e.type)}</strong><span>${esc(e.detail)}</span></div><strong>${esc(e.extra)}</strong></div>`).join(""):"<div class='history-empty'>Aucune activité enregistrée pour ce véhicule.</div>"}
+ `;
+}
 function render(){
  const d=state.data,p=d.periods;
  $("statsDate").textContent=new Intl.DateTimeFormat("fr-FR",{dateStyle:"full"}).format(new Date(`${d.today}T12:00:00`));
@@ -17,7 +51,13 @@ function render(){
  $("todayActivity").textContent=fmt(p.today.actual);$("todayDriving").textContent=`Conduite : ${fmt(p.today.driving)} · ${p.today.km} km`;
  const best=d.consumption[0];$("averageConsumption").textContent=best?`${best.l_per_100km.toFixed(2)} L/100 km`:"—";$("consumptionVehicle").textContent=best?best.vehicle:"Pas assez de pleins";
  $("weekTitle").textContent=`Semaine du ${d.week_start} au ${d.week_end}`;
- $("declarationsList").innerHTML=d.week_declarations.length?d.week_declarations.map(x=>`<div class="list-row"><div><strong>${x.work_date}</strong> · ${fmt(x.total_minutes)}<br><small>${esc(x.notes||"")}</small></div><button data-edit-declaration="${x.work_date}">✎ Modifier</button><button class="delete" data-delete-declaration="${x.id}">🗑</button></div>`).join(""):"<div class=list-row>Aucune heure déclarée.</div>";
+ $("declarationsList").innerHTML=d.week_declarations.length?d.week_declarations.map(x=>{
+   const slots=[
+     x.morning_start&&x.morning_end?`Matin ${x.morning_start}–${x.morning_end}`:null,
+     x.afternoon_start&&x.afternoon_end?`Après-midi ${x.afternoon_start}–${x.afternoon_end}`:null
+   ].filter(Boolean).join(" · ");
+   return `<div class="list-row"><div><strong>${x.work_date}</strong> · ${fmt(x.total_minutes)}<br><small>${esc(slots||"Horaires non renseignés")}${x.notes?` · ${esc(x.notes)}`:""}</small></div><button data-edit-declaration="${x.work_date}">✎ Modifier</button><button class="delete" data-delete-declaration="${x.id}">🗑</button></div>`;
+ }).join(""):"<div class=list-row>Aucune heure déclarée.</div>";
  $("weekDeclaredTotal").textContent=`Total de la semaine : ${fmt(d.week_declarations.reduce((s,x)=>s+Number(x.total_minutes),0))}`;
  $("periodCards").innerHTML=[["Aujourd’hui",p.today],["Cette semaine",p.week],["Ce mois",p.month],["Cette année",p.year]].map(([l,x])=>{
    const percent=x.expected>0?Math.round((x.actual/x.expected)*100):(x.actual>0?100:0);
@@ -34,8 +74,13 @@ function render(){
  $("consumptionList").innerHTML=table(["Véhicule","Distance","Litres","Consommation"],d.consumption.map(x=>[x.vehicle,`${x.distance} km`,x.litres.toFixed(2),`${x.l_per_100km.toFixed(2)} L/100 km`]));
  $("fuelList").innerHTML=table(["Date","Véhicule","Km","Litres",""],d.fuel_fillups.map(x=>[fmtDate(x.filled_at),x.vehicle_registration,x.odometer_km,Number(x.litres).toFixed(2),actions("fuel",x.id)]));
  renderDaily();
- $("workSessions").innerHTML=table(["Début","Fin","Durée",""],d.work_sessions.map(x=>[fmtDate(x.started_at),fmtDate(x.ended_at),fmt(duration(x)),actions("work",x.id)]));
- $("drivingSessions").innerHTML=table(["Date","Véhicule","Début","Fin","Durée","Km début","Km fin","Distance",""],d.driving_sessions.map(x=>[dateOnly(x.started_at),x.vehicle_registration,fmtDate(x.started_at),fmtDate(x.ended_at),fmt(duration(x)),x.km_start,x.km_end??"—",x.km_end==null?"—":`${x.km_end-x.km_start} km`,actions("driving",x.id)]));
+ const weekWork=sessionWeekRows(d.work_sessions);
+ const weekDriving=sessionWeekRows(d.driving_sessions);
+ $("workSessions").innerHTML=table(["Début","Fin","Durée",""],weekWork.map(x=>[fmtDate(x.started_at),fmtDate(x.ended_at),fmt(duration(x)),actions("work",x.id)]));
+ $("drivingSessions").innerHTML=table(["Date","Véhicule","Début","Fin","Durée","Km début","Km fin","Distance",""],weekDriving.map(x=>[dateOnly(x.started_at),x.vehicle_registration,fmtDate(x.started_at),fmtDate(x.ended_at),fmt(duration(x)),x.km_start,x.km_end??"—",x.km_end==null?"—":`${x.km_end-x.km_start} km`,actions("driving",x.id)]));
+ $("workWeekLabel").textContent=`Semaine du ${d.week_start} au ${d.week_end}`;
+ $("drivingWeekLabel").textContent=`Semaine du ${d.week_start} au ${d.week_end}`;
+ renderVehicleHistory();
  const dist=d.distance_totals;$("distanceSummary").innerHTML=[["Aujourd’hui",dist.today],["Cette semaine",dist.week],["Ce mois",dist.month],["Cette année",dist.year],["Depuis toujours",dist.all]].map(([l,v])=>`<div><span>${l}</span><strong>${v} km</strong></div>`).join("");
 }
 function table(headers,rows){return `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join(""):`<tr><td colspan="${headers.length}">Aucune donnée.</td></tr>`}</tbody></table>`}
@@ -221,7 +266,8 @@ async function submitRecordEdit(event){
   closeRecordDialog();
   await load();
 }
-$("weekPicker").value=isoWeekValue();$("weekPicker").addEventListener("change",load);$("dailyPeriod").addEventListener("change",renderDaily);$("declareHere").addEventListener("click",()=>openDeclaration().catch(e=>alert(e.message)));$("declareForm").addEventListener("submit",submitDeclaration);
+$("weekPicker").value=isoWeekValue();$("weekPicker").addEventListener("change",load);$("dailyPeriod").addEventListener("change",renderDaily);
+$("vehicleHistorySelect")?.addEventListener("change",renderVehicleHistory);$("declareHere").addEventListener("click",()=>openDeclaration().catch(e=>alert(e.message)));$("declareForm").addEventListener("submit",submitDeclaration);
 $("settingsButton").addEventListener("click",async()=>{try{const s=state.data?.settings||(await api("/api/timeclock/settings")).settings;$("settingOvertime").value=s.overtime_balance_minutes??720;$("settingOvertimeDate").value=s.overtime_baseline_date||"2026-07-17";$("settingN1").value=s.paid_leave_n1??28;$("settingN").value=s.paid_leave_n??5;$("settingLeaveDate").value=s.paid_leave_baseline_date||"2026-07-17";$("settingsDialog").showModal()}catch(e){alert(e.message)}});
 $("settingsForm").addEventListener("submit",async e=>{e.preventDefault();await api("/api/timeclock/settings",{method:"POST",body:JSON.stringify({overtime_balance_minutes:$("settingOvertime").value,overtime_baseline_date:$("settingOvertimeDate").value,paid_leave_n1:$("settingN1").value,paid_leave_n:$("settingN").value,paid_leave_baseline_date:$("settingLeaveDate").value})});$("settingsDialog").close();await load()});
 document.addEventListener("click",async e=>{const ed=e.target.closest("[data-edit-declaration]"),dd=e.target.closest("[data-delete-declaration]"),dr=e.target.closest("[data-delete-record]"),er=e.target.closest("[data-edit-record]");if(ed)openDeclaration(ed.dataset.editDeclaration);if(dd&&confirm("Supprimer cette déclaration ?")){await api(`/api/timeclock/declarations/${dd.dataset.deleteDeclaration}`,{method:"DELETE"});await load()}if(dr){const [t,id]=dr.dataset.deleteRecord.split(":");deleteRecord(t,id)}if(er){const [t,id]=er.dataset.editRecord.split(":");editRecord(t,id)}});
