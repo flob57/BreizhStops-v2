@@ -26,7 +26,7 @@ function card(vehicle) {
     ${vehicle.cover_url ? `<img class="vehicle-cover" src="${escapeHtml(vehicle.cover_url)}" alt="${escapeHtml(vehicle.registration)}">` : `<div class="vehicle-placeholder">🚌</div>`}
     <div class="vehicle-body">
       <div class="vehicle-head"><div><h2>${escapeHtml(vehicle.registration)}</h2><span class="park">Parc Océlorn : ${escapeHtml(vehicle.ocelorn_number || "—")}</span></div><span class="badge">${statusLabel(vehicle.status)}</span></div>
-      ${vehicle.at_workshop ? '<div class="location-badge workshop">🔧 À l’atelier</div>' : vehicle.location_label ? '<div class="location-badge provisional">📍 ${escapeHtml(vehicle.location_label)}</div>' : ""}
+      ${vehicle.at_workshop ? '<div class="location-badge workshop">🔧 À l’atelier</div>' : vehicle.location_label ? `<div class="location-badge provisional">📍 ${escapeHtml(vehicle.location_label)}</div>` : ""}
       <p class="deadline">${escapeHtml(deadlineText(vehicle))}</p>
       <div class="dates"><span>Dernier déchargement</span><strong>${escapeHtml(formatDate(vehicle.last_download))}</strong><span>Échéance</span><strong>${escapeHtml(formatDate(vehicle.due_date))}</strong></div>
     </div>
