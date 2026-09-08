@@ -4,6 +4,8 @@ import {
 } from "../../_home_status.js";
 
 const FALLBACK_DATABASE_ID = "2e66bbfa7ec1804f963bc019a4d6de92";
+const PARKING_DATABASE_ID = "35e6bbfa7ec180a18deff12d69f95ebc";
+const WORKSHOP_NAME = "Coat-Conq - Atelier";
 const DAY = 86400000;
 
 function normalize(value) {
@@ -39,9 +41,26 @@ function addDays(value, days) {
   return new Date(timestamp + days * DAY).toISOString().slice(0, 10);
 }
 
-function isInService(state) {
+function isIncluded(state) {
   const value = normalize(state);
-  return value === "en service" || value === "en service sur mon parc";
+  return value === "en service" ||
+    value === "en service sur mon parc" ||
+    value === "provisoirement sur parc" ||
+    value === "provisoire sur parc";
+}
+async function findWorkshopParkingPage(token, parkingDatabaseId) {
+  try {
+    const candidates = await queryDatabase(token, parkingDatabaseId, {
+      filter: { property: "Emplacement", title: { equals: WORKSHOP_NAME } }
+    });
+    if (candidates.length) return candidates[0];
+  } catch {}
+  try {
+    const all = await queryDatabase(token, parkingDatabaseId);
+    return all.find(page => normalize(pageTitle(page)) === normalize(WORKSHOP_NAME)) || null;
+  } catch {
+    return null;
+  }
 }
 
 function statusFor(daysRemaining, missingDate) {
@@ -61,6 +80,17 @@ export async function onRequestGet(context) {
     if (!token) return error("Secret NOTION_TOKEN absent.", 500);
     const databaseId = context.env.NOTION_VEHICLES_DATABASE_ID || FALLBACK_DATABASE_ID;
     const pages = await queryDatabase(token, databaseId);
+    const parkingDatabaseId = context.env.NOTION_PARKING_DATABASE_ID || PARKING_DATABASE_ID;
+    const workshopPage = await findWorkshopParkingPage(token, parkingDatabaseId);
+    let workshopVehicleIds = new Set();
+    if (workshopPage?.id) {
+      workshopVehicleIds = new Set(pages.filter(page =>
+        Object.values(page.properties || {}).some(property =>
+          property?.type === "relation" &&
+          (property.relation || []).some(item => item.id === workshopPage.id)
+        )
+      ).map(page => page.id));
+    }
     const today = parisDate();
     const todayUtc = dateUtc(today);
     const vehicles = [];
@@ -69,7 +99,8 @@ export async function onRequestGet(context) {
       if (page.archived) continue;
       const properties = page.properties || {};
       const state = text(properties, ["État", "Etat", "Statut"]);
-      if (!isInService(state)) continue;
+      const atWorkshop = workshopVehicleIds.has(page.id);
+      if (!isIncluded(state) && !atWorkshop) continue;
 
       const registration = text(properties, ["Immatriculation", "Véhicule", "Vehicule", "Nom", "Name"]) || pageTitle(page);
       if (!registration) continue;
@@ -92,6 +123,8 @@ export async function onRequestGet(context) {
           "N° parc Océlorn", "N° Parc Océlorn", "Parc Océlorn", "N° parc", "Numéro de parc", "Numero de parc"
         ])),
         state,
+        at_workshop: atWorkshop,
+        location_label: atWorkshop ? "À l’atelier" : (normalize(state).includes("provisoirement") ? "Provisoirement sur parc" : ""),
         last_download: lastDownload,
         due_date: dueDate,
         days_remaining: daysRemaining,
