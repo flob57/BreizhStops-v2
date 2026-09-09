@@ -2426,3 +2426,31 @@ body.search-panel-collapsed.route-panel-collapsed .layout { grid-template-column
 .popup-stop-status--out {
   margin: .35rem 0 .45rem;
 }
+
+.sae-history-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:12px;border:1px solid rgba(127,223,55,.18);border-radius:12px;background:rgba(10,20,14,.55)}
+.sae-history-toolbar label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;color:#aeb9b1}
+.sae-history-toolbar input[type="date"]{min-height:40px;padding:8px 10px;border-radius:9px;border:1px solid #3b4b42;background:#101812;color:#fff;font:inherit}
+.sae-course-card-recorded{border-color:rgba(127,223,55,.38)!important}
+.sae-course-history-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.sae-history-status{font-size:12px;font-weight:800}
+.sae-history-status.done{color:#9be65b}
+.sae-history-status.active{color:#ffc76f}
+.sae-history-status.pending{color:#8e9991}
+.sae-history-open{font-size:12px;font-weight:800;color:#b8e98a}
+.sae-history-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0}
+.sae-history-summary>div{padding:10px;border:1px solid #304037;border-radius:10px;background:#0d1510}
+.sae-history-summary strong{display:block;font-size:10px;text-transform:uppercase;color:#8f9b93;margin-bottom:4px}
+.sae-history-summary span{font-weight:800}
+.sae-history-table{max-height:58vh;overflow:auto}
+.sae-history-table table{width:100%;border-collapse:collapse;font-size:12px}
+.sae-history-table th,.sae-history-table td{padding:8px;border-bottom:1px solid #28352d;text-align:left;white-space:nowrap}
+.sae-history-table th{position:sticky;top:0;background:#111a14;z-index:1}
+.sae-history-missing{opacity:.55}
+@media(max-width:700px){
+  .sae-history-toolbar{align-items:stretch}
+  .sae-history-toolbar label{width:100%}
+  .sae-history-toolbar .modal-actions{width:100%;margin:0}
+  .sae-history-toolbar .modal-actions button{flex:1}
+  .sae-history-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sae-history-table th,.sae-history-table td{padding:6px;font-size:11px}
+}
