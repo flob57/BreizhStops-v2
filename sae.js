@@ -28,7 +28,39 @@ const SAE = {
 };
 
 function saeTodayIso() {
-  return new Date().toISOString().slice(0, 10);
+  const date = new Date();
+  return date.getFullYear() + "-" +
+    String(date.getMonth() + 1).padStart(2, "0") + "-" +
+    String(date.getDate()).padStart(2, "0");
+}
+
+function saeSelectedDate() {
+  return $("saeHistoryDate")?.value || saeTodayIso();
+}
+
+function saeIsToday(date) {
+  return date === saeTodayIso();
+}
+
+function saeFormatActualTime(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  }).format(date);
+}
+
+function saeFormatHistoryDelay(seconds) {
+  if (seconds === null || seconds === undefined || seconds === "") return "—";
+  const value = Number(seconds);
+  if (!Number.isFinite(value)) return "—";
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+  const absolute = Math.abs(Math.round(value));
+  return sign + Math.floor(absolute / 60) + "m" +
+    String(absolute % 60).padStart(2, "0");
 }
 
 function saeFormatDate(dateString) {
@@ -49,16 +81,18 @@ async function saeApi(url, options = {}) {
 
 async function openSaeToday() {
   $("saeTodayDialog").showModal();
-  $("saeTodayDate").textContent = saeFormatDate(saeTodayIso());
+  $("saeHistoryDate").value = saeTodayIso();
   await loadSaeToday();
 }
 
 async function loadSaeToday() {
+  const date = saeSelectedDate();
+  $("saeTodayDate").textContent = saeFormatDate(date);
   $("saeTodayList").innerHTML = "<p>Chargement des courses…</p>";
 
   try {
     const courses = await saeApi(
-      `/api/public/sae/today?date=${saeTodayIso()}`
+      `/api/public/sae/today?date=${encodeURIComponent(date)}`
     );
 
     SAE.courses = courses;
