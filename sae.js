@@ -1706,6 +1706,12 @@ async function quitSae() {
 }
 
 $("openSae").addEventListener("click", openSaeToday);
+$("saeHistoryDate").addEventListener("change", loadSaeToday);
+$("saeTodayButton").addEventListener("click", () => {
+  $("saeHistoryDate").value = saeTodayIso();
+  loadSaeToday();
+});
+$("saeExportPdf").addEventListener("click", exportSaeHistoryPdf);
 $("saeSyncNotion").addEventListener("click", syncSaeNotion);
 $("saeRefreshToday").addEventListener("click", loadSaeToday);
 $("saeConfirmMatches").addEventListener("click", confirmSaeMatches);
