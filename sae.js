@@ -107,29 +107,148 @@ async function loadSaeToday() {
 
 function renderSaeToday(courses) {
   if (!courses.length) {
-    $("saeTodayList").innerHTML = `
-      <p>Aucune course enregistrée pour aujourd’hui.</p>
-    `;
+    $("saeTodayList").innerHTML = "<p>Aucune course enregistrée pour cette date.</p>";
     return;
   }
 
-  $("saeTodayList").innerHTML = courses.map(course => `
-    <article
-      class="sae-course-card"
-      onclick="prepareSaeCourse('${course.id}')"
-    >
-      <div class="sae-course-title">
-        ${escapeHtml(course.name)}
-      </div>
+  const selectedDate = saeSelectedDate();
+  const today = saeIsToday(selectedDate);
 
-      <div class="sae-course-meta">
-        ${escapeHtml(course.start_time || "—")}
-        ${course.end_time ? ` → ${escapeHtml(course.end_time)}` : ""}
-        · ${course.stop_count} arrêt(s)
-        ${course.girouette ? ` · Girouette ${escapeHtml(course.girouette)}` : ""}
-      </div>
-    </article>
-  `).join("");
+  $("saeTodayList").innerHTML = courses.map(course => {
+    const hasRun = Boolean(course.run_id);
+    const finished = course.run_status === "finished";
+    const recorded = Number(course.recorded_stop_count || 0);
+
+    const status = finished
+      ? '<span class="sae-history-status done">✓ Effectuée · ' + recorded + '/' + course.stop_count + '</span>'
+      : hasRun
+        ? '<span class="sae-history-status active">● En cours · ' + recorded + '/' + course.stop_count + '</span>'
+        : '<span class="sae-history-status pending">○ Pas encore effectuée</span>';
+
+    const action = hasRun
+      ? 'viewSaeHistoryDetail(\'' + course.id + '\')'
+      : today
+        ? 'prepareSaeCourse(\'' + course.id + '\')'
+        : "";
+
+    const onclick = action ? ' onclick="' + action + '"' : "";
+
+    return '<article class="sae-course-card ' +
+      (hasRun ? "sae-course-card-recorded" : "") + '"' + onclick + '>' +
+      '<div class="sae-course-title">' + escapeHtml(course.name) + '</div>' +
+      '<div class="sae-course-meta">' +
+        escapeHtml(course.start_time || "—") +
+        (course.end_time ? " → " + escapeHtml(course.end_time) : "") +
+        " · " + course.stop_count + " arrêt(s)" +
+        (course.girouette ? " · Girouette " + escapeHtml(course.girouette) : "") +
+      '</div>' +
+      '<div class="sae-course-history-row">' + status +
+        (hasRun ? '<span class="sae-history-open">Voir le détail →</span>' : "") +
+      '</div>' +
+      '</article>';
+  }).join("");
+}
+
+async function viewSaeHistoryDetail(courseId) {
+  try {
+    const course = await saeApi(
+      "/api/public/sae/courses/" + encodeURIComponent(courseId)
+    );
+
+    if (!course.latest_run) {
+      alert("Aucune exécution enregistrée pour cette course.");
+      return;
+    }
+
+    renderSaeHistoryDetail(course);
+    $("saeHistoryDetailDialog").showModal();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+function renderSaeHistoryDetail(course) {
+  const run = course.latest_run;
+  const events = course.events || [];
+  const byStop = new Map(events.map(event => [String(event.course_stop_id), event]));
+
+  $("saeHistoryDetailTitle").textContent = "📋 " + (course.name || "Course");
+  $("saeHistoryDetailMeta").textContent =
+    saeFormatDate(course.service_date) + " · " +
+    (course.start_time || "—") +
+    (course.end_time ? " → " + course.end_time : "");
+
+  const duration = run.finished_at
+    ? Math.max(0, Math.round((new Date(run.finished_at) - new Date(run.started_at)) / 60000))
+    : null;
+
+  $("saeHistoryDetailSummary").innerHTML =
+    '<div><strong>Service</strong><span>' + escapeHtml(course.service || "—") + '</span></div>' +
+    '<div><strong>Girouette</strong><span>' + escapeHtml(course.girouette || "—") + '</span></div>' +
+    '<div><strong>Début SAE</strong><span>' + saeFormatActualTime(run.started_at) + '</span></div>' +
+    '<div><strong>Fin SAE</strong><span>' + saeFormatActualTime(run.finished_at) + '</span></div>' +
+    '<div><strong>Durée</strong><span>' +
+      (duration === null ? "En cours" : Math.floor(duration / 60) + "h" + String(duration % 60).padStart(2, "0")) +
+    '</span></div>' +
+    '<div><strong>Arrêts enregistrés</strong><span>' + events.length + " / " + course.stops.length + '</span></div>';
+
+  $("saeHistoryDetailTable").innerHTML =
+    '<table><thead><tr>' +
+      '<th>#</th><th>Arrêt</th><th>Théorique</th><th>Réel</th><th>Écart</th>' +
+      '<th>⬆️ Montées</th><th>⬇️ Descentes</th><th>👥 À bord</th>' +
+    '</tr></thead><tbody>' +
+    course.stops.map((stop, index) => {
+      const event = byStop.get(String(stop.id));
+      return '<tr class="' + (event ? "" : "sae-history-missing") + '">' +
+        '<td>' + (index + 1) + '</td>' +
+        '<td><strong>' + escapeHtml(stop.name) + '</strong></td>' +
+        '<td>' + escapeHtml(stop.scheduled_time || "—") + '</td>' +
+        '<td>' + (event ? saeFormatActualTime(event.actual_time) : "—") + '</td>' +
+        '<td>' + (event ? saeFormatHistoryDelay(event.delay_seconds) : "—") + '</td>' +
+        '<td>' + (event ? Number(event.boardings || 0) : "—") + '</td>' +
+        '<td>' + (event ? Number(event.alightings || 0) : "—") + '</td>' +
+        '<td>' + (event ? Number(event.onboard_after || 0) : "—") + '</td>' +
+      '</tr>';
+    }).join("") +
+    '</tbody></table>';
+}
+
+function exportSaeHistoryPdf() {
+  const title = $("saeHistoryDetailTitle").textContent;
+  const meta = $("saeHistoryDetailMeta").textContent;
+  const summary = $("saeHistoryDetailSummary").innerHTML;
+  const table = $("saeHistoryDetailTable").innerHTML;
+
+  const printWindow = window.open("", "_blank", "width=1100,height=800");
+  if (!printWindow) {
+    alert("Le navigateur bloque la fenêtre d'impression. Autorise les fenêtres contextuelles puis réessaie.");
+    return;
+  }
+
+  printWindow.document.write(
+    '<!doctype html><html lang="fr"><head><meta charset="utf-8">' +
+    '<title>' + escapeHtml(title) + '</title>' +
+    '<style>' +
+    'body{font-family:Arial,sans-serif;color:#111;margin:28px;font-size:12px}' +
+    'h1{font-size:22px;margin:0 0 4px}.meta{color:#555;margin-bottom:18px}' +
+    '.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:15px 0 22px}' +
+    '.summary div{border:1px solid #ccc;border-radius:6px;padding:8px}' +
+    '.summary strong{display:block;font-size:10px;color:#666;text-transform:uppercase;margin-bottom:4px}' +
+    'table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}' +
+    'th{background:#eee}.footer{margin-top:18px;color:#666;font-size:10px}' +
+    '@media print{body{margin:12mm}}' +
+    '</style></head><body>' +
+    '<h1>' + escapeHtml(title) + '</h1>' +
+    '<div class="meta">' + escapeHtml(meta) + '</div>' +
+    '<div class="summary">' + summary + '</div>' +
+    table +
+    '<div class="footer">Rapport SAE — BreizhStops · Généré le ' +
+    escapeHtml(new Date().toLocaleString("fr-FR")) + '</div>' +
+    '</body></html>'
+  );
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => printWindow.print(), 250);
 }
 
 async function syncSaeNotion() {
