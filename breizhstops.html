@@ -590,13 +590,40 @@
         <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
       </div>
 
-      <div class="modal-actions left">
-        <button type="button" id="saeSyncNotion">🔄 Synchroniser Notion</button>
-        <button type="button" id="saeRefreshToday" class="secondary">Actualiser</button>
+      <div class="sae-history-toolbar">
+        <label>
+          Date des courses
+          <input type="date" id="saeHistoryDate">
+        </label>
+        <div class="modal-actions left">
+          <button type="button" id="saeTodayButton" class="secondary">Aujourd’hui</button>
+          <button type="button" id="saeSyncNotion">🔄 Synchroniser Notion</button>
+          <button type="button" id="saeRefreshToday" class="secondary">Actualiser</button>
+        </div>
       </div>
 
       <div id="saeSyncStatus"></div>
       <div id="saeTodayList" class="sae-course-list"></div>
+    </form>
+  </dialog>
+
+  <dialog id="saeHistoryDetailDialog" class="modal">
+    <form method="dialog" class="modal-card large sae-history-detail-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="saeHistoryDetailTitle">📋 Détail de la course</h2>
+          <div id="saeHistoryDetailMeta" class="meta"></div>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fermer">✕</button>
+      </div>
+
+      <div id="saeHistoryDetailSummary" class="sae-history-summary"></div>
+      <div id="saeHistoryDetailTable" class="table-wrap sae-history-table"></div>
+
+      <div class="modal-actions">
+        <button type="button" id="saeExportPdf">🖨️ Exporter en PDF</button>
+        <button value="cancel" class="secondary">Fermer</button>
+      </div>
     </form>
   </dialog>
 
